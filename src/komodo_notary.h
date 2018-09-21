@@ -18,7 +18,8 @@
 
 #include "komodo_cJSON.h"
 
-//include "notaries_STAKED.h"
+#include "notaries_STAKED.h"
+
 //{"kmdcrazy", "02da444a2627d420f1f622fcdfb9bddb67d6d4241ad6b4d5054716ddbde8a25dfb"} // RJPJBbHcm5mkAxhkkERHRfEE9Cvkr4Euoi
 const char *notaries_STAKED[][2] =
 {
@@ -249,7 +250,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
         {
             if ( did1 == 0 )
             {
-	       if ( (strncmp(ASSETCHAINS_SYMBOL, "STKD", 4) == 0) || (strncmp(ASSETCHAINS_SYMBOL, "STAKED", 6) == 0) )
+	       if (is_STAKED()) 
                {
                   n1 = (int32_t)(sizeof(notaries_STAKED)/sizeof(*notaries_STAKED));
                   for (i=0; i<n1; i++)
