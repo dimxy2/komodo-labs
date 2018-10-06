@@ -1894,7 +1894,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
         else if ( ASSETCHAINS_ENDSUBSIDY == 0 || nHeight < ASSETCHAINS_ENDSUBSIDY )
         {
             if ( ASSETCHAINS_REWARD == 0 )
-                return(10000);
+                return(10000000000);
             else if ( ASSETCHAINS_ENDSUBSIDY != 0 && nHeight >= ASSETCHAINS_ENDSUBSIDY )
                 return(0);
             else
