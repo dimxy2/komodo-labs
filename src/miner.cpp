@@ -859,7 +859,7 @@ void static BitcoinMiner()
             uint8_t pubkeys[66][33]; arith_uint256 bnMaxPoSdiff; uint32_t blocktimes[66]; int mids[256],nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
             pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
             savebits = pblock->nBits;
-            HASHTarget = arith_uint256().SetCompact(savebits);
+            HASHTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
             roundrobin_delay = ROUNDROBIN_DELAY;
             if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )
             {
