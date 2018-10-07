@@ -23,7 +23,7 @@ uint32_t komodo_chainactive_timestamp();
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
-    unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
+    /*unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
     // Genesis block
     if (pindexLast == NULL )
         return nProofOfWorkLimit;
@@ -45,6 +45,8 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     arith_uint256 bnAvg {bnTot / params.nPowAveragingWindow};
 
     return CalculateNextWorkRequired(bnAvg, pindexLast->GetMedianTimePast(), pindexFirst->GetMedianTimePast(), params);
+    */
+    return 537857807;
 }
 
 unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
