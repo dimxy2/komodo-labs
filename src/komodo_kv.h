@@ -151,14 +151,15 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
             if ( ptr != 0 )
             {
-                fprintf(stderr,"(%s) already there\n",valueptr);
-                //if ( (ptr->flags & KOMODO_KVPROTECTED) != 0 )
+                //fprintf(stderr,"(%s) already there\n",valueptr);
+                fprintf(stderr,"[%s] : %s\n",ptr->key,valueptr);
+                if ( (ptr->flags & KOMODO_KVPROTECTED) != 0 )
                 {
                     tstr = (char *)"transfer:";
                     transferpubstr = (char *)&valueptr[strlen(tstr)];
                     if ( strncmp(tstr,(char *)valueptr,strlen(tstr)) == 0 && is_hexstr(transferpubstr,0) == 64 )
                     {
-                        //printf("transfer.(%s) to [%s]? ishex.%d\n",key,transferpubstr,is_hexstr(transferpubstr,0));
+                        printf("transfer.(%s) to [%s]? ishex.%d\n",key,transferpubstr,is_hexstr(transferpubstr,0));
                         for (i=0; i<32; i++)
                             ((uint8_t *)&pubkey)[31-i] = _decode_hex(&transferpubstr[i*2]);
                     }
@@ -172,7 +173,8 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 memcpy(ptr->key,key,keylen);
                 newflag = 1;
                 HASH_ADD_KEYPTR(hh,KOMODO_KV,ptr->key,ptr->keylen,ptr);
-                fprintf(stderr,"KV add.(%s) (%s)\n",ptr->key,valueptr);
+                fprintf(stderr,"CONFIRMED [%s] : %s\n",ptr->key,valueptr);
+                //fprintf(stderr,"KV add.(%s) (%s)\n",ptr->key,valueptr);
             }
             if ( newflag != 0 || (ptr->flags & KOMODO_KVPROTECTED) == 0 )
             {
