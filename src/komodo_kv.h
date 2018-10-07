@@ -117,6 +117,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
     }*/
     valueptr = &key[keylen];
     fee = komodo_kvfee(flags,opretlen,keylen);
+    fprintf(stderr,"[%s] : %s\n",ptr->key,valueptr);
     //printf("fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,height,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
     if ( value >= fee )
     {
@@ -152,8 +153,8 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             if ( ptr != 0 )
             {
                 //fprintf(stderr,"(%s) already there\n",valueptr);
-                fprintf(stderr,"[%s] : %s\n",ptr->key,valueptr);
-                if ( (ptr->flags & KOMODO_KVPROTECTED) != 0 )
+                fprintf(stderr,"COMFIRMED 1 [%s] : %s\n",ptr->key,valueptr);
+                //if ( (ptr->flags & KOMODO_KVPROTECTED) != 0 )
                 {
                     tstr = (char *)"transfer:";
                     transferpubstr = (char *)&valueptr[strlen(tstr)];
@@ -173,7 +174,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 memcpy(ptr->key,key,keylen);
                 newflag = 1;
                 HASH_ADD_KEYPTR(hh,KOMODO_KV,ptr->key,ptr->keylen,ptr);
-                fprintf(stderr,"CONFIRMED [%s] : %s\n",ptr->key,valueptr);
+                fprintf(stderr,"CONFIRMED 2 [%s] : %s\n",ptr->key,valueptr);
                 //fprintf(stderr,"KV add.(%s) (%s)\n",ptr->key,valueptr);
             }
             if ( newflag != 0 || (ptr->flags & KOMODO_KVPROTECTED) == 0 )
