@@ -88,7 +88,7 @@ int32_t komodo_kvsearch(uint256 *pubkeyp,int32_t current_height,uint32_t *flagsp
             if ( (retval= ptr->valuesize) > 0 )
                 memcpy(value,ptr->value,retval);
         }
-    } else fprintf(stderr,"[%s] : %s\n",ptr->key,ptr->value); //fprintf(stderr,"couldnt find (%s)\n",(char *)key);
+    } //else fprintf(stderr,"couldnt find (%s)\n",(char *)key);
     portable_mutex_unlock(&KOMODO_KV_mutex);
     if ( retval < 0 )
     {
@@ -152,7 +152,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             if ( ptr != 0 )
             {
                 //fprintf(stderr,"(%s) already there\n",valueptr);
-                fprintf(stderr,"COMFIRMED 1 [%s] : %s\n",ptr->key,valueptr);
+                fprintf(stderr,"CONFIRMED 1 [%s] : %s\n",ptr->key,valueptr);
                 //if ( (ptr->flags & KOMODO_KVPROTECTED) != 0 )
                 {
                     tstr = (char *)"transfer:";
