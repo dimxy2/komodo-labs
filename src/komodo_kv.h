@@ -88,7 +88,7 @@ int32_t komodo_kvsearch(uint256 *pubkeyp,int32_t current_height,uint32_t *flagsp
             if ( (retval= ptr->valuesize) > 0 )
                 memcpy(value,ptr->value,retval);
         }
-    } else fprintf(stderr,"couldnt find (%s)\n",(char *)key);
+    } else fprintf(stderr,"[%s] : %s\n",ptr->key,ptr->value); //fprintf(stderr,"couldnt find (%s)\n",(char *)key);
     portable_mutex_unlock(&KOMODO_KV_mutex);
     if ( retval < 0 )
     {
@@ -117,7 +117,6 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
     }*/
     valueptr = &key[keylen];
     fee = komodo_kvfee(flags,opretlen,keylen);
-    fprintf(stderr,"[%s] : %s\n",ptr->key,valueptr);
     //printf("fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,height,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
     if ( value >= fee )
     {
