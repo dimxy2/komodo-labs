@@ -64,7 +64,7 @@ int32_t komodo_kvsearch(uint256 *pubkeyp,int32_t current_height,uint32_t *flagsp
     if ( ptr != 0 )
     {
         duration = komodo_kvduration(ptr->flags);
-        fprintf(stderr,"duration.%d flags.%d current.%d ht.%d keylen.%d valuesize.%d\n",duration,ptr->flags,current_height,ptr->height,ptr->keylen,ptr->valuesize);
+        //fprintf(stderr,"duration.%d flags.%d current.%d ht.%d keylen.%d valuesize.%d\n",duration,ptr->flags,current_height,ptr->height,ptr->keylen,ptr->valuesize);
         if ( current_height > (ptr->height + duration) )
         {
             HASH_DELETE(hh,KOMODO_KV,ptr);
@@ -83,7 +83,7 @@ int32_t komodo_kvsearch(uint256 *pubkeyp,int32_t current_height,uint32_t *flagsp
                 printf("%02x",((uint8_t *)&ptr->pubkey)[31-i]);
                 ((uint8_t *)pubkeyp)[i] = ((uint8_t *)&ptr->pubkey)[31-i];
             }
-            printf(" ptr->pubkey\n");
+            //printf(" ptr->pubkey\n");
             memcpy(pubkeyp,&ptr->pubkey,sizeof(*pubkeyp));
             if ( (retval= ptr->valuesize) > 0 )
                 memcpy(value,ptr->value,retval);
@@ -108,16 +108,16 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
     iguana_rwnum(0,&opretbuf[5],sizeof(height),&height);
     iguana_rwnum(0,&opretbuf[9],sizeof(flags),&flags);
     key = &opretbuf[13];
-    if ( keylen+13 > opretlen )
+    /*if ( keylen+13 > opretlen )
     {
         static uint32_t counter;
         if ( ++counter < 1 )
             fprintf(stderr,"komodo_kvupdate: keylen.%d + 13 > opretlen.%d, this can be ignored\n",keylen,opretlen);
         return;
-    }
+    }*/
     valueptr = &key[keylen];
     fee = komodo_kvfee(flags,opretlen,keylen);
-    printf("fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,height,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
+    //printf("fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,height,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
     if ( value >= fee )
     {
         coresize = (int32_t)(sizeof(flags)+sizeof(height)+sizeof(keylen)+sizeof(valuesize)+keylen+valuesize+1);
@@ -151,14 +151,14 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
             if ( ptr != 0 )
             {
-                fprintf(stderr,"(%s) already there\n",(char *)key);
+                fprintf(stderr,"(%s) already there\n",valueptr);
                 //if ( (ptr->flags & KOMODO_KVPROTECTED) != 0 )
                 {
                     tstr = (char *)"transfer:";
                     transferpubstr = (char *)&valueptr[strlen(tstr)];
                     if ( strncmp(tstr,(char *)valueptr,strlen(tstr)) == 0 && is_hexstr(transferpubstr,0) == 64 )
                     {
-                        printf("transfer.(%s) to [%s]? ishex.%d\n",key,transferpubstr,is_hexstr(transferpubstr,0));
+                        //printf("transfer.(%s) to [%s]? ishex.%d\n",key,transferpubstr,is_hexstr(transferpubstr,0));
                         for (i=0; i<32; i++)
                             ((uint8_t *)&pubkey)[31-i] = _decode_hex(&transferpubstr[i*2]);
                     }
