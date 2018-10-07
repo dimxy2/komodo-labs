@@ -78,7 +78,6 @@ unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
     LogPrint("pow", "Current average: %08x  %s\n", bnAvg.GetCompact(), bnAvg.ToString());
     LogPrint("pow", "After:  %08x  %s\n", bnNew.GetCompact(), bnNew.ToString());
 
-    fprintf(stderr, "%d\n",bnNew.GetCompact());
     return bnNew.GetCompact();
 }
 

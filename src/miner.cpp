@@ -391,8 +391,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
         nLastBlockSize = nBlockSize;
         blocktime = 1 + std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
         //pblock->nTime = blocktime + 1;
-        printf("fetching GetNextWorkRequired in the miner here\n");
+        printf("fetching GetNextWorkRequired in the miner here: %d\n", GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus()));
         pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
+
         //LogPrintf("CreateNewBlock(): total size %u blocktime.%u nBits.%08x\n", nBlockSize,blocktime,pblock->nBits);
         if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED != 0 && KOMODO_MININGTHREADS == 0 )
         {
