@@ -2940,8 +2940,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     std::vector<PrecomputedTransactionData> txdata;
     txdata.reserve(block.vtx.size()); // Required so that pointers to individual PrecomputedTransactionData don't get invalidated
+    fprintf(stderr,"before check: %s vouts.%d vtx.size.%d block.%d vs %d\n",ASSETCHAINS_SYMBOL,(int32_t)block.vtx[0].vout.size(),(int32_t)block.vtx.size(),pindex->nHeight,ASSETCHAINS_MINHEIGHT);
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
+        fprintf(stderr, "%d\n",ASSETCHAINS_REWARD);
         if ( ASSETCHAINS_REWARD == 0 )
         {
             if ( block.vtx.size() == 1 && block.vtx[0].vout.size() == 2 && pindex->nHeight > ASSETCHAINS_MINHEIGHT )
