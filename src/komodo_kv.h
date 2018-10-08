@@ -152,7 +152,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             if ( ptr != 0 )
             {
                 //fprintf(stderr,"(%s) already there\n",valueptr);
-                fprintf(stderr,"ptr != 0 [%s] : %s\n",ptr->key,valueptr);
+                //fprintf(stderr,"ptr != 0 [%s] : %s\n",ptr->key,valueptr);
                 //if ( (ptr->flags & KOMODO_KVPROTECTED) != 0 )
                 {
                     tstr = (char *)"transfer:";
