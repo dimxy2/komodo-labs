@@ -2940,6 +2940,18 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     std::vector<PrecomputedTransactionData> txdata;
     txdata.reserve(block.vtx.size()); // Required so that pointers to individual PrecomputedTransactionData don't get invalidated
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+    {
+        if ( ASSETCHAINS_REWARD == 0 )
+        {
+            if ( block->vtx.size() == 1 && block->vtx[0].vout.size() == 2 && Mining_height > ASSETCHAINS_MINHEIGHT )
+            {
+                fprintf(stderr,"invalid block in %s \n",ASSETCHAINS_SYMBOL);
+                return state.DoS(100, error("ConnectBlock(): There are no TX in this block, it is invalid!"),
+                                 REJECT_INVALID, "bad-block-no-transactions");
+            } else fprintf(stderr,"%s vouts.%d vtx.size.%d block.%d vs %d\n",ASSETCHAINS_SYMBOL,(int32_t)block->vtx[0].vout.size(),(int32_t)block->vtx.size(),Mining_height,ASSETCHAINS_MINHEIGHT);
+        }
+    }
     for (unsigned int i = 0; i < block.vtx.size(); i++)
     {
         const CTransaction &tx = block.vtx[i];
