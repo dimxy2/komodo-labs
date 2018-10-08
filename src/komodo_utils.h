@@ -1561,7 +1561,8 @@ void komodo_args(char *argv0)
         ASSETCHAINS_DECAY = GetArg("-ac_decay",0);
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
-				STAKEDTROLL_PUBKEY="022ff46635237f9bec86d6f0681c2bc62505cc491e89b8a35e0921e1f30388cb36";
+				decode_hex(STAKEDTROLL_PUBKEY33,33,(char *)STAKEDTROLL_PUBKEY.c_str());
+				printf("%s\n",STAKEDTROLL_PUBKEY);
         if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
             ASSETCHAINS_STAKED = 100;
         if ( ASSETCHAINS_STAKED != 0 && ASSETCHAINS_PRIVATE != 0 )
