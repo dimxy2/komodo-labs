@@ -841,7 +841,7 @@ void static BitcoinMiner()
             {
                 if ( ASSETCHAINS_REWARD == 0 )
                 {
-                    if ( pblock->vtx.size() > 2 && pblock->vtx[0].vout.size() == 3 && Mining_height > ASSETCHAINS_MINHEIGHT )
+                    if ( pblock->vtx.size() == 1 && pblock->vtx[0].vout.size() == 2 && Mining_height > ASSETCHAINS_MINHEIGHT )
                     {
                         static uint32_t counter;
                         if ( counter++ < 10 )
