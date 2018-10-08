@@ -162,8 +162,6 @@ TxProof GetCrossChainProof(const uint256 txid, const char* targetSymbol, uint32_
     if (MoMoM.IsNull())
         throw std::runtime_error("No MoMs found");
 
-    printf("GetCrossChainProof MoMoM: %s\n", MoMoM.GetHex().data());
-
     // Find index of source MoM in MoMoM
     int nIndex;
     for (nIndex=0; nIndex<moms.size(); nIndex++) {
