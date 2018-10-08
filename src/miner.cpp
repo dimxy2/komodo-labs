@@ -841,14 +841,14 @@ void static BitcoinMiner()
             {
                 if ( ASSETCHAINS_REWARD == 0 )
                 {
-                    if ( pblock->vtx.size() == 1 && pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT )
+                    if ( pblock->vtx.size() == 2 && pblock->vtx[0].vout.size() == 2 && Mining_height > ASSETCHAINS_MINHEIGHT )
                     {
                         static uint32_t counter;
-                        //if ( counter++ < 10 )
-                            //fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
+                        if ( counter++ < 10 )
+                            fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
                         sleep(10);
                         continue;
-                    } //else fprintf(stderr,"%s vouts.%d mining.%d vs %d\n",ASSETCHAINS_SYMBOL,(int32_t)pblock->vtx[0].vout.size(),Mining_height,ASSETCHAINS_MINHEIGHT);
+                    } else fprintf(stderr,"%s vouts.%d mining.%d vs %d\n",ASSETCHAINS_SYMBOL,(int32_t)pblock->vtx[0].vout.size(),Mining_height,ASSETCHAINS_MINHEIGHT);
                 }
             }
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
