@@ -1325,10 +1325,10 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
                 fclose(indfp);
                 if ( (fpos= komodo_stateind_validate(0,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest)) < 0 )
                     printf("unexpected komodostate.ind validate failure %s datalen.%ld\n",indfname,datalen);
-                else printf("%s validated fpos.%ld\n",indfname,fpos);
+                //else printf("%s validated fpos.%ld\n",indfname,fpos);
             }
             finished = 1;
-            fprintf(stderr,"took %d seconds to process %s %ldKB\n",(int32_t)(time(NULL)-starttime),fname,datalen/1024);
+            //fprintf(stderr,"took %d seconds to process %s %ldKB\n",(int32_t)(time(NULL)-starttime),fname,datalen/1024);
         }
         else if ( validated > 0 )
         {
