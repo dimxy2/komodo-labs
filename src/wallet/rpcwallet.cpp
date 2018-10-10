@@ -601,7 +601,7 @@ UniValue kvupdate(const UniValue& params, bool fHelp)
                 if ( komodo_kvsigverify(keyvalue,keylen+refvaluesize,refpubkey,sig) < 0 )
                 {
                     ret.push_back(Pair("error",(char *)"error verifying sig, passphrase is probably wrong"));
-                    printf("VERIFY ERROR\n");
+                    //printf("VERIFY ERROR\n");
                     return ret;
                 } // else printf("verified immediately\n");
             }
