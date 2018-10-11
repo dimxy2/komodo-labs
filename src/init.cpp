@@ -1420,7 +1420,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             fReindex = true;
         }
     }
-    
+
     bool fLoaded = false;
     while (!fLoaded) {
         bool fReset = fReindex;
@@ -1496,7 +1496,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 }
                 if ( KOMODO_REWIND == 0 )
                 {
-                    if (!CVerifyDB().VerifyDB(pcoinsdbview, GetArg("-checklevel", 3),
+                    if (!CVerifyDB().VerifyDB(pcoinsdbview, GetArg("-checklevel", 1),
                                               GetArg("-checkblocks", 288))) {
                         strLoadError = _("Corrupted block database detected");
                         break;
