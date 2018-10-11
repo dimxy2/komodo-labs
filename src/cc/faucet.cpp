@@ -69,10 +69,10 @@ bool FaucetExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction
         if ( (assetoshis= IsFaucetvout(cp,tx,i)) != 0 )
             outputs += assetoshis;
     }
-    if ( inputs != outputs+COIN*100+txfee )
+    if ( inputs != outputs+COIN*10+txfee )
     {
         fprintf(stderr,"inputs %llu vs outputs %llu\n",(long long)inputs,(long long)outputs);
-        return eval->Invalid("mismatched inputs != outputs + COIN*100 + txfee");
+        return eval->Invalid("mismatched inputs != outputs + COIN*10 + txfee");
     }
     else return(true);
 }
@@ -172,7 +172,7 @@ int64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
 
 std::string FaucetGet(uint64_t txfee)
 {
-    CMutableTransaction mtx,tmpmtx; CPubKey mypk,faucetpk; int64_t inputs,CCchange=0,nValue=COIN*100; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
+    CMutableTransaction mtx,tmpmtx; CPubKey mypk,faucetpk; int64_t inputs,CCchange=0,nValue=COIN*10; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
     cp = CCinit(&C,EVAL_FAUCET);
     if ( txfee == 0 )
         txfee = 10000;

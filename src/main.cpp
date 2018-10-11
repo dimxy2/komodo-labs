@@ -2944,7 +2944,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     {
         if ( ASSETCHAINS_REWARD == 0 )
         {
-            if ( block.vtx.size() == 1 && block.vtx[0].vout.size() == 2 && pindex->nHeight > ASSETCHAINS_MINHEIGHT )
+            if ( block.vtx.size() == 1 && block.vtx[0].vout.size() == 2 && pindex->nHeight > ASSETCHAINS_MINHEIGHT)
             {
                 return state.DoS(100, error("ConnectBlock(): There are no TX in this block, it is invalid!"),
                                  REJECT_INVALID, "bad-block-no-transactions");
