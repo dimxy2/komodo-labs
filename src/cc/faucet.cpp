@@ -172,7 +172,7 @@ int64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
 
 std::string FaucetGet(uint64_t txfee)
 {
-    CMutableTransaction mtx,tmpmtx; CPubKey mypk,faucetpk; int64_t inputs,CCchange=0,nValue=COIN*10; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
+    CMutableTransaction mtx,tmpmtx; CPubKey mypk,faucetpk; int64_t inputs,CCchange=0,nValue=COIN*10; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j,faucetgettime=0; int32_t i,len; uint8_t buf[32768]; bits256 hash;
     cp = CCinit(&C,EVAL_FAUCET);
     if ( txfee == 0 )
         txfee = 10000;
@@ -185,7 +185,7 @@ std::string FaucetGet(uint64_t txfee)
         if ( CCchange != 0 )
             mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,CCchange,faucetpk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        //fprintf(stderr,"start at %u\n",(uint32_t)time(NULL));
+        faucetgettime = time(NULL);
         j = rand() & 0xfffffff;
         for (i=0; i<1000000; i++,j++)
         {
@@ -198,7 +198,8 @@ std::string FaucetGet(uint64_t txfee)
                 hash = bits256_doublesha256(0,buf,len);
                 if ( (hash.bytes[0] & 0xff) == 0 && (hash.bytes[31] & 0xff) == 0 )
                 {
-                    fprintf(stderr,"found valid txid after %d iterations %u\n",i,(uint32_t)time(NULL));
+                    faucetgettime = (time(NULL) - faucetgettime);
+                    fprintf(stderr,"Mined faucetget in %u after %d iterations\n",i,(uint32_t)faucetgettime;
                     return(rawhex);
                 }
                 //fprintf(stderr,"%02x%02x ",hash.bytes[0],hash.bytes[31]);
