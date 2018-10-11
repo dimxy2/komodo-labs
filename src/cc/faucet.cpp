@@ -18,11 +18,11 @@
 
 /*
  This file implements a simple CC faucet as an example of how to make a new CC contract. It wont have any fancy sybil protection but will serve the purpose of a fully automated faucet.
- 
+
  In order to implement a faucet, we need to have it funded. Once it is funded, anybody should be able to get some reasonable small amount.
- 
+
  This leads to needing to lock the funding in a CC protected output. And to put a spending limit. We can do a per transaction spending limit quite easily with vout constraints. However, that would allow anybody to issue thousands of transactions per block, so we also need to add a rate limiter.
- 
+
  To implement this, we can simply make any faucet vout fund the faucet. Then we can limit the number of confirmed utxo by combining faucet outputs and then only using utxo which are confirmed. This combined with a vout size limit will drastically limit the funds that can be withdrawn from the faucet.
 */
 
@@ -112,14 +112,14 @@ bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             } else i = 0;
             txid = tx.GetHash();
             memcpy(hash,&txid,sizeof(hash));
-            fprintf(stderr,"check faucetget txid %s %02x/%02x\n",uint256_str(str,txid),hash[0],hash[31]);
-            if ( tx.vout[i].nValue != COIN*100 )
+            //fprintf(stderr,"check faucetget txid %s %02x/%02x\n",uint256_str(str,txid),hash[0],hash[31]);
+            if ( tx.vout[i].nValue != COIN*10 )
                 return eval->Invalid("invalid faucet output");
             else if ( (hash[0] & 0xff) != 0 || (hash[31] & 0xff) != 0 )
                 return eval->Invalid("invalid faucetget txid");
             Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
             SetCCtxids(txids,destaddr);
-            for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
+            /*for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
             {
                 //int height = it->first.blockHeight;
                 if ( CCduration(numblocks,it->first.txhash) > 0 && numblocks > 3 )
@@ -131,7 +131,8 @@ bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
             if ( retval != 0 )
                 fprintf(stderr,"faucetget validated\n");
-            else fprintf(stderr,"faucetget invalid\n");
+            else fprintf(stderr,"faucetget invalid\n"); */
+            retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
             return(retval);
         }
     }
@@ -184,7 +185,7 @@ std::string FaucetGet(uint64_t txfee)
         if ( CCchange != 0 )
             mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,CCchange,faucetpk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        fprintf(stderr,"start at %u\n",(uint32_t)time(NULL));
+        //fprintf(stderr,"start at %u\n",(uint32_t)time(NULL));
         j = rand() & 0xfffffff;
         for (i=0; i<1000000; i++,j++)
         {
@@ -238,4 +239,3 @@ UniValue FaucetInfo()
     result.push_back(Pair("funding",numstr));
     return(result);
 }
-

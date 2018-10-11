@@ -44,12 +44,12 @@ bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
     if (eval->state.IsValid()) return true;
 
     std::string lvl = eval->state.IsInvalid() ? "Invalid" : "Error!";
-    fprintf(stderr, "CC Eval %s %s: %s spending tx %s\n",
+    /*fprintf(stderr, "CC Eval %s %s: %s spending tx %s\n",
             EvalToStr(cond->code[0]).data(),
             lvl.data(),
             eval->state.GetRejectReason().data(),
             tx.vin[nIn].prevout.hash.GetHex().data());
-    if (eval->state.IsError()) fprintf(stderr, "Culprit: %s\n", EncodeHexTx(tx).data());
+    if (eval->state.IsError()) fprintf(stderr, "Culprit: %s\n", EncodeHexTx(tx).data()); */
     return false;
 }
 
@@ -76,11 +76,11 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
         case EVAL_IMPORTPAYOUT:
             return ImportPayout(vparams, txTo, nIn);
             break;
-            
+
         case EVAL_IMPORTCOIN:
             return ImportCoin(vparams, txTo, nIn);
             break;
-            
+
         default:
             return(ProcessCC(cp,this, vparams, txTo, nIn));
             break;
