@@ -199,7 +199,7 @@ std::string FaucetGet(uint64_t txfee)
                 if ( (hash.bytes[0] & 0xff) == 0 && (hash.bytes[31] & 0xff) == 0 )
                 {
                     faucetgettime = (time(NULL) - faucetgettime);
-                    fprintf(stderr,"Mined faucetget in %u after %d iterations\n",i,(uint32_t)faucetgettime;
+                    fprintf(stderr,"Mined faucetget in %u after %d iterations\n",i,(uint32_t)faucetgettime);
                     return(rawhex);
                 }
                 //fprintf(stderr,"%02x%02x ",hash.bytes[0],hash.bytes[31]);
