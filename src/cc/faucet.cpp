@@ -164,7 +164,7 @@ int64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
                 n++;
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                     break;
-            } else fprintf(stderr,"nValue too small or already spent in mempool\n");
+            } //else fprintf(stderr,"nValue too small or already spent in mempool\n");
         } else fprintf(stderr,"couldnt get tx\n");
     }
     return(totalinputs);
@@ -207,7 +207,7 @@ std::string FaucetGet(uint64_t txfee)
         }
         fprintf(stderr,"couldnt generate valid txid %u\n",(uint32_t)time(NULL));
         return("");
-    } else fprintf(stderr,"cant find faucet inputs\n");
+    } else fprintf(stderr,"No faucet imputs found at this time. Please try again soon.\n");
     return("");
 }
 
