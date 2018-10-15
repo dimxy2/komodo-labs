@@ -19,30 +19,30 @@
 /*
  An oracles CC has the purpose of converting offchain data into onchain data
  simplest would just be to have a pubkey(s) that are trusted to provide such data, but this wont need to have a CC involved at all and can just be done by convention
- 
+
  That begs the question, "what would an oracles CC do?"
  A couple of things come to mind, ie. payments to oracles for future offchain data and maybe some sort of dispute/censoring ability
- 
+
  first step is to define the data that the oracle is providing. A simple name:description tx can be created to define the name and description of the oracle data.
  linked to this txid would be two types of transactions:
     a) oracle providers
     b) oracle data users
- 
+
  In order to be resistant to sybil attacks, the feedback mechanism needs to have a cost. combining with the idea of payments for data, the oracle providers will be ranked by actual payments made to each oracle for each data type.
- 
+
  Implementation notes:
-  In order to maintain good performance even under heavy usage, special marker utxo are used. Actually a pair of them. When a provider registers to be a data provider, a special unspendable normal output is created to allow for quick scanning. Since the marker is based on the oracletxid, it becomes a single address where all the providers can be found. 
- 
+  In order to maintain good performance even under heavy usage, special marker utxo are used. Actually a pair of them. When a provider registers to be a data provider, a special unspendable normal output is created to allow for quick scanning. Since the marker is based on the oracletxid, it becomes a single address where all the providers can be found.
+
   A convention is used so that the datafee can be changed by registering again. it is assumed that there wont be too many of these datafee changes. if more than one from the same provider happens in the same block, the lower price is used.
- 
+
   The other efficiency issue is finding the most recent data point. We want to create a linked list of all data points, going back to the first one. In order to make this efficient, a special and unique per provider/oracletxid baton utxo is used. This should have exactly one utxo, so the search would be a direct lookup and it is passed on from one data point to the next. There is some small chance that the baton utxo is spent in a non-data transaction, so provision is made to allow for recreating a baton utxo in case it isnt found. The baton utxo is a convenience and doesnt affect validation
- 
+
  Required transactions:
  0) create oracle description -> just needs to create txid for oracle data
  1) register as oracle data provider with price -> become a registered oracle data provider
  2) pay provider for N oracle data points -> lock funds for oracle provider
  3) publish oracle data point -> publish data and collect payment
- 
+
  The format string is a set of chars with the following meaning:
   's' -> <256 char string
   'S' -> <65536 char string
@@ -53,26 +53,26 @@
   'i' -> 4 byte signed little endian number, 'I' unsigned
   'l' -> 8 byte signed little endian number, 'L' unsigned
   'h' -> 32 byte hash
- 
+
  create:
  vins.*: normal inputs
  vout.0: txfee tag to oracle normal address
  vout.1: change, if any
  vout.n-1: opreturn with name and description and format for data
- 
+
  register:
  vins.*: normal inputs
  vout.0: txfee tag to normal marker address
  vout.1: baton CC utxo
  vout.2: change, if any
  vout.n-1: opreturn with oracletxid, pubkey and price per data point
- 
+
  subscribe:
  vins.*: normal inputs
  vout.0: subscription fee to publishers CC address
  vout.1: change, if any
  vout.n-1: opreturn with oracletxid, registered provider's pubkey, amount
- 
+
  data:
  vin.0: normal input
  vin.1: baton CC utxo (most of the time)
@@ -82,7 +82,7 @@
  vout.2: payment for dataprovider
  vout.3: change, if any
  vout.n-1: opreturn with oracletxid, prevbatontxid and data in proper format
- 
+
  data (without payment) this is not needed as publisher can pay themselves!
  vin.0: normal input
  vin.1: baton CC utxo
@@ -568,7 +568,7 @@ bool OraclesDataValidate(struct CCcontract_info *cp,Eval* eval,const CTransactio
         }
         else if ( i != 0 )
             return eval->Invalid("vin0 not normal");
-     
+
     }
     for (i=0; i<numvouts; i++)
     {
@@ -875,6 +875,7 @@ UniValue OracleInfo(uint256 origtxid)
                 txid = it->first.txhash;
                 if ( GetTransaction(txid,regtx,hashBlock,false) != 0 )
                 {
+                    fprintf(stderr, "oracletxid: %s\ntxid: %s\norigtxid: %s", oracletxid,txid,origtxid,origtxid);
                     if ( regtx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == origtxid )
                     {
                         obj.push_back(Pair("publisher",pubkey33_str(str,(uint8_t *)pk.begin())));
@@ -918,4 +919,3 @@ UniValue OraclesList()
     }
     return(result);
 }
-
