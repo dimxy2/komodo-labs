@@ -875,7 +875,7 @@ UniValue OracleInfo(uint256 origtxid)
                 txid = it->first.txhash;
                 if ( GetTransaction(txid,regtx,hashBlock,false) != 0 )
                 {
-                    fprintf(stderr, "oracletxid: %s\ntxid: %s\norigtxid: %s\n", uint256_str(str,oracletxid),uint256_str(str,txid),uint256_str(str,origtxid));
+                    fprintf(stderr, "oracletxid: %s\ntxid:       %s\norigtxid:   %s\n", uint256_str(str,oracletxid),uint256_str(str,txid),uint256_str(str,origtxid));
                     if ( regtx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == origtxid )
                     {
                         obj.push_back(Pair("publisher",pubkey33_str(str,(uint8_t *)pk.begin())));
