@@ -880,7 +880,6 @@ UniValue OracleInfo(uint256 origtxid)
                     //fprintf(stderr, "oracletxid: %s\ntxid:       %s\norigtxid:   %s\n", uint256_str(str,oracletxid),uint256_str(str,txid),uint256_str(str,origtxid));
                     fprintf(stderr, "publisher pub:  %s\nlast publisher: %s \n", pubkey33_str(str,(uint8_t *)pk.begin()),pubkey33_str(str,lastpublisher));
                     fprintf(stderr, "loop: %d\n",loops);
-                    loops = loops+1;
                     if ( regtx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == origtxid )
                     {
                         obj.push_back(Pair("publisher",pubkey33_str(str,(uint8_t *)pk.begin())));
@@ -892,6 +891,7 @@ UniValue OracleInfo(uint256 origtxid)
                         sprintf(numstr,"%.8f",(double)funding/COIN);
                         obj.push_back(Pair("lifetime",numstr));
                         funding = AddOracleInputs(cp,mtx,pk,0,0);
+                        fprintf(stderr, "funding: %d\n", funding);
                         sprintf(numstr,"%.8f",(double)funding/COIN);
                         obj.push_back(Pair("funds",numstr));
                         sprintf(numstr,"%.8f",(double)datafee/COIN);
@@ -900,8 +900,10 @@ UniValue OracleInfo(uint256 origtxid)
                     }
                 }
                 lastpublisher = ((uint8_t *)pk.begin());
+
             }
             result.push_back(Pair("registered",a));
+            loops = loops+1;
         }
     }
     return(result);
