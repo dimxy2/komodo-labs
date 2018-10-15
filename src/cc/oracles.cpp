@@ -859,6 +859,7 @@ UniValue OracleInfo(uint256 origtxid)
     CMutableTransaction mtx; CTransaction regtx,tx; std::string name,description,format; uint256 hashBlock,txid,oracletxid,batontxid; CPubKey pk; struct CCcontract_info *cp,C; int64_t datafee,funding; char str[67],markeraddr[64],numstr[64],batonaddr[64]; std::vector <uint8_t> data;
     cp = CCinit(&C,EVAL_ORACLES);
     uint8_t *lastpublisher = 0;
+    int loops;
     CCtxidaddr(markeraddr,origtxid);
     if ( GetTransaction(origtxid,tx,hashBlock,false) != 0 )
     {
@@ -878,6 +879,8 @@ UniValue OracleInfo(uint256 origtxid)
                 {
                     //fprintf(stderr, "oracletxid: %s\ntxid:       %s\norigtxid:   %s\n", uint256_str(str,oracletxid),uint256_str(str,txid),uint256_str(str,origtxid));
                     fprintf(stderr, "publisher pub:  %s\nlast publisher: %s \n", pubkey33_str(str,(uint8_t *)pk.begin()),pubkey33_str(str,lastpublisher));
+                    fprintf(stderr, "loop: %d\n",loops);
+                    loops = loops+1;
                     if ( regtx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == origtxid )
                     {
                         obj.push_back(Pair("publisher",pubkey33_str(str,(uint8_t *)pk.begin())));
