@@ -879,10 +879,11 @@ UniValue OracleInfo(uint256 origtxid)
                 {
                     //fprintf(stderr, "oracletxid: %s\ntxid:       %s\norigtxid:   %s\n", uint256_str(str,oracletxid),uint256_str(str,txid),uint256_str(str,origtxid));
                     fprintf(stderr, "publisher pub:  %s\nlast publisher: %s \n", pubkey33_str(str,(uint8_t *)pk.begin()),pubkey33_str(str,lastpublisher));
-                    fprintf(stderr, "loop: %d\n",loops);
+
                     if ( regtx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == origtxid )
                     {
                         obj.push_back(Pair("publisher",pubkey33_str(str,(uint8_t *)pk.begin())));
+                        fprintf(stderr, "loop: %d\n",loops);
                         funding = AddOracleInputs(cp,mtx,pk,0,0);
                         fprintf(stderr, "funding: %ld\n", funding);
                         sprintf(numstr,"%.8f",(double)funding/COIN);
@@ -900,10 +901,9 @@ UniValue OracleInfo(uint256 origtxid)
                     }
                 }
                 lastpublisher = ((uint8_t *)pk.begin());
-
+                loops = loops+1;
             }
             result.push_back(Pair("registered",a));
-            loops = loops+1;
         }
     }
     return(result);
