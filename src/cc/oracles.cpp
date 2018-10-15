@@ -891,7 +891,7 @@ UniValue OracleInfo(uint256 origtxid)
                         sprintf(numstr,"%.8f",(double)funding/COIN);
                         obj.push_back(Pair("lifetime",numstr));
                         funding = AddOracleInputs(cp,mtx,pk,0,0);
-                        fprintf(stderr, "funding: %d\n", funding);
+                        fprintf(stderr, "funding: %ld\n", funding);
                         sprintf(numstr,"%.8f",(double)funding/COIN);
                         obj.push_back(Pair("funds",numstr));
                         sprintf(numstr,"%.8f",(double)datafee/COIN);
