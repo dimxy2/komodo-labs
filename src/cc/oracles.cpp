@@ -883,6 +883,10 @@ UniValue OracleInfo(uint256 origtxid)
                     if ( regtx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == origtxid )
                     {
                         obj.push_back(Pair("publisher",pubkey33_str(str,(uint8_t *)pk.begin())));
+                        funding = AddOracleInputs(cp,mtx,pk,0,0);
+                        fprintf(stderr, "funding: %ld\n", funding);
+                        sprintf(numstr,"%.8f",(double)funding/COIN);
+                        obj.push_back(Pair("funds",numstr));
                         Getscriptaddress(batonaddr,regtx.vout[1].scriptPubKey);
                         batontxid = OracleBatonUtxo(10000,cp,oracletxid,batonaddr,pk,data);
                         obj.push_back(Pair("baton",batonaddr));
@@ -890,10 +894,6 @@ UniValue OracleInfo(uint256 origtxid)
                         funding = LifetimeOraclesFunds(cp,oracletxid,pk);
                         sprintf(numstr,"%.8f",(double)funding/COIN);
                         obj.push_back(Pair("lifetime",numstr));
-                        funding = AddOracleInputs(cp,mtx,pk,0,0);
-                        fprintf(stderr, "funding: %ld\n", funding);
-                        sprintf(numstr,"%.8f",(double)funding/COIN);
-                        obj.push_back(Pair("funds",numstr));
                         sprintf(numstr,"%.8f",(double)datafee/COIN);
                         obj.push_back(Pair("datafee",numstr));
                         a.push_back(obj);
