@@ -202,6 +202,7 @@ const char *Notaries_elected1[][2] =
     {"webworker01_NA", "03bb7d005e052779b1586f071834c5facbb83470094cff5112f0072b64989f97d7" },
     {"xrobesx_NA", "03f0cc6d142d14a40937f12dbd99dbd9021328f45759e26f1877f2a838876709e1" },
 };
+#define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp)
 {
@@ -263,6 +264,9 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             for (i=0; i<ns1; i++)
                 decode_hex(staked_pubkeys1[i],33,(char *)notaries_STAKED1[i][1]);
             didstaked1 = 1;
+            didstaked2 = 0;
+            didstaked3 = 0;
+            didstaked4 = 0;
             printf("%s IS A STAKED CHAIN and is era 1 \n",ASSETCHAINS_SYMBOL);
           }
           memcpy(pubkeys,staked_pubkeys1,ns1 * 33);
@@ -275,6 +279,8 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             for (i=0; i<ns2; i++)
                 decode_hex(staked_pubkeys2[i],33,(char *)notaries_STAKED2[i][1]);
             didstaked2 = 1;
+            didstaked3 = 0;
+            didstaked4 = 0;
             printf("%s IS A STAKED CHAIN and is era 2 \n",ASSETCHAINS_SYMBOL);
           }
           memcpy(pubkeys,staked_pubkeys2,ns2 * 33);
@@ -287,6 +293,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             for (i=0; i<ns3; i++)
                 decode_hex(staked_pubkeys3[i],33,(char *)notaries_STAKED3[i][1]);
             didstaked3 = 1;
+            didstaked4 = 0;
             printf("%s IS A STAKED CHAIN and is era 3 \n",ASSETCHAINS_SYMBOL);
           }
           memcpy(pubkeys,staked_pubkeys3,ns3 * 33);
