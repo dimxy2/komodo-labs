@@ -60,23 +60,29 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
             continue;
 
         // See if we have an own notarisation in this block
+        int n = 0;
         BOOST_FOREACH(Notarisation& nota, notarisations) {
+            n++;
             if (strcmp(nota.second.symbol, symbol) == 0)
             {
                 seenOwnNotarisations++;
                 if (seenOwnNotarisations == 1)
                     destNotarisationTxid = nota.first;
                 else if (seenOwnNotarisations == 2)
+                    fprintf(stderr, "Seen own notarisations == 2 on loop: %d\n",i);
                     goto end;
-                break;
+                fprintf(stderr, "notaisations in block loop number: %d\n",n);
+                //break;
             }
         }
 
         if (seenOwnNotarisations == 1) {
             BOOST_FOREACH(Notarisation& nota, notarisations) {
                 if (GetSymbolAuthority(nota.second.symbol) == authority)
-                    if (nota.second.ccId == targetCCid)
+                    if (nota.second.ccId == targetCCid) {
                         moms.push_back(nota.second.MoM);
+                        fprintf(stderr, "add mom: %s\n",nota.second.MoM.GetHex().data());
+                    }
             }
         }
     }
@@ -164,7 +170,7 @@ TxProof GetCrossChainProof(const uint256 txid, const char* targetSymbol, uint32_
 
     printf("[%s] GetCrossChainProof MoMoM: %s\n", targetSymbol,MoMoM.GetHex().data());
     FILE * fptr;
-    fptr = fopen("/home/cc/acmomom", "a+");
+    fptr = fopen("/home/cc/momom_on_kmd", "a+");
     fprintf(fptr, "%s\n", MoMoM.GetHex().data());
     fclose(fptr);
 

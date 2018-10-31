@@ -79,9 +79,9 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         if (!GetProofRoot(proof.first, momom))
             return Invalid("coudnt-load-momom");
 
-        fprintf(stderr,"IMPORT momom: %s\n", momom.GetHex().data());
+        fprintf(stderr,"IMPORT momom: %s\nKMD TX HASH: %s\n", momom.GetHex().data(),proof.first.GetHex().data());
         FILE * fptr;
-        fptr = fopen("/home/cc/kmdmomom", "a+");
+        fptr = fopen("/home/cc/momoms_on_ac", "a+");
         fprintf(fptr, "%s\n", momom.GetHex().data());
         fclose(fptr);
 
