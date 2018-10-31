@@ -62,7 +62,6 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
         // See if we have an own notarisation in this block
         int n = 0;
         BOOST_FOREACH(Notarisation& nota, notarisations) {
-            n++;
             if (strcmp(nota.second.symbol, symbol) == 0)
             {
                 seenOwnNotarisations++;
@@ -72,6 +71,7 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
                     fprintf(stderr, "Seen own notarisations == 2 on loop: %d\n",i);
                     goto end;
                 fprintf(stderr, "notaisations in block loop number: %d\n",n);
+                n++;
                 //break;
             }
         }
