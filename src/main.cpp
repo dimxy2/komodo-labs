@@ -1200,6 +1200,11 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                              REJECT_INVALID, "bad-txns-txouttotal-toolarge");
         }
     }
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> jl777-FSM
     if ( ASSETCHAINS_TXPOW != 0 && tx.vjoinsplit.size() == 0 )
     {
         // genesis coinbase 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
@@ -1217,6 +1222,10 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             }
         }
     }
+<<<<<<< HEAD
+=======
+>>>>>>> 19d614c8344b70a0d4a7da8620a2dd1168016abc
+>>>>>>> jl777-FSM
 
     // Ensure input values do not exceed MAX_MONEY
     // We have not resolved the txin values at this stage,
@@ -1465,6 +1474,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                     return state.Invalid(error("AcceptToMemoryPool: joinsplit requirements not met"),REJECT_DUPLICATE, "bad-txns-joinsplit-requirements-not-met");
                 }
             }
+
             // Bring the best block into scope
             view.GetBestBlock();
 
