@@ -17,12 +17,12 @@
 
 /*
  FinalizeCCTx is a very useful function that will properly sign both CC and normal inputs, adds normal change and the opreturn.
- 
+
  This allows the contract transaction functions to create the appropriate vins and vouts and have FinalizeCCTx create a properly signed transaction.
- 
+
  By using -addressindex=1, it allows tracking of all the CC addresses
  */
- 
+
 bool SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey)
 {
 #ifdef ENABLE_WALLET
@@ -276,6 +276,11 @@ int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *
     abovei = belowi = -1;
     for (above=below=i=0; i<numunspents; i++)
     {
+        // Filter to randomly pick utxo to avoid conflicts, and having multiple CC choose the same ones. 
+        //if ( numunspents > 500 ) {
+        //    if ( (rand() % 100) < 80 )
+        //        continue;
+        //}
         if ( (atx_value= utxos[i].nValue) <= 0 )
             continue;
         if ( atx_value == value )
