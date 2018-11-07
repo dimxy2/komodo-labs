@@ -144,7 +144,7 @@ int8_t updateStakedNotary() {
       pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
       NOTARY_ADDRESS.assign(Raddress);
     }
-    return(StakedNotaryID(notaryname,NOTARY_ADDRESS.c_str()));
+    return(StakedNotaryID(notaryname,(char *)NOTARY_ADDRESS.c_str()));
 }
 #else
 int8_t updateStakedNotary() {
