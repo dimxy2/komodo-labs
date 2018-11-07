@@ -1500,8 +1500,6 @@ char *argv0names[] =
     (char *)"MNZ", (char *)"MNZ", (char *)"MNZ", (char *)"MNZ", (char *)"BTCH", (char *)"BTCH", (char *)"BTCH", (char *)"BTCH"
 };
 
-bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
-
 void komodo_args(char *argv0)
 {
     extern int64_t MAX_MONEY;
@@ -1534,12 +1532,6 @@ void komodo_args(char *argv0)
                     break;
                 }
         }
-#ifdef SERVER
-				char Raddress[18]; uint8_t pubkey33[33];
-				decode_hex(pubkey33,33,(char *)NOTARY_PUBKEY.c_str());
-				pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
-				NOTARY_ADDRESS.assign(Raddress);
-#endif
     }
 		name = GetArg("-ac_name","");
     if ( argv0 != 0 )
