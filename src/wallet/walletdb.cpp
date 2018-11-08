@@ -905,6 +905,7 @@ DBErrors CWalletDB::ZapWalletTx(CWallet* pwallet, vector<CWalletTx>& vWtx)
     BOOST_FOREACH (uint256& hash, vTxHash) {
         if (!EraseTx(hash))
             return DB_CORRUPT;
+        fprintf(stderr, "erased: %s\n",hash.ToString().c_str());
     }
 
     return DB_LOAD_OK;
