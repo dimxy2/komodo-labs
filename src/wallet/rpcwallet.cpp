@@ -1063,8 +1063,11 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                       {
                          if ( (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
                          {
-                            fprintf(stderr, "spent? : hash.(%s) vout.(%u) toRadd.(%s)\n", txhash.c_str(),n,CBitcoinAddress(address).ToString().c_str());
-                            //continue;
+                           CTxDestination address;
+                           if ( ExtractDestination(wtx.vout[n].scriptPubKey, address)) {
+                             fprintf(stderr, "spent? : hash.(%s) vout.(%u) toRadd.(%s)\n", txhash.c_str(),n,CBitcoinAddress(address).ToString().c_str());
+                             //continue;
+                           }
                          }
                          else
                          {
@@ -1075,8 +1078,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
             }
 
-            //CTxDestination address;
-            //if ( ExtractDestination(wtx.vout[n].scriptPubKey, address))
+
 
             //fprintf(stderr, "wallet tx %d : %s\n",i,txhash.c_str());
             i++;
