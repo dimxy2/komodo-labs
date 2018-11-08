@@ -1443,11 +1443,12 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
             continue;
 
         unsigned int n = 0;
-        BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+        //BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+        for (int i = 0; i < wtx.vout.size() ; i++)
         {
 
             CTxDestination address;
-            if (!ExtractDestination(txout.scriptPubKey, address))
+            if (!ExtractDestination(wtx.vout[i].scriptPubKey, address))
                 continue;
 
             isminefilter mine = IsMine(*pwalletMain, address);
@@ -1456,16 +1457,15 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
 
             CCoins coins;
             if (!pcoinsTip->GetCoins(wtx.GetHash(), coins)) {
-                fprintf(stderr, "got wallet transaction: hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),n);
-                if (coins.vout[n].IsNull()) {
-                    fprintf(stderr, "spent? : hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),n);
+                fprintf(stderr, "got wallet transaction: hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),i);
+                if (coins.vout[i].IsNull()) {
+                    fprintf(stderr, "spent? : hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),i);
                     //continue;
                 }
             }
-            n++;
 
             tallyitem& item = mapTally[address];
-            item.nAmount += txout.nValue; // komodo_interest?
+            item.nAmount += wtx.vout[i].nValue; // komodo_interest?
             item.nConf = min(item.nConf, nDepth);
             item.txids.push_back(wtx.GetHash());
             if (mine & ISMINE_WATCH_ONLY)
