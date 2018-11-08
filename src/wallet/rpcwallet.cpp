@@ -1070,7 +1070,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                 for (unsigned int n = 0; n < wtx.vout.size() ; n++)
                 {
                    // Need to check for each vout is mine before counting them!
-                   if ( IsMine(wtx.vout[n]) )
+                   if ( pwalletMain->IsMine(wtx.vout[n]) )
                         fprintf(stderr, "IS MINE is TRUE\n");
                    if ( (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
                    {
