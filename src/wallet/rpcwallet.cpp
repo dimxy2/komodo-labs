@@ -1442,7 +1442,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
         if (nDepth < nMinDepth)
             continue;
 
-        int n;
+        unsigned int n;
         BOOST_FOREACH(const CTxOut& txout, wtx.vout)
         {
 
@@ -1456,9 +1456,9 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
 
             CCoins coins;
             if (!pcoinsTip->GetCoins(txout.GetHash(), coins))
-                fprintf(stderr, "GetCoins thing is spent? : hash.(%s) vout.(%d)\n", txout.GetHash().ToString().c_str(),n);
-            if ((unsigned int)n>=coins.vout.size() || coins.vout[n].IsNull())
-                fprintf(stderr, "Next thing is spent? : hash.(%s) vout.(%d)\n", txout.GetHash().ToString().c_str(),n);
+                fprintf(stderr, "GetCoins thing is spent? : hash.(%s) vout.(%ud)\n", txout.GetHash().ToString().c_str(),n);
+            if (n>=coins.vout.size() || coins.vout[n].IsNull())
+                fprintf(stderr, "Next thing is spent? : hash.(%s) vout.(%ud)\n", txout.GetHash().ToString().c_str(),n);
 
             tallyitem& item = mapTally[address];
             item.nAmount += txout.nValue; // komodo_interest?
