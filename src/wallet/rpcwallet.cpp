@@ -1066,9 +1066,13 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
             {
                 CTxDestination addressIn; std::string MyAddress;
-                if ( ExtractDestination(wtx.vin[0].scriptPubKey, addressIn) )
+                uint256 hash_in; CTransaction txin;
+                if (GetTransaction(wtx.vin[0].prevout.hash,txin,hashin,false))
                 {
-                    MyAddress = CBitcoinAddress(addressIn).ToString();
+                    if ( ExtractDestination(txin.vout[wtx.vin[0].prevout.n].scriptPubKey, addressIn) )
+                    {
+                        MyAddress = CBitcoinAddress(addressIn).ToString();
+                    }
                 }
                 //fprintf(stderr, "got wallet transaction: hash.(%s) \n", txhash.c_str());
                 int spents = 0;
@@ -1120,7 +1124,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             pwalletMain->EraseFromWallet(hash);
             fprintf(stderr, "ERASED Split Tx: %s\n",hash.ToString().c_str());
         }
-        
+
         // find notarisations spending from fully spent splits.
         BOOST_FOREACH (CWalletTx& tx, NotarisationTxs)
         {
