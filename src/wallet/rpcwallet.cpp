@@ -1053,37 +1053,25 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         {
             const CWalletTx& wtx = (*it).second;
 
-            std::string txhash = wtx.GetHash().ToString();
+            //std::string txhash = wtx.GetHash().ToString();
 
             if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 0 )
                 continue;
 
-            fprintf(stderr, "wallet tx %d : %s\n",i,txhash.c_str());
+            //fprintf(stderr, "wallet tx %d : %s\n",i,txhash.c_str());
 
             //CRYPTO777_KMDADDR //"RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
 
             CCoins coins;
             if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
             {
-                CTxDestination addressIn; std::string MyAddress;
-                uint256 hash_in; CTransaction txin;
-                if (GetTransaction(wtx.vin[0].prevout.hash,txin,hash_in,false) && wtx.vin.size() == 1 && wtx.vout.size() > 3 )
-                {
-                    if ( ExtractDestination(txin.vout[wtx.vin[0].prevout.n].scriptPubKey, addressIn) )
-                    {
-                        MyAddress = CBitcoinAddress(addressIn).ToString();
-                    }
-                }
                 //fprintf(stderr, "got wallet transaction: hash.(%s) \n", txhash.c_str());
                 int spents = 0;
                 for (unsigned int n = 0; n < wtx.vout.size() ; n++)
                 {
-                   CTxDestination addressOut;
-                   // get all  notarisations
-                   if ( ExtractDestination(wtx.vout[n].scriptPubKey, addressOut) )
+                   if ( (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
                    {
-                      if ( ((unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull()) && CBitcoinAddress(addressOut).ToString() == MyAddress )
-                          spents++;
+                      spents++;
                    }
                }
                if ( spents == wtx.vout.size() )
@@ -1093,8 +1081,8 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             }
 
             CTxDestination address;
-            // get all  notarisations
-            if ( ExtractDestination(wtx.vout[0].scriptPubKey, address) )
+            // get all  notarisations older than approx 6 hours.
+            if ( ExtractDestination(wtx.vout[0].scriptPubKey, address)
             {
                 if ( strcmp(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
                     NotarisationTxs.push_back(wtx); //fprintf(stderr, "This is a notarisation to RXL address\n");
@@ -1118,13 +1106,6 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             nBalance -= allFee; */
         }
 
-        // erase spent split txs
-        BOOST_FOREACH (uint256& hash, TxToRemove)
-        {
-            pwalletMain->EraseFromWallet(hash);
-            fprintf(stderr, "ERASED Split Tx: %s\n",hash.ToString().c_str());
-        }
-
         // find notarisations spending from fully spent splits.
         BOOST_FOREACH (CWalletTx& tx, NotarisationTxs)
         {
@@ -1135,13 +1116,21 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                   //fprintf(stderr, "%s : %s \n",SpentHash.ToString().c_str(), tx.vin[n].prevout.hash.ToString().c_str());
                   if ( SpentHash == tx.vin[n].prevout.hash )
                   {
-                      fprintf(stderr, "We have a match!\n");
+                      //fprintf(stderr, "We have a match!\n");
                       pwalletMain->EraseFromWallet(tx.GetHash());
                       fprintf(stderr, "ERASED Notarisation: %s\n",tx.GetHash().ToString().c_str());
                   }
               }
           }
         }
+
+        // erase spent split txs
+        BOOST_FOREACH (uint256& hash, TxToRemove)
+        {
+            pwalletMain->EraseFromWallet(hash);
+            fprintf(stderr, "ERASED spent Tx: %s\n",hash.ToString().c_str());
+        }
+
         return  (i); //ValueFromAmount(nBalance);
     }
 
