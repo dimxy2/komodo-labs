@@ -1058,19 +1058,19 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                 CCoins coins;
                  if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
                  {
-                      fprintf(stderr, "got wallet transaction: hash.(%s) \n", txhash.c_str());
-                      /*for (unsigned int n = 0; n < wtx.vout.size() ; n++)
+                      //fprintf(stderr, "got wallet transaction: hash.(%s) \n", txhash.c_str());
+                      for (unsigned int n = 0; n < wtx.vout.size() ; n++)
                       {
                          if ( (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
                          {
-                            fprintf(stderr, "spent? : hash.(%s) vout.(%u) toRadd.(%s)\n", wtx.GetHash().ToString().c_str(),n,CBitcoinAddress(address).ToString().c_str());
+                            fprintf(stderr, "spent? : hash.(%s) vout.(%u) toRadd.(%s)\n", txhash.c_str(),n,CBitcoinAddress(address).ToString().c_str());
                             //continue;
                          }
                          else
                          {
-                            fprintf(stderr, "unspent? : hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),n);
+                            fprintf(stderr, "unspent? : hash.(%s) vout.(%u)\n", txhash.c_str(),n);
                          }
-                     } */
+                     }
                   }
 
             }
