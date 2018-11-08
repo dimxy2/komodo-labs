@@ -1068,7 +1068,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                 nBalance -= s.amount;
             nBalance -= allFee; */
         }
-        return  ValueFromAmount(nBalance);
+        return  (i); //ValueFromAmount(nBalance);
     }
 
     string strAccount = AccountFromValue(params[0]);
