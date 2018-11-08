@@ -1067,7 +1067,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             {
                 CTxDestination addressIn; std::string MyAddress;
                 uint256 hash_in; CTransaction txin;
-                if (GetTransaction(wtx.vin[0].prevout.hash,txin,hash_in,false) && wtx.vin.size() == 1 )
+                if (GetTransaction(wtx.vin[0].prevout.hash,txin,hash_in,false) && wtx.vin.size() == 1 && wtx.vout.size() > 3 )
                 {
                     if ( ExtractDestination(txin.vout[wtx.vin[0].prevout.n].scriptPubKey, addressIn) )
                     {
