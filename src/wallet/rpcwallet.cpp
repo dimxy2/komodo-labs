@@ -1047,7 +1047,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         // getbalance and "getbalance * 1 true" should return the same number
         //CAmount nBalance = 0;
         int32_t i = 0;
-        vector<uint256> TxToRemove;
+        vector<uint256> TxToRemove,TxToRemove2;
         for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
@@ -1060,13 +1060,6 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             fprintf(stderr, "wallet tx %d : %s\n",i,txhash.c_str());
 
             //CRYPTO777_KMDADDR //"RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
-
-            CTxDestination address;
-            if ( ExtractDestination(wtx.vout[0].scriptPubKey, address))
-            {
-                if ( strcmp(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
-                    TxToRemove.push_back(wtx.GetHash()); //fprintf(stderr, "This is a notarisation to RXL address\n");
-            }
 
             CCoins coins;
             if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
@@ -1090,6 +1083,13 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                }
             }
 
+            CTxDestination address;
+            if ( ExtractDestination(wtx.vout[0].scriptPubKey, address))
+            {
+                if ( strcmp(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
+                    TxToRemove2.push_back(wtx.GetHash()); //fprintf(stderr, "This is a notarisation to RXL address\n");
+            }
+
             //fprintf(stderr, "wallet tx %d : %s\n",i,txhash.c_str());
             i++;
 
@@ -1110,6 +1110,12 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
         // erase each wallet TX
         BOOST_FOREACH (uint256& hash, TxToRemove) {
+            fprintf(stderr, "ERASING: %s\n",hash.ToString().c_str());
+            pwalletMain->EraseFromWallet(hash);
+            fprintf(stderr, "ERASED: %s\n",hash.ToString().c_str());
+        }
+
+        BOOST_FOREACH (uint256& hash, TxToRemove2) {
             fprintf(stderr, "ERASING: %s\n",hash.ToString().c_str());
             pwalletMain->EraseFromWallet(hash);
             fprintf(stderr, "ERASED: %s\n",hash.ToString().c_str());
