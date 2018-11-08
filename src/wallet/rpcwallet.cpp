@@ -1062,7 +1062,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             //CRYPTO777_KMDADDR //"RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
 
             CTxDestination address;
-            if ( ExtractDestination(tx.vout[0].scriptPubKey, address))
+            if ( ExtractDestination(wtx.vout[0].scriptPubKey, address))
             {
                 if ( strcpm(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
                     fprintf(stderr, "This is a notarisation to RXL address\n");
