@@ -1077,9 +1077,6 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                }
                if ( spents == wtx.vout.size() )
                {
-                  fprintf(stderr, "ERASING: %s\n",txhash.c_str());
-                  //pwalletMain->EraseFromWallet(wtx.GetHash());
-                  //fprintf(stderr, "ERASED: %s\n",txhash.c_str());
                   TxToRemove.push_back(wtx.GetHash());
                }
             }
@@ -1104,9 +1101,9 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
         // erase each wallet TX
         BOOST_FOREACH (uint256& hash, TxToRemove) {
-            //if (!EraseTx(hash))
-            //    return DB_CORRUPT;
-            fprintf(stderr, "to erase: %s\n",hash.ToString().c_str());
+            fprintf(stderr, "ERASING: %s\n",txhash.c_str());
+            pwalletMain->EraseFromWallet(wtx.GetHash());
+            fprintf(stderr, "ERASED: %s\n",txhash.c_str());
         }
 
         return  (i); //ValueFromAmount(nBalance);
