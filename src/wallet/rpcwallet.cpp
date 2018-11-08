@@ -1046,7 +1046,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         // (GetBalance() sums up all unspent TxOuts)
         // getbalance and "getbalance * 1 true" should return the same number
         //CAmount nBalance = 0;
-        //int32_t i = 0;
+        int32_t i = 0;
         for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
@@ -1078,7 +1078,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                {
                   fprintf(stderr, "ERASING: %s\n",txhash.c_str());
                   if (pwalletMain->mapWallet.erase(hash))
-                    CWalletDB(pwalletMain->strWalletFile).EraseTx(wtx.GetHash())
+                    pwalletdb->EraseTx(wtx.GetHash())
                   fprintf(stderr, "ERASED: %s\n",txhash.c_str());
                   sleep(1);
                }
