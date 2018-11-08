@@ -1101,9 +1101,9 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
         // erase each wallet TX
         BOOST_FOREACH (uint256& hash, TxToRemove) {
-            fprintf(stderr, "ERASING: %s\n",hash.GetString().c_str());
+            fprintf(stderr, "ERASING: %s\n",hash.ToString().c_str());
             pwalletMain->EraseFromWallet(hash);
-            fprintf(stderr, "ERASED: %s\n",hash.GetString().c_str());
+            fprintf(stderr, "ERASED: %s\n",hash.ToString().c_str());
         }
 
         return  (i); //ValueFromAmount(nBalance);
