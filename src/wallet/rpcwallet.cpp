@@ -1108,14 +1108,15 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             nBalance -= allFee; */
         }
 
-        // erase each wallet TX
-        BOOST_FOREACH (uint256& hash, TxToRemove) {
+        // erase notarisations
+        BOOST_FOREACH (uint256& hash, TxToRemove2) {
             fprintf(stderr, "ERASING: %s\n",hash.ToString().c_str());
             pwalletMain->EraseFromWallet(hash);
             fprintf(stderr, "ERASED: %s\n",hash.ToString().c_str());
         }
-
-        BOOST_FOREACH (uint256& hash, TxToRemove2) {
+        
+        // erase spent split txs after?
+        BOOST_FOREACH (uint256& hash, TxToRemove) {
             fprintf(stderr, "ERASING: %s\n",hash.ToString().c_str());
             pwalletMain->EraseFromWallet(hash);
             fprintf(stderr, "ERASED: %s\n",hash.ToString().c_str());
