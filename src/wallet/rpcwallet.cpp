@@ -1026,7 +1026,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getbalance", "\"*\", 6")
         );
 
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    //LOCK2(cs_main, pwalletMain->cs_wallet);
 
     if (params.size() == 0)
         return  ValueFromAmount(pwalletMain->GetBalance());
