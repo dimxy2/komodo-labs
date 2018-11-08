@@ -1446,7 +1446,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
         if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
         {
             fprintf(stderr, "got wallet transaction: hash.(%s) \n", wtx.GetHash().ToString().c_str());
-            for (unsigned int i = 0; i < coins.vout.size() ; i++)
+            for (unsigned int i = 0; i < wtx.vout.size() ; i++)
             {
                 fprintf(stderr, "entered loop for : hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),i);
                 CTxDestination address;
@@ -1457,7 +1457,8 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
                 if(!(mine & filter))
                     continue;
 
-                if (coins.vout[i].IsNull())
+                //if (coins.vout[i].IsNull())
+                if ( n < 0 || (unsigned int)i >= coins.vout.size() || coins.vout[i].IsNull() )
                 {
                     fprintf(stderr, "spent? : hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),i);
                     //continue;
@@ -1469,6 +1470,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
                 item.txids.push_back(wtx.GetHash());
                 if (mine & ISMINE_WATCH_ONLY)
                     item.fIsWatchonly = true;
+                
             }
         }
     }
