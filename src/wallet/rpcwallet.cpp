@@ -1455,10 +1455,10 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
                 continue;
 
             CCoins coins;
-            if (!pcoinsTip->GetCoins(txout.GetHash(), coins)) {
-                fprintf(stderr, "GetCoins thing is spent? : hash.(%s) vout.(%u)\n", txout.GetHash().ToString().c_str(),n);
+            if (!pcoinsTip->GetCoins(wtx.GetHash(), coins)) {
+                fprintf(stderr, "got wallet transaction: hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),n);
                 if (coins.vout[n].IsNull()) {
-                    fprintf(stderr, "spent? : hash.(%s) vout.(%u)\n", txout.GetHash().ToString().c_str(),n);
+                    fprintf(stderr, "spent? : hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),n);
                     //continue;
                 }
             }
