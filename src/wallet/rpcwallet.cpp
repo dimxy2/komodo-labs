@@ -1026,7 +1026,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getbalance", "\"*\", 6")
         );
 
-    //LOCK2(cs_main, pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     if (params.size() == 0)
         return  ValueFromAmount(pwalletMain->GetBalance());
@@ -1076,7 +1076,8 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                if ( spents == wtx.vout.size() )
                {
                   fprintf(stderr, "ERASING: %s\n",txhash.c_str());
-                  EraseFromWallets(wtx.GetHash());
+                  if (pwalletMain->mapWallet.erase(hash))
+                      CWalletDB(strWalletFile).EraseTx(hash);
                   fprintf(stderr, "ERASED: %s\n",txhash.c_str());
                }
             }
