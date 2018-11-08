@@ -1052,7 +1052,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 0)
                 continue;
 
-            //fprintf(stderr, "wallet tx %d : %s\n",i,wtx.GetHash().ToString().c_str());
+            fprintf(stderr, "wallet tx %d : %s\n",i,wtx.GetHash().ToString().c_str());
 
             CCoins coins;
             if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
