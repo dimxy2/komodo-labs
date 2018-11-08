@@ -1456,13 +1456,13 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
 
             CCoins coins;
             if (!pcoinsTip->GetCoins(txout.GetHash(), coins)) {
-                //fprintf(stderr, "GetCoins thing is spent? : hash.(%s) vout.(%u)\n", txout.GetHash().ToString().c_str(),n);
+                fprintf(stderr, "GetCoins thing is spent? : hash.(%s) vout.(%u)\n", txout.GetHash().ToString().c_str(),n);
                 if (coins.vout[n].IsNull()) {
-                    n++;
                     fprintf(stderr, "spent? : hash.(%s) vout.(%u)\n", txout.GetHash().ToString().c_str(),n);
                     //continue;
                 }
             }
+            n++;
 
             tallyitem& item = mapTally[address];
             item.nAmount += txout.nValue; // komodo_interest?
