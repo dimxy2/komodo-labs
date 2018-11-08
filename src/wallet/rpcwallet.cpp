@@ -1458,7 +1458,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
                     continue;
 
                 //if (coins.vout[i].IsNull())
-                if ( n < 0 || (unsigned int)i >= coins.vout.size() || coins.vout[i].IsNull() )
+                if ( (unsigned int)i >= coins.vout.size() || coins.vout[i].IsNull() )
                 {
                     fprintf(stderr, "spent? : hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),i);
                     //continue;
@@ -1470,7 +1470,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
                 item.txids.push_back(wtx.GetHash());
                 if (mine & ISMINE_WATCH_ONLY)
                     item.fIsWatchonly = true;
-                
+
             }
         }
     }
