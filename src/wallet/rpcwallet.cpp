@@ -1039,7 +1039,8 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         if(params[2].get_bool())
             filter = filter | ISMINE_WATCH_ONLY;
 
-    if (params[0].get_str() == "*") {
+    if (params[0].get_str() == "*")
+    {
         // Calculate total balance a different way from GetBalance()
         // (GetBalance() sums up all unspent TxOuts)
         // getbalance and "getbalance * 1 true" should return the same number
@@ -1050,7 +1051,6 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             const CWalletTx& wtx = (*it).second;
 
             std::string txhash = wtx.GetHash().ToString();
-
 
 
             if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 0)
@@ -1073,10 +1073,12 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                       fprintf(stderr, "unspent? : hash.(%s) vout.(%u)\n", txhash.c_str(),n);
                    }
                }
-               if ( spents == wtx.vout.size() ) {
+               if ( spents == wtx.vout.size() )
+               {
                   fprintf(stderr, "ERASING: %s\n",txhash.c_str());
                   EraseFromWallets(wtx.GetHash());
                   fprintf(stderr, "ERASED: %s\n",txhash.c_str());
+               }
             }
 
             //fprintf(stderr, "wallet tx %d : %s\n",i,txhash.c_str());
