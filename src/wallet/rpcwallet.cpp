@@ -1445,7 +1445,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
         CCoins coins;
         if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
         {
-            for (int i = 0; i < coins.vout.size() ; i++)
+            for (int i = 0; i < wtx.vout.size() ; i++)
             {
                 fprintf(stderr, "got wallet transaction: hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),i);
                 CTxDestination address;
