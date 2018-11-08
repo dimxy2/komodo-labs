@@ -1044,7 +1044,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         std::vector<CWalletTx> vWtx;
         DBErrors nZapWalletRet = pwalletMain->ZapWalletTx(vWtx);
         if (nZapWalletRet != DB_LOAD_OK) {
-            uiInterface.InitMessage(_("Error loading wallet.dat: Wallet corrupted"));
+            fprintf(stderr, "Error loading wallet.dat: Wallet corrupted");
             return NullUniValue;
         }
         // Calculate total balance a different way from GetBalance()
