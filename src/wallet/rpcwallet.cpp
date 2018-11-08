@@ -1044,13 +1044,17 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         // (GetBalance() sums up all unspent TxOuts)
         // getbalance and "getbalance * 1 true" should return the same number
         CAmount nBalance = 0;
+        int32_t i = 0;
         for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
+
+            fprintf(stderr, "wallet tx %d : %s\n",i,wtx.GetHash().ToString().c_str());
+            i++;
             if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 0)
                 continue;
 
-            CAmount allFee;
+            /*CAmount allFee;
             string strSentAccount;
             list<COutputEntry> listReceived;
             list<COutputEntry> listSent;
@@ -1062,7 +1066,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             }
             BOOST_FOREACH(const COutputEntry& s, listSent)
                 nBalance -= s.amount;
-            nBalance -= allFee;
+            nBalance -= allFee; */
         }
         return  ValueFromAmount(nBalance);
     }
@@ -1442,140 +1446,6 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
         if (nDepth < nMinDepth)
             continue;
 
-        CCoins coins;
-        if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
-        {
-            fprintf(stderr, "got wallet transaction: hash.(%s) \n", wtx.GetHash().ToString().c_str());
-            for (unsigned int i = 0; i < wtx.vout.size() ; i++)
-            {
-                //fprintf(stderr, "entered loop for : hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),i);
-                CTxDestination address;
-                if (!ExtractDestination(wtx.vout[i].scriptPubKey, address))
-                    continue;
-
-                isminefilter mine = IsMine(*pwalletMain, address);
-                if(!(mine & filter))
-                    continue;
-
-                //if (coins.vout[i].IsNull())
-                if ( (unsigned int)i >= coins.vout.size() || coins.vout[i].IsNull() )
-                {
-                    fprintf(stderr, "spent? : hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),i);
-                    //continue;
-                }
-                else
-                {
-                  tallyitem& item = mapTally[address];
-                  item.nAmount += wtx.vout[i].nValue; // komodo_interest?
-                  item.nConf = min(item.nConf, nDepth);
-                  item.txids.push_back(wtx.GetHash());
-                  if (mine & ISMINE_WATCH_ONLY)
-                      item.fIsWatchonly = true;
-                }
-                
-            }
-        }
-    }
-
-    // Reply
-    UniValue ret(UniValue::VARR);
-    map<string, tallyitem> mapAccountTally;
-    BOOST_FOREACH(const PAIRTYPE(CBitcoinAddress, CAddressBookData)& item, pwalletMain->mapAddressBook)
-    {
-        const CBitcoinAddress& address = item.first;
-        const string& strAccount = item.second.name;
-        map<CBitcoinAddress, tallyitem>::iterator it = mapTally.find(address);
-        if (it == mapTally.end() && !fIncludeEmpty)
-            continue;
-
-        CAmount nAmount = 0;
-        int nConf = std::numeric_limits<int>::max();
-        bool fIsWatchonly = false;
-        if (it != mapTally.end())
-        {
-            nAmount = (*it).second.nAmount;
-            nConf = (*it).second.nConf;
-            fIsWatchonly = (*it).second.fIsWatchonly;
-        }
-
-        if (fByAccounts)
-        {
-            tallyitem& item = mapAccountTally[strAccount];
-            item.nAmount += nAmount;
-            item.nConf = min(item.nConf, nConf);
-            item.fIsWatchonly = fIsWatchonly;
-        }
-        else
-        {
-            UniValue obj(UniValue::VOBJ);
-            if(fIsWatchonly)
-                obj.push_back(Pair("involvesWatchonly", true));
-            obj.push_back(Pair("address",       address.ToString()));
-            obj.push_back(Pair("account",       strAccount));
-            obj.push_back(Pair("amount",        ValueFromAmount(nAmount)));
-            obj.push_back(Pair("confirmations", (nConf == std::numeric_limits<int>::max() ? 0 : nConf)));
-            UniValue transactions(UniValue::VARR);
-            if (it != mapTally.end())
-            {
-                BOOST_FOREACH(const uint256& item, (*it).second.txids)
-                {
-                    transactions.push_back(item.GetHex());
-                }
-            }
-            obj.push_back(Pair("txids", transactions));
-            ret.push_back(obj);
-        }
-    }
-
-    if (fByAccounts)
-    {
-        for (map<string, tallyitem>::iterator it = mapAccountTally.begin(); it != mapAccountTally.end(); ++it)
-        {
-            CAmount nAmount = (*it).second.nAmount;
-            int nConf = (*it).second.nConf;
-            UniValue obj(UniValue::VOBJ);
-            if((*it).second.fIsWatchonly)
-                obj.push_back(Pair("involvesWatchonly", true));
-            obj.push_back(Pair("account",       (*it).first));
-            obj.push_back(Pair("amount",        ValueFromAmount(nAmount)));
-            obj.push_back(Pair("confirmations", (nConf == std::numeric_limits<int>::max() ? 0 : nConf)));
-            ret.push_back(obj);
-        }
-    }
-
-    return ret;
-}
-
-/*UniValue ListReceived(const UniValue& params, bool fByAccounts)
-{
-    // Minimum confirmations
-    int nMinDepth = 1;
-    if (params.size() > 0)
-        nMinDepth = params[0].get_int();
-
-    // Whether to include empty accounts
-    bool fIncludeEmpty = false;
-    if (params.size() > 1)
-        fIncludeEmpty = params[1].get_bool();
-
-    isminefilter filter = ISMINE_SPENDABLE;
-    if(params.size() > 2)
-        if(params[2].get_bool())
-            filter = filter | ISMINE_WATCH_ONLY;
-
-    // Tally
-    map<CBitcoinAddress, tallyitem> mapTally;
-    for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
-    {
-        const CWalletTx& wtx = (*it).second;
-
-        if (wtx.IsCoinBase() || !CheckFinalTx(wtx))
-            continue;
-
-        int nDepth = wtx.GetDepthInMainChain();
-        if (nDepth < nMinDepth)
-            continue;
-
         BOOST_FOREACH(const CTxOut& txout, wtx.vout)
         {
             CTxDestination address;
@@ -1662,7 +1532,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
     }
 
     return ret;
-} */
+}
 
 UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
 {
