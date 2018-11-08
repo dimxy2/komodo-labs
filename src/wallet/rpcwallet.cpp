@@ -1082,7 +1082,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
             CTxDestination address;
             // get all  notarisations older than approx 6 hours.
-            if ( ExtractDestination(wtx.vout[0].scriptPubKey, address) && wtx.GetDepthInMainChain() < 360 )
+            if ( ExtractDestination(wtx.vout[0].scriptPubKey, address) )
             {
                 if ( strcmp(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
                     NotarisationTxs.push_back(wtx); //fprintf(stderr, "This is a notarisation to RXL address\n");
