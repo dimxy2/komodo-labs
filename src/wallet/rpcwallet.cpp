@@ -1080,7 +1080,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                   fprintf(stderr, "ERASING: %s\n",txhash.c_str());
                   //pwalletMain->EraseFromWallet(wtx.GetHash());
                   //fprintf(stderr, "ERASED: %s\n",txhash.c_str());
-                  TxToRemove.push_back(wtx.GetHash())
+                  TxToRemove.push_back(wtx.GetHash());
                }
             }
 
