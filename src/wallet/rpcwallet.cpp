@@ -1076,7 +1076,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                if ( spents == wtx.vout.size() )
                {
                   fprintf(stderr, "ERASING: %s\n",txhash.c_str());
-                  pWalletMain->EraseTx(wtx.GetHash())
+                  pwalletMain->EraseTx(wtx.GetHash())
                   fprintf(stderr, "ERASED: %s\n",txhash.c_str());
                }
             }
