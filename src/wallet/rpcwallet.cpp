@@ -1060,11 +1060,19 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                  fprintf(stderr, "got wallet transaction: hash.(%s) \n", wtx.GetHash().ToString().c_str());
                  for (unsigned int n = 0; n < wtx.vout.size() ; n++)
                  {
-                     if ( (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
-                     {
-                         fprintf(stderr, "spent? : hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),i);
-                         //continue;
-                     }
+                    CTxDestination address;
+                    if ( ExtractDestination(wtx.vout[n].scriptPubKey, address))
+                    {
+                        if ( (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
+                        {
+                           fprintf(stderr, "spent? : hash.(%s) vout.(%u) toRadd.(%s)\n", wtx.GetHash().ToString().c_str(),n,CBitcoinAddress(address).ToString().c_str());
+                           //continue;
+                        }
+                        else
+                        {
+                           fprintf(stderr, "unspent? : hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),n);
+                        }
+                    }
                  }
 
             }
