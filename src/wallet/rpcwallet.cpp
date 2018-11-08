@@ -1061,21 +1061,22 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
             {
                 //fprintf(stderr, "got wallet transaction: hash.(%s) \n", txhash.c_str());
+                int spents = 0;
                 for (unsigned int n = 0; n < wtx.vout.size() ; n++)
                 {
                    if ( (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
                    {
-                     CTxDestination address;
-                     if ( ExtractDestination(wtx.vout[n].scriptPubKey, address)) {
-                       fprintf(stderr, "spent? : hash.(%s) vout.(%u) toRadd.(%s)\n", txhash.c_str(),n,CBitcoinAddress(address).ToString().c_str());
-                       //continue;
-                     }
+                      spents++;
                    }
                    else
                    {
                       fprintf(stderr, "unspent? : hash.(%s) vout.(%u)\n", txhash.c_str(),n);
                    }
                }
+               if ( spents == wtx.vout.size() ) {
+                  fprintf(stderr, "ERASING: %s\n",txhash.c_str());
+                  EraseFromWallets(wtx.GetHash());
+                  fprintf(stderr, "ERASED: %s\n",txhash.c_str());
             }
 
             //fprintf(stderr, "wallet tx %d : %s\n",i,txhash.c_str());
