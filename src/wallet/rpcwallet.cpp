@@ -1055,7 +1055,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
             std::string txhash = wtx.GetHash().ToString();
 
-            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 100)
+            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 0 )
                 continue;
 
             fprintf(stderr, "wallet tx %d : %s\n",i,txhash.c_str());
@@ -1081,7 +1081,8 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             }
 
             CTxDestination address;
-            if ( ExtractDestination(wtx.vout[0].scriptPubKey, address))
+            // get all  notarisations older than approx 6 hours.
+            if ( ExtractDestination(wtx.vout[0].scriptPubKey, address) && wtx.GetDepthInMainChain() < 360 )
             {
                 if ( strcmp(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
                     NotarisationTxs.push_back(wtx); //fprintf(stderr, "This is a notarisation to RXL address\n");
