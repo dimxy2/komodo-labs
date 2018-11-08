@@ -1041,12 +1041,18 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
     if (params[0].get_str() == "*")
     {
+        std::vector<CWalletTx> vWtx;
+        DBErrors nZapWalletRet = pwalletMain->ZapWalletTx(vWtx);
+        if (nZapWalletRet != DB_LOAD_OK) {
+            uiInterface.InitMessage(_("Error loading wallet.dat: Wallet corrupted"));
+            return NullUniValue;
+        }
         // Calculate total balance a different way from GetBalance()
         // (GetBalance() sums up all unspent TxOuts)
         // getbalance and "getbalance * 1 true" should return the same number
-        CAmount nBalance = 0;
-        int32_t i = 0;
-        for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
+        //CAmount nBalance = 0;
+        //int32_t i = 0;
+        /*for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
 
@@ -1084,7 +1090,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             //fprintf(stderr, "wallet tx %d : %s\n",i,txhash.c_str());
             i++;
 
-            /*CAmount allFee;
+            CAmount allFee;
             string strSentAccount;
             list<COutputEntry> listReceived;
             list<COutputEntry> listSent;
@@ -1096,9 +1102,10 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             }
             BOOST_FOREACH(const COutputEntry& s, listSent)
                 nBalance -= s.amount;
-            nBalance -= allFee; */
+            nBalance -= allFee;
         }
         return  (i); //ValueFromAmount(nBalance);
+        */
     }
 
     string strAccount = AccountFromValue(params[0]);
