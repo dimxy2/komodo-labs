@@ -1442,7 +1442,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
         if (nDepth < nMinDepth)
             continue;
 
-        unsigned int n;
+        unsigned int n = 0;
         BOOST_FOREACH(const CTxOut& txout, wtx.vout)
         {
 
@@ -1457,7 +1457,6 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
             CCoins coins;
             if (!pcoinsTip->GetCoins(txout.GetHash(), coins)) {
                 fprintf(stderr, "GetCoins thing is spent? : hash.(%s) vout.(%u)\n", txout.GetHash().ToString().c_str(),n);
-                continue;
             }
             if (n>=coins.vout.size() || coins.vout[n].IsNull()) {
                 fprintf(stderr, "Next thing is spent? : hash.(%s) vout.(%u)\n", txout.GetHash().ToString().c_str(),n);
