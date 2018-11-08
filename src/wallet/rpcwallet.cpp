@@ -1054,11 +1054,20 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
             std::string txhash = wtx.GetHash().ToString();
 
-
-            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 0)
+            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 100)
                 continue;
 
             fprintf(stderr, "wallet tx %d : %s\n",i,txhash.c_str());
+
+            //CRYPTO777_KMDADDR //"RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
+
+            CTxDestination address;
+            if ( ExtractDestination(tx.vout[0].scriptPubKey, address))
+            {
+                if ( strcpm(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
+                    fprintf(stderr, "This is a notarisation to RXL address\n");
+            }
+
             CCoins coins;
             if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
             {
