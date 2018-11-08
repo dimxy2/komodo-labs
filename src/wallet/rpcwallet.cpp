@@ -1047,6 +1047,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         // getbalance and "getbalance * 1 true" should return the same number
         //CAmount nBalance = 0;
         int32_t i = 0;
+        vector<uint256> TxToRemove;
         for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
@@ -1077,10 +1078,9 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                if ( spents == wtx.vout.size() )
                {
                   fprintf(stderr, "ERASING: %s\n",txhash.c_str());
-                  if (pwalletMain->mapWallet.erase(hash))
-                    pwalletdb->EraseTx(wtx.GetHash())
-                  fprintf(stderr, "ERASED: %s\n",txhash.c_str());
-                  sleep(1);
+                  //pwalletMain->EraseFromWallet(wtx.GetHash());
+                  //fprintf(stderr, "ERASED: %s\n",txhash.c_str());
+                  TxToRemove.push_back(wtx.GetHash())
                }
             }
 
@@ -1101,6 +1101,14 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                 nBalance -= s.amount;
             nBalance -= allFee; */
         }
+
+        // erase each wallet TX
+        BOOST_FOREACH (uint256& hash, TxToRemove) {
+            //if (!EraseTx(hash))
+            //    return DB_CORRUPT;
+            fprintf(stderr, "to erase: %s\n",hash.ToString().c_str());
+        }
+
         return  (i); //ValueFromAmount(nBalance);
     }
 
