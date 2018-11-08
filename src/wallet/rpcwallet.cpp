@@ -1456,11 +1456,12 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
 
             CCoins coins;
             if (!pcoinsTip->GetCoins(txout.GetHash(), coins)) {
-                fprintf(stderr, "GetCoins thing is spent? : hash.(%s) vout.(%u)\n", txout.GetHash().ToString().c_str(),n);
-            }
-            if (n>=coins.vout.size() || coins.vout[n].IsNull()) {
-                fprintf(stderr, "Next thing is spent? : hash.(%s) vout.(%u)\n", txout.GetHash().ToString().c_str(),n);
-                continue;
+                //fprintf(stderr, "GetCoins thing is spent? : hash.(%s) vout.(%u)\n", txout.GetHash().ToString().c_str(),n);
+                if (coins.vout[n].IsNull()) {
+                    n++;
+                    fprintf(stderr, "spent? : hash.(%s) vout.(%u)\n", txout.GetHash().ToString().c_str(),n);
+                    //continue;
+                }
             }
 
             tallyitem& item = mapTally[address];
@@ -1469,7 +1470,6 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
             item.txids.push_back(wtx.GetHash());
             if (mine & ISMINE_WATCH_ONLY)
                 item.fIsWatchonly = true;
-            n++;
         }
     }
 
