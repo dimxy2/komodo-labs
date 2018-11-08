@@ -1065,13 +1065,21 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             CCoins coins;
             if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
             {
+                CTxDestination addressIn; std::string MyAddress;
+                if ( ExtractDestination(wtx.vin[0].scriptPubKey, addressIn) )
+                {
+                    MyAddress = CBitcoinAddress(addressIn).ToString();
+                }
                 //fprintf(stderr, "got wallet transaction: hash.(%s) \n", txhash.c_str());
                 int spents = 0;
                 for (unsigned int n = 0; n < wtx.vout.size() ; n++)
                 {
-                   if ( (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
+                   CTxDestination addressOut;
+                   // get all  notarisations
+                   if ( ExtractDestination(wtx.vout[n].scriptPubKey, addressOut) )
                    {
-                      spents++;
+                      if ( ((unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull()) && CBitcoinAddress(addressOut).ToString() == MyAddress )
+                          spents++;
                    }
                }
                if ( spents == wtx.vout.size() )
@@ -1081,7 +1089,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             }
 
             CTxDestination address;
-            // get all  notarisations older than approx 6 hours.
+            // get all  notarisations
             if ( ExtractDestination(wtx.vout[0].scriptPubKey, address) )
             {
                 if ( strcmp(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
@@ -1106,6 +1114,13 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             nBalance -= allFee; */
         }
 
+        // erase spent split txs
+        BOOST_FOREACH (uint256& hash, TxToRemove)
+        {
+            pwalletMain->EraseFromWallet(hash);
+            fprintf(stderr, "ERASED Split Tx: %s\n",hash.ToString().c_str());
+        }
+        
         // find notarisations spending from fully spent splits.
         BOOST_FOREACH (CWalletTx& tx, NotarisationTxs)
         {
@@ -1123,14 +1138,6 @@ UniValue getbalance(const UniValue& params, bool fHelp)
               }
           }
         }
-
-        // erase spent split txs
-        BOOST_FOREACH (uint256& hash, TxToRemove)
-        {
-            pwalletMain->EraseFromWallet(hash);
-            fprintf(stderr, "ERASED Split Tx: %s\n",hash.ToString().c_str());
-        }
-
         return  (i); //ValueFromAmount(nBalance);
     }
 
