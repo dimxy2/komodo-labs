@@ -1455,10 +1455,14 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
                 continue;
 
             CCoins coins;
-            if (!pcoinsTip->GetCoins(txout.GetHash(), coins))
-                fprintf(stderr, "GetCoins thing is spent? : hash.(%s) vout.(%ud)\n", txout.GetHash().ToString().c_str(),n);
-            if (n>=coins.vout.size() || coins.vout[n].IsNull())
-                fprintf(stderr, "Next thing is spent? : hash.(%s) vout.(%ud)\n", txout.GetHash().ToString().c_str(),n);
+            if (!pcoinsTip->GetCoins(txout.GetHash(), coins)) {
+                fprintf(stderr, "GetCoins thing is spent? : hash.(%s) vout.(%u)\n", txout.GetHash().ToString().c_str(),n);
+                continue;
+            }
+            if (n>=coins.vout.size() || coins.vout[n].IsNull()) {
+                fprintf(stderr, "Next thing is spent? : hash.(%s) vout.(%u)\n", txout.GetHash().ToString().c_str(),n);
+                continue;
+            }
 
             tallyitem& item = mapTally[address];
             item.nAmount += txout.nValue; // komodo_interest?
