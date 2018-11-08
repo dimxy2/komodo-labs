@@ -1116,14 +1116,11 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                   if ( SpentHash == tx.vin[n].prevout.hash )
                   {
                       fprintf(stderr, "We have a match!\n");
-                      pwalletMain->EraseFromWallet(hash);
-                      fprintf(stderr, "ERASED Notarisation: %s\n",hash.ToString().c_str());
+                      pwalletMain->EraseFromWallet(tx.GetHash());
+                      fprintf(stderr, "ERASED Notarisation: %s\n",tx.GetHash().ToString().c_str());
                   }
               }
           }
-
-
-
         }
 
         // erase spent split txs
