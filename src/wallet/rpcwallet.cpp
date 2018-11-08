@@ -1047,7 +1047,8 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         // getbalance and "getbalance * 1 true" should return the same number
         //CAmount nBalance = 0;
         int32_t i = 0;
-        vector<uint256> TxToRemove,TxToRemove2;
+        std::vector<uint256> TxToRemove;
+        std::vector<CWalletTx> NotarisationTxs;
         for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
@@ -1072,10 +1073,6 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                    {
                       spents++;
                    }
-                   else
-                   {
-                      fprintf(stderr, "unspent? : hash.(%s) vout.(%u)\n", txhash.c_str(),n);
-                   }
                }
                if ( spents == wtx.vout.size() )
                {
@@ -1087,7 +1084,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             if ( ExtractDestination(wtx.vout[0].scriptPubKey, address))
             {
                 if ( strcmp(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
-                    TxToRemove2.push_back(wtx.GetHash()); //fprintf(stderr, "This is a notarisation to RXL address\n");
+                    NotarisationTxs.push_back(wtx); //fprintf(stderr, "This is a notarisation to RXL address\n");
             }
 
             //fprintf(stderr, "wallet tx %d : %s\n",i,txhash.c_str());
@@ -1108,19 +1105,33 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             nBalance -= allFee; */
         }
 
-        // erase notarisations
-        BOOST_FOREACH (uint256& hash, TxToRemove2) {
-            fprintf(stderr, "ERASING: %s\n",hash.ToString().c_str());
-            pwalletMain->EraseFromWallet(hash);
-            fprintf(stderr, "ERASED: %s\n",hash.ToString().c_str());
+        // find notarisations spending from fully spent splits.
+        BOOST_FOREACH (CWalletTx& tx, NotarisationTxs)
+        {
+          for (int n = 0; n < tx.vin.size(); n++)
+          {
+              BOOST_FOREACH (uint256& SpentHash, TxToRemove)
+              {
+                  fprintf(stderr, "%s : %s \n",SpentHash.ToString().c_str(), tx.vin[n].prevout.hash.ToString().c_str());
+                  if ( SpentHash == tx.vin[n].prevout.hash )
+                  {
+                      fprintf(stderr, "We have a match!\n");
+                  }
+              }
+          }
+
+
+            //fprintf(stderr, "ERASING: %s\n",hash.ToString().c_str());
+            //pwalletMain->EraseFromWallet(hash);
+            //fprintf(stderr, "ERASED: %s\n",hash.ToString().c_str());
         }
-        
+
         // erase spent split txs after?
-        BOOST_FOREACH (uint256& hash, TxToRemove) {
-            fprintf(stderr, "ERASING: %s\n",hash.ToString().c_str());
-            pwalletMain->EraseFromWallet(hash);
-            fprintf(stderr, "ERASED: %s\n",hash.ToString().c_str());
-        }
+        //BOOST_FOREACH (uint256& hash, TxToRemove) {
+        //    fprintf(stderr, "ERASING: %s\n",hash.ToString().c_str());
+        //    pwalletMain->EraseFromWallet(hash);
+        //    fprintf(stderr, "ERASED: %s\n",hash.ToString().c_str());
+        //}
 
         return  (i); //ValueFromAmount(nBalance);
     }
