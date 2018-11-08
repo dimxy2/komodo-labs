@@ -1442,34 +1442,33 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
         if (nDepth < nMinDepth)
             continue;
 
-        unsigned int n = 0;
-        //BOOST_FOREACH(const CTxOut& txout, wtx.vout)
-        for (int i = 0; i < wtx.vout.size() ; i++)
+        CCoins coins;
+        if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
         {
+            for (int i = 0; i < coins.vout.size() ; i++)
+            {
+                fprintf(stderr, "got wallet transaction: hash.(%s) vout.(%u)\n", coins.GetHash().ToString().c_str(),i);
+                CTxDestination address;
+                if (!ExtractDestination(coins.vout[i].scriptPubKey, address))
+                    continue;
 
-            CTxDestination address;
-            if (!ExtractDestination(wtx.vout[i].scriptPubKey, address))
-                continue;
+                isminefilter mine = IsMine(*pwalletMain, address);
+                if(!(mine & filter))
+                    continue;
 
-            isminefilter mine = IsMine(*pwalletMain, address);
-            if(!(mine & filter))
-                continue;
-
-            CCoins coins;
-            if (!pcoinsTip->GetCoins(wtx.GetHash(), coins)) {
-                fprintf(stderr, "got wallet transaction: hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),i);
-                if (coins.vout[i].IsNull()) {
-                    fprintf(stderr, "spent? : hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),i);
+                if (coins.vout[i].IsNull())
+                {
+                    fprintf(stderr, "spent? : hash.(%s) vout.(%u)\n", coins.GetHash().ToString().c_str(),i);
                     //continue;
                 }
-            }
 
-            tallyitem& item = mapTally[address];
-            item.nAmount += wtx.vout[i].nValue; // komodo_interest?
-            item.nConf = min(item.nConf, nDepth);
-            item.txids.push_back(wtx.GetHash());
-            if (mine & ISMINE_WATCH_ONLY)
-                item.fIsWatchonly = true;
+                tallyitem& item = mapTally[address];
+                item.nAmount += coins.vout[i].nValue; // komodo_interest?
+                item.nConf = min(item.nConf, nDepth);
+                item.txids.push_back(coins.GetHash());
+                if (mine & ISMINE_WATCH_ONLY)
+                    item.fIsWatchonly = true;
+            }
         }
     }
 
