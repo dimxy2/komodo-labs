@@ -1049,10 +1049,26 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         {
             const CWalletTx& wtx = (*it).second;
 
-            fprintf(stderr, "wallet tx %d : %s\n",i,wtx.GetHash().ToString().c_str());
-            i++;
             if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 0)
                 continue;
+
+            //fprintf(stderr, "wallet tx %d : %s\n",i,wtx.GetHash().ToString().c_str());
+
+            CCoins coins;
+            if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
+            {
+                 fprintf(stderr, "got wallet transaction: hash.(%s) \n", wtx.GetHash().ToString().c_str());
+                 for (unsigned int n = 0; n < wtx.vout.size() ; n++)
+                 {
+                     if ( (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
+                     {
+                         fprintf(stderr, "spent? : hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),i);
+                         //continue;
+                     }
+                 }
+
+            }
+            i++;
 
             /*CAmount allFee;
             string strSentAccount;
