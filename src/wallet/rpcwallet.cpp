@@ -1112,26 +1112,26 @@ UniValue getbalance(const UniValue& params, bool fHelp)
           {
               BOOST_FOREACH (uint256& SpentHash, TxToRemove)
               {
-                  fprintf(stderr, "%s : %s \n",SpentHash.ToString().c_str(), tx.vin[n].prevout.hash.ToString().c_str());
+                  //fprintf(stderr, "%s : %s \n",SpentHash.ToString().c_str(), tx.vin[n].prevout.hash.ToString().c_str());
                   if ( SpentHash == tx.vin[n].prevout.hash )
                   {
                       fprintf(stderr, "We have a match!\n");
+                      pwalletMain->EraseFromWallet(hash);
+                      fprintf(stderr, "ERASED Notarisation: %s\n",hash.ToString().c_str());
                   }
               }
           }
 
 
-            //fprintf(stderr, "ERASING: %s\n",hash.ToString().c_str());
-            //pwalletMain->EraseFromWallet(hash);
-            //fprintf(stderr, "ERASED: %s\n",hash.ToString().c_str());
+
         }
 
-        // erase spent split txs after?
-        //BOOST_FOREACH (uint256& hash, TxToRemove) {
-        //    fprintf(stderr, "ERASING: %s\n",hash.ToString().c_str());
-        //    pwalletMain->EraseFromWallet(hash);
-        //    fprintf(stderr, "ERASED: %s\n",hash.ToString().c_str());
-        //}
+        // erase spent split txs
+        BOOST_FOREACH (uint256& hash, TxToRemove)
+        {
+            pwalletMain->EraseFromWallet(hash);
+            fprintf(stderr, "ERASED Split Tx: %s\n",hash.ToString().c_str());
+        }
 
         return  (i); //ValueFromAmount(nBalance);
     }
