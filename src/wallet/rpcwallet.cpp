@@ -1448,7 +1448,7 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
             fprintf(stderr, "got wallet transaction: hash.(%s) \n", wtx.GetHash().ToString().c_str());
             for (unsigned int i = 0; i < wtx.vout.size() ; i++)
             {
-                fprintf(stderr, "entered loop for : hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),i);
+                //fprintf(stderr, "entered loop for : hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),i);
                 CTxDestination address;
                 if (!ExtractDestination(wtx.vout[i].scriptPubKey, address))
                     continue;
@@ -1463,14 +1463,16 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
                     fprintf(stderr, "spent? : hash.(%s) vout.(%u)\n", wtx.GetHash().ToString().c_str(),i);
                     //continue;
                 }
-
-                tallyitem& item = mapTally[address];
-                item.nAmount += wtx.vout[i].nValue; // komodo_interest?
-                item.nConf = min(item.nConf, nDepth);
-                item.txids.push_back(wtx.GetHash());
-                if (mine & ISMINE_WATCH_ONLY)
-                    item.fIsWatchonly = true;
-
+                else
+                {
+                  tallyitem& item = mapTally[address];
+                  item.nAmount += wtx.vout[i].nValue; // komodo_interest?
+                  item.nConf = min(item.nConf, nDepth);
+                  item.txids.push_back(wtx.GetHash());
+                  if (mine & ISMINE_WATCH_ONLY)
+                      item.fIsWatchonly = true;
+                }
+                
             }
         }
     }
