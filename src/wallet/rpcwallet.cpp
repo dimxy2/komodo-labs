@@ -1024,7 +1024,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             + HelpExampleCli("cleanoldtxs", "")
             + HelpExampleCli("cleanoldtxs","\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
             "\nAs a json rpc call\n"
-            + HelpExampleRpc("cleanoldtxs", "") 
+            + HelpExampleRpc("cleanoldtxs", "")
             + HelpExampleRpc("cleanoldtxs","\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
         );
 
@@ -1039,7 +1039,9 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         if (GetTransaction(exception,tmp_tx,tmp_hash,false))
         if ( !pwalletMain->IsMine(tmp_tx) )
         {
-            throw runtime_error("The txid provided is not yours!");
+            throw runtime_error(
+                "\nThe txid provided is not yours!\n"
+            );
         }
         else
         {
