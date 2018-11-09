@@ -1040,22 +1040,24 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         {
             if ( !pwalletMain->IsMine(tmp_tx) )
             {
-                throw runtime_error(
-                    "\nThe txid provided is not yours!\n"
-                );
+                throw runtime_error("\nThe transaction is not yours!\n");
+            }
+            else
+            {
+                for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
+                {
+                    txs++;
+                    const CWalletTx& wtx = (*it).second;
+                    if ( wtx.GetHash() != exception )
+                    {
+                        TxToRemove.push_back(wtx.GetHash());
+                    }
+                }
             }
         }
         else
         {
-            for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
-            {
-                txs++;
-                const CWalletTx& wtx = (*it).second;
-                if ( wtx.GetHash() != exception )
-                {
-                    TxToRemove.push_back(wtx.GetHash());
-                }
-            }
+            throw runtime_error("\nThe transaction could not be found!\n");
         }
     }
     else
