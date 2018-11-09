@@ -1045,6 +1045,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
            if ( spents == mine )
            {
               TxToRemove.push_back(wtx.GetHash());
+              removed++;
               for (unsigned int n = 0; n < wtx.vin.size() ; n++)
               {
                   if ( pwalletMain->IsMine(wtx.vin[n]) )
@@ -1086,7 +1087,6 @@ UniValue getbalance(const UniValue& params, bool fHelp)
     BOOST_FOREACH (uint256& hash, TxToRemove)
     {
         pwalletMain->EraseFromWallet(hash);
-        removed++;
         //fprintf(stderr, "ERASED spent Tx: %s\n",hash.ToString().c_str());
     }
     UniValue ret(UniValue::VOBJ);
