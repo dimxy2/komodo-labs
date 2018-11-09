@@ -1014,9 +1014,9 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "amount              (numeric) The total txs from " + strprintf("%s",komodo_chainname()) + " removed.\n"
             "\nExamples:\n"
-            + HelpExampleCli("cleanoldtxs") +
+            + HelpExampleCli("cleanoldtxs","") +
             "\nAs a json rpc call\n"
-            + HelpExampleRpc("cleanoldtxs")
+            + HelpExampleRpc("cleanoldtxs","")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -1089,7 +1089,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         removed++;
         //fprintf(stderr, "ERASED spent Tx: %s\n",hash.ToString().c_str());
     }
-    UniValue ret(UniValue::VARR);
+    UniValue ret(UniValue::VOBJ);
     ret.pushback(Pair("total_transactons", (int)txs));
     ret.push_back(Pair("removed_transactions", (int)removed));
     ret.pushback(Pair("remaining_transactons", (int)(txs - removed)));
