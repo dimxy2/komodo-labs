@@ -1055,7 +1055,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
             //std::string txhash = wtx.GetHash().ToString();
 
-            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 0 )
+            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() >= 0 )
                 continue;
 
             //fprintf(stderr, "wallet tx %d : %s\n",i,txhash.c_str());
@@ -1066,16 +1066,19 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
             {
                 //fprintf(stderr, "got wallet transaction: hash.(%s) \n", txhash.c_str());
-                int spents = 0;
+                int spents = 0; int mine = 0;
                 for (unsigned int n = 0; n < wtx.vout.size() ; n++)
                 {
-                   // Need to check for each vout is mine before counting them!
-                   if ( ((unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() ) && pwalletMain->IsMine(wtx.vout[n]) )
-                   {
-                      spents++;
-                   }
+                    if ( pwalletMain->IsMine(wtx.vout[n]) )
+                    {
+                        mine++;
+                    }
+                    if ( ((unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() ) )
+                    {
+                       spents++;
+                    }
                }
-               if ( spents == wtx.vout.size() )
+               if ( spents == mine )
                {
                   TxToRemove.push_back(wtx.GetHash());
                }
