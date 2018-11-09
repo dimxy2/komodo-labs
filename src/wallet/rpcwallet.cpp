@@ -1029,7 +1029,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
-
+    UniValue ret(UniValue::VOBJ);
     uint256 exception; int32_t txs = 0;
     std::vector<uint256> TxToRemove;
     if (params.size() > 0)
@@ -1040,7 +1040,8 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         {
             if ( !pwalletMain->IsMine(tmp_tx) )
             {
-                throw runtime_error("\nThe transaction is not yours!\n");
+                ret.push_back(Pair("error","\nThe transaction is not yours!\n"));
+                return(ret);
             }
             else
             {
@@ -1057,7 +1058,8 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         }
         else
         {
-            throw runtime_error("\nThe transaction could not be found!\n");
+            ret.push_back(Pair("error","\nThe transaction could not be found!\n"));
+            return(ret);
         }
     }
     else
@@ -1127,7 +1129,6 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
     // build return JSON for stats.
     int remaining = pwalletMain->mapWallet.size();
-    UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("total_transactons", (int)txs));
     ret.push_back(Pair("remaining_transactons", (int)remaining));
     ret.push_back(Pair("removed_transactions", (int)(txs-remaining)));
