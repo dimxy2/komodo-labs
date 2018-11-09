@@ -1030,7 +1030,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    uint256 exception;
+    uint256 exception; int32_t txs = 0;
     std::vector<uint256> TxToRemove;
     if (params.size() > 0)
     {
@@ -1045,6 +1045,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         {
             for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
             {
+                txs++;
                 const CWalletTx& wtx = (*it).second;
                 if ( wtx.GetHash() != exception )
                 {
@@ -1055,7 +1056,6 @@ UniValue getbalance(const UniValue& params, bool fHelp)
     }
     else
     {
-        int32_t txs = 0;
         std::vector<CWalletTx> NotarisationTxs;
         for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
         {
