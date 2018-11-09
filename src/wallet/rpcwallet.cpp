@@ -1037,11 +1037,13 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         exception.SetHex(params[0].get_str());
         uint256 tmp_hash; CTransaction tmp_tx;
         if (GetTransaction(exception,tmp_tx,tmp_hash,false))
-        if ( !pwalletMain->IsMine(tmp_tx) )
         {
-            throw runtime_error(
-                "\nThe txid provided is not yours!\n"
-            );
+            if ( !pwalletMain->IsMine(tmp_tx) )
+            {
+                throw runtime_error(
+                    "\nThe txid provided is not yours!\n"
+                );
+            }
         }
         else
         {
