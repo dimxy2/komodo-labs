@@ -1007,7 +1007,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() != 0 || params.size() != 1 )
+    if (fHelp || params.size() > 1 )
         throw runtime_error(
             "cleanwalletnotarisations \"txid\"\n"
             "\nRemove all txs which are totally spent and all notarisations created from them, you can clear all txs bar one, by specifiying a txid.\n"
@@ -1023,7 +1023,6 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             "\nExamples:\n"
             + HelpExampleCli("cleanoldtxs", "")
             + HelpExampleCli("cleanoldtxs","\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
-            "\nAs a json rpc call\n"
             + HelpExampleRpc("cleanoldtxs", "")
             + HelpExampleRpc("cleanoldtxs","\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
         );
