@@ -1070,11 +1070,11 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                if ( spents == mine )
                {
                   TxToRemove.push_back(wtx.GetHash());
-                  for (unsigned int n = 0; n < wtx.vout.size() ; n++)
+                  for (unsigned int n = 0; n < wtx.vin.size() ; n++)
                   {
-                      if ( pwalletMain->IsMine(wtx.vout[n].prevout.hash) )
+                      if ( pwalletMain->IsMine(wtx.vin[n].prevout.hash) )
                       {
-                          TxToRemove.push_back(wtx.vout[n].prevout.hash);
+                          TxToRemove.push_back(wtx.vin[n].prevout.hash);
                       }
                   }
                }
