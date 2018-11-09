@@ -1027,7 +1027,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
     for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
     {
         const CWalletTx& wtx = (*it).second;
-        if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < nMinDepth )
+        if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 50 )
             continue;
 
         CCoins coins;
@@ -1090,9 +1090,9 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         //fprintf(stderr, "ERASED spent Tx: %s\n",hash.ToString().c_str());
     }
     UniValue ret(UniValue::VOBJ);
-    ret.pushback(Pair("total_transactons", (int)txs));
+    ret.push_back(Pair("total_transactons", (int)txs));
     ret.push_back(Pair("removed_transactions", (int)removed));
-    ret.pushback(Pair("remaining_transactons", (int)(txs - removed)));
+    ret.push_back(Pair("remaining_transactons", (int)(txs - removed)));
     return  (ret);
 }
 
