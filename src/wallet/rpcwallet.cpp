@@ -1045,7 +1045,6 @@ UniValue getbalance(const UniValue& params, bool fHelp)
            if ( spents == mine )
            {
               TxToRemove.push_back(wtx.GetHash());
-              removed++;
               for (unsigned int n = 0; n < wtx.vin.size() ; n++)
               {
                   if ( pwalletMain->IsMine(wtx.vin[n]) )
@@ -1076,7 +1075,6 @@ UniValue getbalance(const UniValue& params, bool fHelp)
               {
                   //fprintf(stderr, "We have a match!\n");
                   pwalletMain->EraseFromWallet(tx.GetHash());
-                  removed++;
                   //fprintf(stderr, "ERASED Notarisation: %s\n",tx.GetHash().ToString().c_str());
               }
           }
@@ -1089,10 +1087,12 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         pwalletMain->EraseFromWallet(hash);
         //fprintf(stderr, "ERASED spent Tx: %s\n",hash.ToString().c_str());
     }
+    int remaining = pwalletMain->mapWallet.size();
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("total_transactons", (int)txs));
-    ret.push_back(Pair("removed_transactions", (int)removed));
-    ret.push_back(Pair("remaining_transactons", (int)(txs - removed)));
+    ret.push_back(Pair("remaining_transactons", (int)remaining));
+    ret.push_back(Pair("removed_transactions", (int)(txs-remaining)));
+
     return  (ret);
 }
 
