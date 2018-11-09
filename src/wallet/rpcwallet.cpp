@@ -1007,7 +1007,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp)
+    if (fHelp || params.size() != 0 || params.size() != 1 )
         throw runtime_error(
             "cleanwalletnotarisations \"txid\"\n"
             "\nRemove all txs which are totally spent and all notarisations created from them, you can clear all txs bar one, by specifiying a txid.\n"
@@ -1032,7 +1032,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
     UniValue ret(UniValue::VOBJ);
     uint256 exception; int32_t txs = 0;
     std::vector<uint256> TxToRemove;
-    if (params.size() > 0)
+    if (params.size() == 1)
     {
         exception.SetHex(params[0].get_str());
         uint256 tmp_hash; CTransaction tmp_tx;
