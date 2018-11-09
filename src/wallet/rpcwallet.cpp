@@ -1041,11 +1041,6 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
     if (params[0].get_str() == "*")
     {
-
-        // Calculate total balance a different way from GetBalance()
-        // (GetBalance() sums up all unspent TxOuts)
-        // getbalance and "getbalance * 1 true" should return the same number
-        //CAmount nBalance = 0;
         int32_t i = 0;
         std::vector<uint256> TxToRemove;
         std::vector<CWalletTx> NotarisationTxs;
@@ -1053,20 +1048,19 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         {
             const CWalletTx& wtx = (*it).second;
 
-            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 0 )
+            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < nMinDepth )
                 continue;
 
             CCoins coins;
             if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
             {
-                fprintf(stderr, "got wallet transaction: hash.(%s) \n", wtx.GetHash().ToString().c_str());
+                //fprintf(stderr, "got wallet transaction: hash.(%s) \n", wtx.GetHash().ToString().c_str());
                 int spents = 0; int mine = 0;
                 for (unsigned int n = 0; n < wtx.vout.size() ; n++)
                 {
                     if ( pwalletMain->IsMine(wtx.vout[n]) )
                     {
                         mine++;
-
                     }
                     if ( ((unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() ) )
                     {
@@ -1080,32 +1074,16 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             }
 
             CTxDestination address;
-            // get all  notarisations older than approx 6 hours.
+            // get all  notarisations
             if ( ExtractDestination(wtx.vout[0].scriptPubKey, address) )
             {
                 if ( strcmp(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
                     NotarisationTxs.push_back(wtx); //fprintf(stderr, "This is a notarisation to RXL address\n");
             }
-
-            //fprintf(stderr, "wallet tx %d : %s\n",i,txhash.c_str());
             i++;
-
-            /*CAmount allFee;
-            string strSentAccount;
-            list<COutputEntry> listReceived;
-            list<COutputEntry> listSent;
-            wtx.GetAmounts(listReceived, listSent, allFee, strSentAccount, filter);
-            if (wtx.GetDepthInMainChain() >= nMinDepth)
-            {
-                BOOST_FOREACH(const COutputEntry& r, listReceived)
-                    nBalance += r.amount;
-            }
-            BOOST_FOREACH(const COutputEntry& s, listSent)
-                nBalance -= s.amount;
-            nBalance -= allFee; */
         }
 
-        // find notarisations spending from fully spent splits.
+        // Erase notarisations spending from fully spent splits.
         BOOST_FOREACH (CWalletTx& tx, NotarisationTxs)
         {
           for (int n = 0; n < tx.vin.size(); n++)
