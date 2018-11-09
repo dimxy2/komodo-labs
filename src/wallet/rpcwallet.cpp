@@ -1074,7 +1074,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
                   {
                       if ( pwalletMain->IsMine(wtx.vin[n]) )
                       {
-                          TxToRemove.push_back(wtx.vin[n].GetHash());
+                          TxToRemove.push_back(wtx.vin[n].hash;
                       }
                   }
                }
