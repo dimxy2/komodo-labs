@@ -1039,8 +1039,9 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         {
             if ( !pwalletMain->IsMine(tmp_tx) )
             {
-                ret.push_back(Pair("error","\nThe transaction is not yours!\n"));
-                return(ret);
+                throw runtime_error("\nThe transaction is not yours!\n");
+                //ret.push_back(Pair("error","\nThe transaction is not yours!\n"));
+                //return(ret);
             }
             else
             {
@@ -1057,8 +1058,9 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         }
         else
         {
-            ret.push_back(Pair("error","\nThe transaction could not be found!\n"));
-            return(ret);
+            throw runtime_error(\nThe transaction could not be found!\n");
+            //ret.push_back(Pair("error","\nThe transaction could not be found!\n"));
+            //return(ret);
         }
     }
     else
