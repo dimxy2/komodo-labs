@@ -1007,123 +1007,93 @@ UniValue getbalance(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 3)
+    if (fHelp)
         throw runtime_error(
-            "getbalance ( \"account\" minconf includeWatchonly )\n"
-            "\nReturns the server's total available balance.\n"
-            "\nArguments:\n"
-            "1. \"account\"      (string, optional) DEPRECATED. If provided, it MUST be set to the empty string \"\" or to the string \"*\", either of which will give the total available balance. Passing any other string will result in an error.\n"
-            "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
-            "3. includeWatchonly (bool, optional, default=false) Also include balance in watchonly addresses (see 'importaddress')\n"
+            "cleanoldtxs \n"
+            "\nRemove all txs which are totally spent and all notarisations spent from them.\n"
             "\nResult:\n"
-            "amount              (numeric) The total amount in " + strprintf("%s",komodo_chainname()) + " received for this account.\n"
+            "amount              (numeric) The total txs from " + strprintf("%s",komodo_chainname()) + " removed.\n"
             "\nExamples:\n"
-            "\nThe total amount in the wallet\n"
-            + HelpExampleCli("getbalance", "") +
-            "\nThe total amount in the wallet at least 5 blocks confirmed\n"
-            + HelpExampleCli("getbalance", "\"*\" 6") +
+            + HelpExampleCli("cleanoldtxs") +
             "\nAs a json rpc call\n"
-            + HelpExampleRpc("getbalance", "\"*\", 6")
+            + HelpExampleRpc("cleanoldtxs")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    if (params.size() == 0)
-        return  ValueFromAmount(pwalletMain->GetBalance());
-
-    int nMinDepth = 1;
-    if (params.size() > 1)
-        nMinDepth = params[1].get_int();
-    isminefilter filter = ISMINE_SPENDABLE;
-    if(params.size() > 2)
-        if(params[2].get_bool())
-            filter = filter | ISMINE_WATCH_ONLY;
-
-    if (params[0].get_str() == "*")
+    int32_t txs = 0, removed = 0;
+    std::vector<uint256> TxToRemove;
+    std::vector<CWalletTx> NotarisationTxs;
+    for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
     {
-        int32_t i = 0;
-        std::vector<uint256> TxToRemove;
-        std::vector<CWalletTx> NotarisationTxs;
-        for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
+        const CWalletTx& wtx = (*it).second;
+        if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < nMinDepth )
+            continue;
+
+        CCoins coins;
+        if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
         {
-            const CWalletTx& wtx = (*it).second;
-
-            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < nMinDepth )
-                continue;
-
-            CCoins coins;
-            if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
+            //fprintf(stderr, "got wallet transaction: hash.(%s) \n", wtx.GetHash().ToString().c_str());
+            int spents = 0; int mine = 0;
+            for (unsigned int n = 0; n < wtx.vout.size() ; n++)
             {
-                //fprintf(stderr, "got wallet transaction: hash.(%s) \n", wtx.GetHash().ToString().c_str());
-                int spents = 0; int mine = 0;
-                for (unsigned int n = 0; n < wtx.vout.size() ; n++)
-                {
-                    if ( pwalletMain->IsMine(wtx.vout[n]) )
-                    {
-                        mine++;
-                    }
-                    if ( ((unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() ) )
-                    {
-                       spents++;
-                    }
-               }
-               if ( spents == mine )
-               {
-                  TxToRemove.push_back(wtx.GetHash());
-                  for (unsigned int n = 0; n < wtx.vin.size() ; n++)
-                  {
-
-                      if ( pwalletMain->IsMine(wtx.vin[n]) )
-                      {
-                          TxToRemove.push_back(wtx.vin[n].prevout.hash);
-                      }
-                  }
-               }
-            }
-
-            CTxDestination address;
-            // get all  notarisations
-            if ( ExtractDestination(wtx.vout[0].scriptPubKey, address) )
-            {
-                if ( strcmp(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
-                    NotarisationTxs.push_back(wtx); //fprintf(stderr, "This is a notarisation to RXL address\n");
-            }
-            i++;
-        }
-
-        // Erase notarisations spending from fully spent splits.
-        BOOST_FOREACH (CWalletTx& tx, NotarisationTxs)
-        {
-          for (int n = 0; n < tx.vin.size(); n++)
-          {
-              BOOST_FOREACH (uint256& SpentHash, TxToRemove)
+                if ( pwalletMain->IsMine(wtx.vout[n]) )
+                    mine++;
+                if ( ((unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() ) )
+                   spents++;
+           }
+           if ( spents == mine )
+           {
+              TxToRemove.push_back(wtx.GetHash());
+              for (unsigned int n = 0; n < wtx.vin.size() ; n++)
               {
-                  //fprintf(stderr, "%s : %s \n",SpentHash.ToString().c_str(), tx.vin[n].prevout.hash.ToString().c_str());
-                  if ( SpentHash == tx.vin[n].prevout.hash )
-                  {
-                      //fprintf(stderr, "We have a match!\n");
-                      pwalletMain->EraseFromWallet(tx.GetHash());
-                      fprintf(stderr, "ERASED Notarisation: %s\n",tx.GetHash().ToString().c_str());
-                  }
+                  if ( pwalletMain->IsMine(wtx.vin[n]) )
+                      TxToRemove.push_back(wtx.vin[n].prevout.hash);
               }
-          }
+           }
         }
 
-        // erase spent split txs
-        BOOST_FOREACH (uint256& hash, TxToRemove)
+        CTxDestination address;
+        // get all  notarisations
+        if ( ExtractDestination(wtx.vout[0].scriptPubKey, address) )
         {
-            pwalletMain->EraseFromWallet(hash);
-            fprintf(stderr, "ERASED spent Tx: %s\n",hash.ToString().c_str());
+            if ( strcmp(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
+                NotarisationTxs.push_back(wtx);
         }
-
-        return  (i); //ValueFromAmount(nBalance);
+        txs++;
     }
 
-    string strAccount = AccountFromValue(params[0]);
+    // Erase notarisations spending from fully spent splits.
+    BOOST_FOREACH (CWalletTx& tx, NotarisationTxs)
+    {
+      for (int n = 0; n < tx.vin.size(); n++)
+      {
+          BOOST_FOREACH (uint256& SpentHash, TxToRemove)
+          {
+              //fprintf(stderr, "%s : %s \n",SpentHash.ToString().c_str(), tx.vin[n].prevout.hash.ToString().c_str());
+              if ( SpentHash == tx.vin[n].prevout.hash )
+              {
+                  //fprintf(stderr, "We have a match!\n");
+                  pwalletMain->EraseFromWallet(tx.GetHash());
+                  removed++;
+                  //fprintf(stderr, "ERASED Notarisation: %s\n",tx.GetHash().ToString().c_str());
+              }
+          }
+      }
+    }
 
-    CAmount nBalance = GetAccountBalance(strAccount, nMinDepth, filter);
-
-    return ValueFromAmount(nBalance);
+    // erase spent split txs
+    BOOST_FOREACH (uint256& hash, TxToRemove)
+    {
+        pwalletMain->EraseFromWallet(hash);
+        removed++;
+        //fprintf(stderr, "ERASED spent Tx: %s\n",hash.ToString().c_str());
+    }
+    UniValue ret(UniValue::VARR);
+    ret.pushback(Pair("total_transactons", (int)txs));
+    ret.push_back(Pair("removed_transactions", (int)removed));
+    ret.pushback(Pair("remaining_transactons", (int)(txs - removed)));
+    return  (ret);
 }
 
 UniValue getunconfirmedbalance(const UniValue &params, bool fHelp)
