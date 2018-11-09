@@ -1053,25 +1053,20 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         {
             const CWalletTx& wtx = (*it).second;
 
-            //std::string txhash = wtx.GetHash().ToString();
-
-            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() >= 0 )
+            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 0 )
                 continue;
-
-            //fprintf(stderr, "wallet tx %d : %s\n",i,txhash.c_str());
-
-            //CRYPTO777_KMDADDR //"RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
 
             CCoins coins;
             if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
             {
-                //fprintf(stderr, "got wallet transaction: hash.(%s) \n", txhash.c_str());
+                fprintf(stderr, "got wallet transaction: hash.(%s) \n", wtx.GetHash().ToString().c_str());
                 int spents = 0; int mine = 0;
                 for (unsigned int n = 0; n < wtx.vout.size() ; n++)
                 {
                     if ( pwalletMain->IsMine(wtx.vout[n]) )
                     {
                         mine++;
+
                     }
                     if ( ((unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() ) )
                     {
