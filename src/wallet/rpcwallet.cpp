@@ -1058,7 +1058,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         }
         else
         {
-            throw runtime_error(\nThe transaction could not be found!\n");
+            throw runtime_error("\nThe transaction could not be found!\n");
             //ret.push_back(Pair("error","\nThe transaction could not be found!\n"));
             //return(ret);
         }
