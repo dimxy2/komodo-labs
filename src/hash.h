@@ -221,7 +221,8 @@ public:
     }
 };
 
-/** A writer stream (for serialization) that computes a 256-bit Verus hash. */
+
+/** A writer stream (for serialization) that computes a 256-bit Verus hash. 
 class CVerusHashWriter
 {
 private:
@@ -255,22 +256,22 @@ public:
         ::Serialize(*this, obj);
         return (*this);
     }
-};
+}; */
 
 /** A writer stream (for serialization) that computes a 256-bit Verus hash with key initialized to Haraka standard. */
-class CVerusHashV2Writer
+class CVerusHashWriter
 {
 private:
-    CVerusHashV2 state;
+    CVerusHash state;
 
 public:
     int nType;
     int nVersion;
 
-    CVerusHashV2Writer(int nTypeIn, int nVersionIn) : nType(nTypeIn), nVersion(nVersionIn), state() {}
+    CVerusHashWriter(int nTypeIn, int nVersionIn) : nType(nTypeIn), nVersion(nVersionIn), state() {}
     void Reset() { state.Reset(); }
 
-    CVerusHashV2Writer& write(const char *pch, size_t size) {
+    CVerusHashWriter& write(const char *pch, size_t size) {
         state.Write((const unsigned char*)pch, size);
         return (*this);
     }
@@ -283,10 +284,10 @@ public:
     }
 
     int64_t *xI64p() { return state.ExtraI64Ptr(); }
-    CVerusHashV2 &GetState() { return state; }
+    CVerusHash &GetState() { return state; }
 
     template<typename T>
-    CVerusHashV2Writer& operator<<(const T& obj) {
+    CVerusHashWriter& operator<<(const T& obj) {
         // Serialize to this stream
         ::Serialize(*this, obj);
         return (*this);
@@ -302,20 +303,20 @@ uint256 SerializeHash(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL
     return ss.GetHash();
 }
 
-/** Compute the 256-bit Verus hash of an object's serialization. */
+/** Compute the 256-bit Verus hash of an object's serialization. 
 template<typename T>
 uint256 SerializeVerusHash(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL_VERSION)
 {
     CVerusHashWriter ss(nType, nVersion);
     ss << obj;
     return ss.GetHash();
-}
+}* /
 
 /** Compute the 256-bit Verus hash of an object's serialization. */
 template<typename T>
-uint256 SerializeVerusHashV2(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL_VERSION)
+uint256 SerializeVerusHash(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL_VERSION)
 {
-    CVerusHashV2Writer ss(nType, nVersion);
+    CVerusHashWriter ss(nType, nVersion);
     ss << obj;
     return ss.GetHash();
 }

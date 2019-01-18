@@ -18,7 +18,7 @@ extern "C"
 #include "crypto/haraka.h"
 #include "crypto/haraka_portable.h"
 }
-
+/*
 class CVerusHash
 {
     public:
@@ -67,8 +67,9 @@ class CVerusHash
         unsigned char *curBuf = buf1, *result = buf2;
         size_t curPos = 0;
 };
+*/
 
-class CVerusHashV2
+class CVerusHash
 {
     public:
         static void Hash(void *result, const void *data, size_t len);
@@ -76,11 +77,11 @@ class CVerusHashV2
 
         static void init();
 
-        CVerusHashV2() {}
+        CVerusHash() {}
 
-        CVerusHashV2 &Write(const unsigned char *data, size_t len);
+        CVerusHash &Write(const unsigned char *data, size_t len);
 
-        CVerusHashV2 &Reset()
+        CVerusHash &Reset()
         {
             curBuf = buf1;
             result = buf2;
@@ -117,7 +118,7 @@ class CVerusHashV2
 };
 
 extern void verus_hash(void *result, const void *data, size_t len);
-extern void verus_hash_v2(void *result, const void *data, size_t len);
+//extern void verus_hash_v2(void *result, const void *data, size_t len);
 
 inline bool IsCPUVerusOptimized()
 {

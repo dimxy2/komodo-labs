@@ -12,6 +12,7 @@ bit output.
 #include "crypto/common.h"
 #include "crypto/verus_hash.h"
 
+/*
 void (*CVerusHash::haraka512Function)(unsigned char *out, const unsigned char *in);
 
 void CVerusHash::Hash(void *result, const void *data, size_t _len)
@@ -89,15 +90,17 @@ CVerusHash &CVerusHash::Write(const unsigned char *data, size_t _len)
     return *this;
 }
 
+
 // to be declared and accessed from C
 void verus_hash(void *result, const void *data, size_t len)
 {
     return CVerusHash::Hash(result, data, len);
 }
+*/
 
-void (*CVerusHashV2::haraka512Function)(unsigned char *out, const unsigned char *in);
+void (*CVerusHash::haraka512Function)(unsigned char *out, const unsigned char *in);
 
-void CVerusHashV2::init()
+void CVerusHash::init()
 {
     if (IsCPUVerusOptimized())
     {
@@ -112,7 +115,7 @@ void CVerusHashV2::init()
     }
 }
 
-void CVerusHashV2::Hash(void *result, const void *data, size_t len)
+void CVerusHash::Hash(void *result, const void *data, size_t len)
 {
     unsigned char buf[128];
     unsigned char *bufPtr = buf;
@@ -144,7 +147,7 @@ void CVerusHashV2::Hash(void *result, const void *data, size_t len)
     memcpy(result, bufPtr, 32);
 };
 
-CVerusHashV2 &CVerusHashV2::Write(const unsigned char *data, size_t len)
+CVerusHash &CVerusHash::Write(const unsigned char *data, size_t len)
 {
     unsigned char *tmp;
 
@@ -174,7 +177,7 @@ CVerusHashV2 &CVerusHashV2::Write(const unsigned char *data, size_t len)
 }
 
 // to be declared and accessed from C
-void verus_hash_v2(void *result, const void *data, size_t len)
+void verus_hash(void *result, const void *data, size_t len)
 {
-    return CVerusHashV2::Hash(result, data, len);
+    return CVerusHash::Hash(result, data, len);
 }

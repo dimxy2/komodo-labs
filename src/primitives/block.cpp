@@ -44,11 +44,11 @@ uint256 CBlockHeader::GetVerusHash() const
         return SerializeVerusHash(*this);
 }
 
-uint256 CBlockHeader::GetVerusV2Hash() const
+/*uint256 CBlockHeader::GetVerusV2Hash() const
 {
     // no check for genesis block and use the optimized hash
     return SerializeVerusHashV2(*this);
-}
+} */
 
 void CBlockHeader::SetSHA256DHash()
 {
