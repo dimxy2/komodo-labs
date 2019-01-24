@@ -2015,6 +2015,9 @@ bool RemoveOrphanedBlocks(int32_t notarized_height)
     std::vector<const CBlockIndex*> prunedblocks;
     std::set<const CBlockIndex*, CompareBlocksByHeightMain> setTips;
     int32_t n = 0;
+    // get notarised timestamp and use this as a backup incase the forked block has no height. 
+    // we -600 to make sure the time is within future block constraints. 
+    uint32_t notarized_timestamp = komodo_heightstamp(notarized_height)-600;
     fprintf(stderr, "removing oprhans from before %d\n", notarized_height);
     // Most of this code is a direct copy from GetChainTips RPC. Which gives a return of all 
     // blocks that are not in the main chain.
@@ -2037,7 +2040,7 @@ bool RemoveOrphanedBlocks(int32_t notarized_height)
     BOOST_FOREACH(const CBlockIndex* block, setTips)
     {
         // We skip anything over notarised height to avoid breaking normal consensus rules. 
-        if ( block->GetHeight() > notarized_height )
+        if ( block->GetHeight() > notarized_height || block->nTime > notarized_timestamp )
             continue;
         // We can also check if the block is in the active chain as a backup test. 
         forked = chainActive.FindFork(block);
