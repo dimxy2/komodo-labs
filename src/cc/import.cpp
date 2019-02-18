@@ -198,7 +198,7 @@ std::string MakeGatewaysImportTx(uint64_t txfee, uint256 bindtxid, int32_t heigh
 
     std::vector<CTxOut> vouts;
 
-
+    // This is an unfinished func! To be implemented yet...
 
     return  HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(txProof, burntx, vouts)));
 
@@ -412,10 +412,13 @@ int32_t CheckPUBKEYimport(TxProof proof,std::vector<uint8_t> rawproof,CTransacti
     return(0);
 }
 
-bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &importTx,unsigned int nIn)
+bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &importTx, unsigned int nIn)
 {
     ImportProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; uint64_t txfee = 10000;
     uint32_t targetCcid; std::string targetSymbol; uint256 payoutsHash; std::vector<uint8_t> rawproof;
+
+    LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "Validating import tx..., txid=" << importTx.GetHash().GetHex() << std::endl);
+
     if ( importTx.vout.size() < 2 )
         return Invalid("too-few-vouts");
     // params
@@ -428,7 +431,17 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
     // burn params
     if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof))
         return Invalid("invalid-burn-tx");
+    
+    if( burnTx.vout.size() == 0 )
+        return Invalid("invalid-burn-tx-no-vouts");
+
+    vscript_t vburnOpret;
+    GetOpReturnData(importTx.vout.back().scriptPubKey, vburnOpret);
+    if (vburnOpret.empty())
+        return Invalid("invalid-burn-tx-no-opret");
+
     // check burn amount
+    if( vburnOpret.begin()[0] == EVAL_IMPORTCOIN )  // for coins
     {
         uint64_t burnAmount = burnTx.vout.back().nValue;
         if (burnAmount == 0)
@@ -439,6 +452,39 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
         if (totalOut > burnAmount || totalOut < burnAmount-txfee )
             return Invalid("payout-too-high-or-too-low");
     }
+    else if (vburnOpret.begin()[0] == EVAL_TOKENS) { // for tokens
+        struct CCcontract_info *cpTokens, CCtokens_info;
+        std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+        uint256 tokenid;
+        uint8_t evalCodeInOpret;
+        std::vector<CPubKey> voutTokenPubkeys;
+        vscript_t vnonfungibleOpret;
+        uint8_t nonfungibleEvalCode = 0;
+
+        cpTokens = CCinit(&CCtokens_info, EVAL_TOKENS);
+
+        if (DecodeTokenOpRet(importTx.vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) == 0)  // no nonfungible data in burn tx
+            return false;
+        GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vnonfungibleOpret);  
+        if (!vnonfungibleOpret.empty())
+            nonfungibleEvalCode = vnonfungibleOpret.begin()[0];
+
+        int64_t burnAmount = 0;
+        for (auto v : burnTx.vout)
+            if (v.scriptPubKey.IsPayToCryptoCondition() && CTxOut(v.nValue, v.scriptPubKey) == MakeTokensCC1vout(nonfungibleEvalCode ? nonfungibleEvalCode : EVAL_TOKENS, v.nValue, pubkey2pk(ParseHex(CC_BURNPUBKEY))) )  // burned to dead pubkey
+                burnAmount += v.nValue;
+
+        int64_t importAmount = 0;
+        for (auto v : importTx.vout)
+            if (v.scriptPubKey.IsPayToCryptoCondition() && CTxOut(v.nValue, v.scriptPubKey) != MakeCC1vout(EVAL_TOKENS, v.nValue, GetUnspendable(cpTokens, NULL)))  // not marker
+                importAmount += v.nValue;
+        if( burnAmount != importAmount )
+            return Invalid("token-payout-too-high-or-too-low");
+    }
+    else {
+        return Invalid("invalid-burn-tx-incorrect-opret");
+    }
+
     // Check burntx shows correct outputs hash
     if (payoutsHash != SerializeHash(payouts))
         return Invalid("wrong-payouts");
@@ -506,5 +552,9 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
                 return Invalid("GATEWAY-import-failure");
         }
     }
+
+    // return Invalid("test-invalid");
+    LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "Valid import tx! txid=" << importTx.GetHash().GetHex() << std::endl);
+
     return Valid();
 }

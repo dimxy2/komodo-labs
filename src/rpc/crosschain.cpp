@@ -35,6 +35,8 @@
 #include "script/standard.h"
 
 #include "key_io.h"
+#include "cc/CCinclude.h"
+#include "cc/CCtokens.h"
 
 #include "merkleblock.h"
 
@@ -184,7 +186,7 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
             "If neccesary, the transaction should be funded using fundrawtransaction.\n"
             "Finally, the transaction should be signed using signrawtransaction\n"
             "The finished export transaction, plus the payouts, should be passed to "
-            "the \"migrate_createimporttransaction\" method on a KMD node to get the corresponding "
+            "the \"migrate_createimporttransaction\" method to get the corresponding "
             "import transaction.\n"
             );
 
@@ -240,23 +242,22 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
     UniValue ret(UniValue::VOBJ);
     //uint8_t *ptr; 
     //uint8_t i; 
-    uint32_t ccid = ASSETCHAINS_CC;
+    uint32_t ccid = ASSETCHAINS_CC; 
     int64_t txfee = 10000;
 
     if (fHelp || params.size() != 3 && params.size() != 4)
         throw runtime_error(
             "migrate_createburntransaction dest_symbol dest_addr amount [tokenid]\n"
-            "\nCreates a burn transaction and payouts to make a cross-chain coin or non-fungible token transfer.\n"
+            "\nCreates a raw burn transaction to make a cross-chain coin or non-fungible token transfer.\n"
             "The parameters:\n"
-            "dest_symbol -  destination chain ac_name\n"
-            "dest_addr -   address on the destination chain where coins are to be sent or pubkey if tokens are to be sent\n"
-            "amount -      amount in coins to be burned on the source chain and sent to the destination address/pubkey on the destination chain, for tokens should be equal to 1\n"
-            "tokenid -     token id, if tokens are transferred (optional). Only non-fungible tokens are supported\n"
+            "dest_symbol   destination chain ac_name\n"
+            "dest_addr     address on the destination chain where coins are to be sent or pubkey if tokens are to be sent\n"
+            "amount        amount in coins to be burned on the source chain and sent to the destination address/pubkey on the destination chain, for tokens should be equal to 1\n"
+            "tokenid       token id, if tokens are transferred (optional). Only non-fungible tokens are supported\n"
             "\n"
-            "The created burn transaction should be sent using sendrawtransaction to the source chain\n"
-            "The hex representation of the burn transaction with the payouts should be also passed to "
-            "the \"migrate_createimporttransaction\" method on a KMD node to get the corresponding "
-            "import transaction.\n"
+            "The transaction should be sent using sendrawtransaction to the source chain\n"
+            "The finished burn transaction and payouts should be also passed to "
+            "the \"migrate_createimporttransaction\" method to get the corresponding import transaction.\n"
         );
 
     if (ASSETCHAINS_CC < KOMODO_FIRSTFUNGIBLEID)
@@ -264,16 +265,11 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
 
     if (ASSETCHAINS_SYMBOL[0] == 0)
         throw runtime_error("Must be called on assetchain");
-    
-    // if -pubkey not set it sends change to null pubkey. 
-    // we need a better way to return errors from this function!
-    if ( ensure_CCrequirements(225) < 0 )
-        throw runtime_error("You need to set -pubkey, or run setpukbey RPC, or imports are disabled on this chain.");
 
-    //    vector<uint8_t> txData(ParseHexV(params[0], "argument 1"));
-    // CMutableTransaction tx;
-    //    if (!E_UNMARSHAL(txData, ss >> tx))
-    //        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+//    vector<uint8_t> txData(ParseHexV(params[0], "argument 1"));
+   // CMutableTransaction tx;
+//    if (!E_UNMARSHAL(txData, ss >> tx))
+//        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
 
     string targetSymbol = params[0].get_str();
     if (targetSymbol.size() == 0 || targetSymbol.size() > 32)
@@ -284,69 +280,115 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
 
     std::string dest_addr_or_pubkey = params[1].get_str();
 
-    CAmount burnAmount = (CAmount)(atof(params[2].get_str().c_str()) * COIN + 0.00000000499999);
+    CAmount burnAmount;
+    if(params.size() == 3)
+        burnAmount = (CAmount)( atof(params[2].get_str().c_str()) * COIN + 0.00000000499999 );
+    else
+        burnAmount = atoll(params[2].get_str().c_str());
 
-    //    for (int i = 0; i<tx.vout.size(); i++) burnAmount += tx.vout[i].nValue;
+//    for (int i = 0; i<tx.vout.size(); i++) burnAmount += tx.vout[i].nValue;
     if (burnAmount <= 0)
         throw JSONRPCError(RPC_TYPE_ERROR, "Cannot export a negative or zero value.");
     if (burnAmount > 1000000LL * COIN)
         throw JSONRPCError(RPC_TYPE_ERROR, "Cannot export more than 1 million coins per export.");
 
     uint256 tokenid = zeroid;
-    if (params.size() == 4)
+    if( params.size() == 4 )
         tokenid = Parseuint256(params[3].get_str().c_str());
 
     // check non-fungible tokens amount
-    if (!tokenid.IsNull() && burnAmount != 1)
+    if( !tokenid.IsNull() && burnAmount != 1 )
         throw JSONRPCError(RPC_TYPE_ERROR, "For tokens amount should be equal to 1, only non-fungible tokens are supported.");
 
     CPubKey myPubKey = Mypubkey();
-    struct CCcontract_info *cpDummy, C;
-    cpDummy = CCinit(&C, EVAL_TOKENS);
+    struct CCcontract_info *cpTokens, C;
+    cpTokens = CCinit(&C, EVAL_TOKENS);
 
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    int64_t inputs;
-    if ((inputs = AddNormalinputs(mtx, myPubKey, burnAmount + txfee, 60)) == 0) {
-        throw runtime_error("Cannot find normal inputs\n");
-    }
 
     CScript scriptPubKey;
-    if (tokenid == zeroid) {        // coins
+    const std::string chainSymbol(ASSETCHAINS_SYMBOL);
+    std::vector<uint8_t> rawproof(chainSymbol.begin(), chainSymbol.end());
+
+    if (tokenid.IsNull()) {        // coins
+        int64_t inputs;
+        if ((inputs = AddNormalinputs(mtx, myPubKey, burnAmount + txfee, 60)) == 0) {
+            throw runtime_error("Cannot find normal inputs\n");
+        }
+
         CTxDestination txdest = DecodeDestination(dest_addr_or_pubkey.c_str());
         scriptPubKey = GetScriptForDestination(txdest);
         if (!scriptPubKey.IsPayToPublicKeyHash()) {
             throw JSONRPCError(RPC_TYPE_ERROR, "Incorrect destination addr.");
         }
         mtx.vout.push_back(CTxOut(burnAmount, scriptPubKey));               // 'model' vout
+        ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save 'model' vout
+
+        CTxOut burnOut = MakeBurnOutput(burnAmount + txfee, ccid, targetSymbol, mtx.vout, rawproof);  //make opret with burned amount
+
+        mtx.vout.clear();               // remove 'model' vout
+
+        int64_t change = inputs - (burnAmount + txfee);
+        if (change != 0)
+            mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));
+
+        mtx.vout.push_back(burnOut);    // mtx now has only burned vout (that is, amount sent to OP_RETURN making it unspendable)
     }
-    else {   // tokens
+    else    {   // tokens
+        CTransaction tokenbasetx;
+        uint256 hashBlock;
+        vscript_t vopretNonfungible;
+        vscript_t vopretBurnData;
+        std::vector<uint8_t> vorigpubkey, vdestpubkey;
+        std::string name, description;
+        std::vector<std::pair<uint8_t, vscript_t>>  oprets;
 
-             //mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, assetsupply, mypk));
-             //mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(cp->CChexstr) << OP_CHECKSIG));
-             //return(FinalizeCCTx(0, cp, mtx, mypk, txfee, EncodeTokenCreateOpRet('c', Mypubkey(), name, description)));
+        if (!myGetTransaction(tokenid, tokenbasetx, hashBlock)) 
+            throw runtime_error("Could not load token creation tx\n");
+        
+        // check if it is non-fungible tx and get its second evalcode from non-fungible payload
+        if (tokenbasetx.vout.size() == 0) 
+            throw runtime_error("No vouts in token tx\n");
+
+        if (DecodeTokenCreateOpRet(tokenbasetx.vout.back().scriptPubKey, vorigpubkey, name, description, oprets) != 'c')
+            throw runtime_error("Incorrect token creation tx\n");
+        GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vopretNonfungible);
+        if( vopretNonfungible.empty() )
+            throw runtime_error("No non-fungible token data\n");
+
+        uint8_t destEvalCode = vopretNonfungible.begin()[0];
+        vdestpubkey = ParseHex(dest_addr_or_pubkey);
+        CPubKey destPubKey = pubkey2pk(vdestpubkey);
+        if( !destPubKey.IsValid() )
+            throw runtime_error("Invalid destination pubkey\n");
+
+        if( AddTokenCCInputs(cpTokens, mtx, myPubKey, tokenid, burnAmount, 1) != burnAmount )
+            throw runtime_error("No non-fungible token input found for your pubkey\n");
+
+        // destination vouts (payouts) which would create the import tx with non-fungible token:
+        mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens, NULL)));  // new marker to token cc addr, burnable and validated, vout pos now changed to 0 (from 1)
+        mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, destPubKey));
+        mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenImportOpRet(vorigpubkey, name, description, tokenid, 
+            std::vector<std::pair<uint8_t, vscript_t>> {std::make_pair(OPRETID_NONFUNGIBLEDATA, vopretNonfungible)})));  // make token import opret
+        ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save payouts for import tx
+
+        CTxOut burnOut = MakeBurnOutput(0, ccid, targetSymbol, mtx.vout, rawproof);  //make opret with amount=0 because tokens are burned, not coins (see next vout) 
+       
+        mtx.vout.clear();  // remove payouts
+        mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, pubkey2pk(ParseHex(CC_BURNPUBKEY))));    // burn tokens
+
+        std::vector<CPubKey> voutTokenPubkeys;
+        voutTokenPubkeys.push_back(pubkey2pk(ParseHex(CC_BURNPUBKEY)));  // maybe we do not need this
+
+        GetOpReturnData(burnOut.scriptPubKey, vopretBurnData);
+        mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenOpRet(tokenid, voutTokenPubkeys, std::make_pair(OPRETID_BURNDATA, vopretBurnData))));  //token opret with burn data, should be the last vout
     }
 
-    ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save 'model' vout
-
-    const std::string chainSymbol(ASSETCHAINS_SYMBOL);
-    std::vector<uint8_t> rawproof(chainSymbol.begin(), chainSymbol.end());
-    //make opret with burned amount:
-    CTxOut burnOut = MakeBurnOutput(burnAmount, ccid, targetSymbol, mtx.vout, rawproof);
-
-    mtx.vout.clear();               // remove 'model' vout
-
-    int64_t change = inputs - (burnAmount + txfee);
-    if (change != 0)
-        mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));
-
-    mtx.vout.push_back(burnOut);    // mtx now has only burned vout (that is, amount sent to OP_RETURN)
-
-    std::string exportTxHex = FinalizeCCTx(0, cpDummy, mtx, myPubKey, txfee, CScript()/*no opret*/);
+    std::string exportTxHex = FinalizeCCTx(0, cpTokens, mtx, myPubKey, txfee, CScript()/*no opret*/);
     ret.push_back(Pair("hex", HexStr(E_MARSHAL(ss << mtx))));
 
     return ret;
 }
-
 
 // util func to check burn tx and source chain params
 void CheckBurnTxSource(uint256 burntxid, std::string &targetSymbol, uint32_t &targetCCid) {
@@ -373,17 +415,20 @@ void CheckBurnTxSource(uint256 burntxid, std::string &targetSymbol, uint32_t &ta
 }
 
 /*
- * The process to migrate funds
+ * The process to migrate funds from a chain to chain
  *
- * Create a transaction on assetchain:
+ * 1.Create a transaction on assetchain (deprecated):
+ * 1.1 generaterawtransaction
+ * 1.2 migrate_converttoexport
+ * 1.3 fundrawtransaction
+ * 1.4 signrawtransaction
  *
- * generaterawtransaction
- * migrate_converttoexport
- * fundrawtransaction
- * signrawtransaction
+ * alternatively, burn (export) transaction may be created with this new rpc call:
+ * 1. migrate_createburntransaction
  *
- * migrate_createimportransaction
- * migrate_completeimporttransaction
+ * next steps:
+ * 2. migrate_createimporttransaction
+ * 3. migrate_completeimporttransaction
  */
 
 UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
@@ -405,6 +450,13 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
     CTransaction burnTx;
     if (!E_UNMARSHAL(txData, ss >> burnTx))
         throw runtime_error("Couldn't parse burnTx");
+
+    if( burnTx.vin.size() == 0 )
+        throw runtime_error("No vins in the burnTx");
+
+    if (burnTx.vout.size() == 0)
+        throw runtime_error("No vouts in the burnTx");
+
 
     vector<CTxOut> payouts;
     if (!E_UNMARSHAL(ParseHexV(params[1], "argument 2"), ss >> payouts))
@@ -789,7 +841,8 @@ UniValue getimports(const UniValue& params, bool fHelp)
             {
                 objTx.push_back(Pair("address", CBitcoinAddress(importaddress).ToString()));
             }
-            UniValue objBurnTx(UniValue::VOBJ);            
+            UniValue objBurnTx(UniValue::VOBJ);      
+            CPubKey vinPubkey;
             if (UnmarshalImportTx(tx, proof, burnTx, payouts)) 
             {
                 if (burnTx.vout.size() == 0)
