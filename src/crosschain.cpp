@@ -222,8 +222,9 @@ cont:
 void CompleteImportTransaction(CTransaction &importTx)
 {
     TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; std::vector<uint8_t> rawproof;
+
     if (!UnmarshalImportTx(importTx, proof, burnTx, payouts))
-        throw std::runtime_error("Couldn't parse importTx");
+        throw std::runtime_error("Couldn't unmarshal importTx");
 
     std::string targetSymbol;
     uint32_t targetCCid;
