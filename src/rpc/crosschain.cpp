@@ -224,8 +224,9 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
 // creates export tx as an alternative to 'migrate_converttoexport()'
 UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
 {
-    uint8_t *ptr; 
-    uint8_t i; 
+    UniValue ret(UniValue::VOBJ);
+    //uint8_t *ptr; 
+    //uint8_t i; 
     uint32_t ccid = ASSETCHAINS_CC; 
     uint64_t txfee = 10000;
 
@@ -262,7 +263,7 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
 
     std::string dest_addr = params[1].get_str();
 
-    CAmount burnAmount = atoll( params[2].get_str().c_str() );
+    CAmount burnAmount = (CAmount) ( atof( params[2].get_str().c_str() ) * COIN + 0.00000000499999 );
 
 //    for (int i = 0; i<tx.vout.size(); i++) burnAmount += tx.vout[i].nValue;
     if (burnAmount <= 0)
@@ -276,7 +277,7 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
 
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     int64_t inputs;
-    if ((inputs = AddNormalinputs(mtx, myPubKey, burnAmount + txfee, 60)) == 0) {
+    if ((inputs = AddNormalinputs(mtx, myPubKey, burnAmount, 60)) == 0) {
         throw runtime_error("cannot find normal inputs\n");
     }
 
@@ -286,22 +287,20 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_TYPE_ERROR, "Incorrect destination addr.");
     }
 
-    mtx.vout.push_back(CTxOut(burnAmount, scriptPubKey));
+    mtx.vout.push_back(CTxOut(burnAmount+txfee, scriptPubKey));
     int64_t change = inputs - burnAmount;
     if (change != 0)
         mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));
 
-    //make opret with amount:
-    std::string exportTxHex = FinalizeCCTx(0, cpDummy, mtx, myPubKey, txfee, CScript());
-
     const std::string chainSymbol(ASSETCHAINS_SYMBOL);
     std::vector<uint8_t> rawproof(chainSymbol.begin(), chainSymbol.end());
 
-    CTxOut burnOut = MakeBurnOutput(burnAmount + txfee, ccid, targetSymbol, mtx.vout, rawproof);
-    UniValue ret(UniValue::VOBJ);
+    //make opret with burned amount:
+    CTxOut burnOut = MakeBurnOutput(burnAmount, ccid, targetSymbol, mtx.vout, rawproof);
+    mtx.vout.push_back(burnOut);
     ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));
 
-    mtx.vout.push_back(burnOut);
+    std::string exportTxHex = FinalizeCCTx(0, cpDummy, mtx, myPubKey, txfee, CScript());
     ret.push_back(Pair("hex", HexStr(E_MARSHAL(ss << mtx))));
 
     return ret;
