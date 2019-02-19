@@ -287,10 +287,8 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_TYPE_ERROR, "Incorrect destination addr.");
     }
 
-    mtx.vout.push_back(CTxOut(burnAmount+txfee, scriptPubKey));
-    int64_t change = inputs - burnAmount;
-    if (change != 0)
-        mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));
+    ////////////// mtx.vout.push_back(CTxOut(burnAmount+txfee, scriptPubKey));
+    
 
     const std::string chainSymbol(ASSETCHAINS_SYMBOL);
     std::vector<uint8_t> rawproof(chainSymbol.begin(), chainSymbol.end());
@@ -299,6 +297,10 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
     CTxOut burnOut = MakeBurnOutput(burnAmount, ccid, targetSymbol, mtx.vout, rawproof);
     mtx.vout.push_back(burnOut);
     ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));
+
+    int64_t change = inputs - burnAmount;
+    if (change != 0)
+        mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));
 
     std::string exportTxHex = FinalizeCCTx(0, cpDummy, mtx, myPubKey, txfee, CScript());
     ret.push_back(Pair("hex", HexStr(E_MARSHAL(ss << mtx))));
