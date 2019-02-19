@@ -233,10 +233,12 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 3)
         throw runtime_error(
             "migrate_createexporttransaction dest_symbol dest_addr amount\n"
-            "\nCreates a raw export transaction to a cross-chain coin export.\n"
-            "dest_symbol is the destination chain ac_name\n"
-            "dest_addr is the address on the dest chain where coins are to send\n"
-            "amount is the amount in coins to burn on the source chain and send to the destination address on the destination chain\n"
+            "\nCreates a raw export transaction to make a cross-chain coin export.\n"
+            "The parameters:\n"
+            "dest_symbol   destination chain ac_name\n"
+            "dest_addr     address on the destination chain where coins are to be sent\n"
+            "amount        amount in coins to burn on the source chain and send to the destination address on the destination chain\n"
+            "\n"
             "The transaction should be sent using sendrawtransaction to the source chain\n"
             "The finished export transaction should be also passed to "
             "the \"migrate_createimporttransaction\" method on a KMD node to get the corresponding "
@@ -277,7 +279,7 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
 
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     int64_t inputs;
-    if ((inputs = AddNormalinputs(mtx, myPubKey, burnAmount, 60)) == 0) {
+    if ((inputs = AddNormalinputs(mtx, myPubKey, burnAmount+txfee, 60)) == 0) {
         throw runtime_error("cannot find normal inputs\n");
     }
 
@@ -287,15 +289,15 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_TYPE_ERROR, "Incorrect destination addr.");
     }
 
-    ////////////// mtx.vout.push_back(CTxOut(burnAmount+txfee, scriptPubKey));
-    
-
+    mtx.vout.push_back(CTxOut(burnAmount, scriptPubKey));   // 'model' vout
+   
     const std::string chainSymbol(ASSETCHAINS_SYMBOL);
     std::vector<uint8_t> rawproof(chainSymbol.begin(), chainSymbol.end());
 
     //make opret with burned amount:
-    CTxOut burnOut = MakeBurnOutput(burnAmount, ccid, targetSymbol, mtx.vout, rawproof);
-    mtx.vout.push_back(burnOut);
+    CTxOut burnOut = MakeBurnOutput(burnAmount+txfee, ccid, targetSymbol, mtx.vout, rawproof);
+    mtx.vout.clear();               // remove 'model' vout
+    mtx.vout.push_back(burnOut);    // mtx now has only burned vout (that is, amount sent to OP_RETURN)
     ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));
 
     int64_t change = inputs - burnAmount;
@@ -314,12 +316,12 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
  * The process to migrate funds from a chain to chain
  *
  * 1.Create a transaction on assetchain:
- * generaterawtransaction
- * migrate_converttoexport
- * fundrawtransaction
- * signrawtransaction
+ * 1.1 generaterawtransaction
+ * 1.2 migrate_converttoexport
+ * 1.3 fundrawtransaction
+ * 1.4 signrawtransaction
  *
- * alternatively, it might be used:
+ * alternatively, export transaction may be created with this new rpc call:
  * 1. migrate_createexporttransaction
  *
  * 2. migrate_createimporttransaction
