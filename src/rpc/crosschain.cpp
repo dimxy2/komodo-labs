@@ -279,7 +279,7 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
 
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     int64_t inputs;
-    if ((inputs = AddNormalinputs(mtx, myPubKey, burnAmount+txfee, 60)) == 0) {
+    if ((inputs = AddNormalinputs(mtx, myPubKey, burnAmount+2*txfee, 60)) == 0) {
         throw runtime_error("cannot find normal inputs\n");
     }
 
