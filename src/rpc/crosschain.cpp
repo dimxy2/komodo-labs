@@ -298,13 +298,14 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
     CTxOut burnOut = MakeBurnOutput(burnAmount+txfee, ccid, targetSymbol, mtx.vout, rawproof);
 
     mtx.vout.clear();               // remove 'model' vout
-    mtx.vout.push_back(burnOut);    // mtx now has only burned vout (that is, amount sent to OP_RETURN)
-
+   
     int64_t change = inputs - (burnAmount+txfee);
     if (change != 0)
         mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));
 
-    std::string exportTxHex = FinalizeCCTx(0, cpDummy, mtx, myPubKey, txfee, CScript());
+    mtx.vout.push_back(burnOut);    // mtx now has only burned vout (that is, amount sent to OP_RETURN)
+
+    std::string exportTxHex = FinalizeCCTx(0, cpDummy, mtx, myPubKey, txfee, CScript()/*no opret*/);
     ret.push_back(Pair("hex", HexStr(E_MARSHAL(ss << mtx))));
 
     return ret;
