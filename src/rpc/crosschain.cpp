@@ -289,16 +289,16 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_TYPE_ERROR, "Incorrect destination addr.");
     }
 
-    mtx.vout.push_back(CTxOut(burnAmount, scriptPubKey));   // 'model' vout
-   
+    mtx.vout.push_back(CTxOut(burnAmount, scriptPubKey));               // 'model' vout
+    ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save 'model' vout
+
     const std::string chainSymbol(ASSETCHAINS_SYMBOL);
     std::vector<uint8_t> rawproof(chainSymbol.begin(), chainSymbol.end());
-
     //make opret with burned amount:
     CTxOut burnOut = MakeBurnOutput(burnAmount+txfee, ccid, targetSymbol, mtx.vout, rawproof);
+
     mtx.vout.clear();               // remove 'model' vout
     mtx.vout.push_back(burnOut);    // mtx now has only burned vout (that is, amount sent to OP_RETURN)
-    ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));
 
     int64_t change = inputs - (burnAmount+txfee);
     if (change != 0)
