@@ -228,7 +228,7 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
     //uint8_t *ptr; 
     //uint8_t i; 
     uint32_t ccid = ASSETCHAINS_CC; 
-    uint64_t txfee = 10000;
+    int64_t txfee = 10000;
 
     if (fHelp || params.size() != 3)
         throw runtime_error(
@@ -279,7 +279,7 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
 
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     int64_t inputs;
-    if ((inputs = AddNormalinputs(mtx, myPubKey, burnAmount+2*txfee, 60)) == 0) {
+    if ((inputs = AddNormalinputs(mtx, myPubKey, burnAmount+txfee, 60)) == 0) {
         throw runtime_error("cannot find normal inputs\n");
     }
 
@@ -300,7 +300,7 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
     mtx.vout.push_back(burnOut);    // mtx now has only burned vout (that is, amount sent to OP_RETURN)
     ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));
 
-    int64_t change = inputs - burnAmount;
+    int64_t change = inputs - (burnAmount+txfee);
     if (change != 0)
         mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));
 
