@@ -174,8 +174,10 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
 		bool isEof = true;
 
 		evalCodeTokens = script[0];
-		if (evalCodeTokens != EVAL_TOKENS)
-			return (uint8_t)0;
+        if (evalCodeTokens != EVAL_TOKENS) {
+            LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() incorrect evalcode in tokens opret" << std::endl);
+            return (uint8_t)0;
+        }
 
         funcId = script[1];
         LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << "DecodeTokenOpRet decoded funcId=" << (char)(funcId?funcId:' ') << std::endl);
