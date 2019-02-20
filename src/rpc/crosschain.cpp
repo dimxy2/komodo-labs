@@ -283,47 +283,84 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_TYPE_ERROR, "For tokens amount should be equal to 1, only non-fungible tokens are supported.");
 
     CPubKey myPubKey = Mypubkey();
-    struct CCcontract_info *cpDummy, C;
-    cpDummy = CCinit(&C, EVAL_TOKENS);
+    struct CCcontract_info *cpTokens, C;
+    cpTokens = CCinit(&C, EVAL_TOKENS);
 
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    int64_t inputs;
-    if ((inputs = AddNormalinputs(mtx, myPubKey, burnAmount+txfee, 60)) == 0) {
-        throw runtime_error("Cannot find normal inputs\n");
-    }
 
     CScript scriptPubKey;
-    if (tokenid == zeroid) {        // coins
+    const std::string chainSymbol(ASSETCHAINS_SYMBOL);
+    std::vector<uint8_t> rawproof(chainSymbol.begin(), chainSymbol.end());
+
+    if (tokenid.IsNull()) {        // coins
+        int64_t inputs;
+        if ((inputs = AddNormalinputs(mtx, myPubKey, burnAmount + txfee, 60)) == 0) {
+            throw runtime_error("Cannot find normal inputs\n");
+        }
+
         CTxDestination txdest = DecodeDestination(dest_addr_or_pubkey.c_str());
         scriptPubKey = GetScriptForDestination(txdest);
         if (!scriptPubKey.IsPayToPublicKeyHash()) {
             throw JSONRPCError(RPC_TYPE_ERROR, "Incorrect destination addr.");
         }
         mtx.vout.push_back(CTxOut(burnAmount, scriptPubKey));               // 'model' vout
+        ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save 'model' vout
+
+        CTxOut burnOut = MakeBurnOutput(burnAmount + txfee, ccid, targetSymbol, mtx.vout, rawproof);  //make opret with burned amount
+
+        mtx.vout.clear();               // remove 'model' vout
+
+        int64_t change = inputs - (burnAmount + txfee);
+        if (change != 0)
+            mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));
+
+        mtx.vout.push_back(burnOut);    // mtx now has only burned vout (that is, amount sent to OP_RETURN making it unspendable)
     }
     else    {   // tokens
+        CTransaction tokenbasetx;
+        uint256 hashBlock;
+        std::vector<uint8_t> vopretNonfungible;
+        std::vector<uint8_t> vorigpubkey, vdestpubkey;
+        std::string name, description;
+
+        if (!myGetTransaction(tokenid, tokenbasetx, hashBlock)) 
+            throw runtime_error("Could not load token creation tx\n");
         
-        //mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, assetsupply, mypk));
-        //mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(cp->CChexstr) << OP_CHECKSIG));
-        //return(FinalizeCCTx(0, cp, mtx, mypk, txfee, EncodeTokenCreateOpRet('c', Mypubkey(), name, description)));
+        // check if it is non-fungible tx and get its second evalcode from non-fungible payload
+        if (tokenbasetx.vout.size() == 0) 
+            throw runtime_error("No vouts in token tx\n");
+
+        if (DecodeTokenCreateOpRet(tokenbasetx.vout.back().scriptPubKey, vorigpubkey, name, description, vopretNonfungible) != 'c')
+            throw runtime_error("Incorrect token creation tx\n");
+
+        if( vopretNonfungible.empty() )
+            throw runtime_error("No non-fungible token data\n");
+
+        uint8_t destEvalCode = vopretNonfungible.begin()[0];
+        vdestpubkey = ParseHex(dest_addr_or_pubkey);
+        CPubKey destPubKey = pubkey2pk(vdestpubkey);
+        if( !destPubKey.IsValid() )
+            throw runtime_error("Invalid destination pubkey\n");
+
+        if( AddTokenCCInputs(cpTokens, mtx, myPubKey, tokenid, burnAmount, 1) != burnAmount )
+            throw runtime_error("No non-fungible token input found for your pubkey\n");
+
+        // 'model' of destination vouts which would create the imported non-fungible token:
+        mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens, NULL)));  // new marker to token cc addr, burnable and validated, vout pos now changed to 0 (from 1)
+        mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, destPubKey));
+        mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenCreateOpRet('c', vorigpubkey, name, description, vopretNonfungible)));
+        ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save 'model' vouts
+
+        mtx.vout.clear();  // remove 'model' vout
+
+        mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, pubkey2pk(ParseHex(CC_BURNPUBKEY))));    // burn tokens
+        CTxOut burnOut = MakeBurnOutput(0, ccid, targetSymbol, mtx.vout, rawproof);  //make opret with amount=0 because tokens are burned, not coins (see next vout) 
+        mtx.vout.push_back(burnOut);    // opret with vouts and proof (empty for this step yet)
     }
 
-    ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save 'model' vout
+  
 
-    const std::string chainSymbol(ASSETCHAINS_SYMBOL);
-    std::vector<uint8_t> rawproof(chainSymbol.begin(), chainSymbol.end());
-    //make opret with burned amount:
-    CTxOut burnOut = MakeBurnOutput(burnAmount+txfee, ccid, targetSymbol, mtx.vout, rawproof);
-
-    mtx.vout.clear();               // remove 'model' vout
-   
-    int64_t change = inputs - (burnAmount+txfee);
-    if (change != 0)
-        mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));
-
-    mtx.vout.push_back(burnOut);    // mtx now has only burned vout (that is, amount sent to OP_RETURN)
-
-    std::string exportTxHex = FinalizeCCTx(0, cpDummy, mtx, myPubKey, txfee, CScript()/*no opret*/);
+    std::string exportTxHex = FinalizeCCTx(0, cpTokens, mtx, myPubKey, txfee, CScript()/*no opret*/);
     ret.push_back(Pair("hex", HexStr(E_MARSHAL(ss << mtx))));
 
     return ret;

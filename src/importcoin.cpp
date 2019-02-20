@@ -35,10 +35,10 @@ CTransaction MakeImportCoinTransaction(const TxProof proof, const CTransaction b
     mtx.vin.push_back(CTxIn(COutPoint(burnTx.GetHash(), 10e8), CScript() << payload));
     mtx.vout = payouts;
     auto importData = E_MARSHAL(ss << proof; ss << burnTx);
-    mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));
+    mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));     // NOTE: import tx opret is in vout[0] !!
 
 	if (nExpiryHeightOverride != 0)
-		mtx.nExpiryHeight = nExpiryHeightOverride;  //this is for construction of the tx used for validating importtx
+		mtx.nExpiryHeight = nExpiryHeightOverride;  //this is for validation code, to construct the tx used for validating import tx
     return CTransaction(mtx);
 }
 
