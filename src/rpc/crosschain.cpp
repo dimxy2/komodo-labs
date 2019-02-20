@@ -178,7 +178,7 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
             "If neccesary, the transaction should be funded using fundrawtransaction.\n"
             "Finally, the transaction should be signed using signrawtransaction\n"
             "The finished export transaction, plus the payouts, should be passed to "
-            "the \"migrate_createimporttransaction\" method on a KMD node to get the corresponding "
+            "the \"migrate_createimporttransaction\" method to get the corresponding "
             "import transaction.\n"
             );
 
@@ -230,7 +230,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
     uint32_t ccid = ASSETCHAINS_CC; 
     int64_t txfee = 10000;
 
-    if (fHelp || params.size() != 3 || params.size() != 4)
+    if (fHelp || params.size() != 3 && params.size() != 4)
         throw runtime_error(
             "migrate_createburntransaction dest_symbol dest_addr amount [tokenid]\n"
             "\nCreates a raw burn transaction to make a cross-chain coin or non-fungible token transfer.\n"
@@ -241,9 +241,8 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
             "tokenid       token id, if tokens are transferred (optional). Only non-fungible tokens are supported\n"
             "\n"
             "The transaction should be sent using sendrawtransaction to the source chain\n"
-            "The finished burn transaction should be also passed to "
-            "the \"migrate_createimporttransaction\" method on a KMD node to get the corresponding "
-            "import transaction.\n"
+            "The finished burn transaction and payouts should be also passed to "
+            "the \"migrate_createimporttransaction\" method to get the corresponding import transaction.\n"
         );
 
     if (ASSETCHAINS_CC < KOMODO_FIRSTFUNGIBLEID)
