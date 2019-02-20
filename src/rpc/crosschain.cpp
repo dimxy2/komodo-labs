@@ -51,7 +51,7 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
 struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t kmdstarti,int32_t kmdendi);
 uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth);
 extern std::string ASSETCHAINS_SELFIMPORT;
-uint256 Parseuint256(char *hexstr);
+//uint256 Parseuint256(char *hexstr);
 
 std::string MakeSelfImportSourceTx(CTxDestination &dest, int64_t amount, CMutableTransaction &mtx);
 int32_t GetSelfimportProof(std::string source, CMutableTransaction &mtx, CScript &scriptPubKey, TxProof &proof, std::string rawsourcetx, int32_t &ivout, uint256 sourcetxid, uint64_t burnAmount);
@@ -221,8 +221,8 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
     return ret;
 }
 
-// creates export tx as an alternative to 'migrate_converttoexport()'
-UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
+// creates burn tx as an alternative to 'migrate_converttoexport()'
+UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
 {
     UniValue ret(UniValue::VOBJ);
     //uint8_t *ptr; 
@@ -230,17 +230,18 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
     uint32_t ccid = ASSETCHAINS_CC; 
     int64_t txfee = 10000;
 
-    if (fHelp || params.size() != 3)
+    if (fHelp || params.size() != 3 || params.size() != 4)
         throw runtime_error(
-            "migrate_createexporttransaction dest_symbol dest_addr amount\n"
-            "\nCreates a raw export transaction to make a cross-chain coin export.\n"
+            "migrate_createburntransaction dest_symbol dest_addr amount [tokenid]\n"
+            "\nCreates a raw burn transaction to make a cross-chain coin or non-fungible token transfer.\n"
             "The parameters:\n"
             "dest_symbol   destination chain ac_name\n"
-            "dest_addr     address on the destination chain where coins are to be sent\n"
-            "amount        amount in coins to burn on the source chain and send to the destination address on the destination chain\n"
+            "dest_addr     address on the destination chain where coins are to be sent or pubkey if tokens are to be sent\n"
+            "amount        amount in coins to be burned on the source chain and sent to the destination address/pubkey on the destination chain, for tokens should be equal to 1\n"
+            "tokenid       token id, if tokens are transferred (optional). Only non-fungible tokens are supported\n"
             "\n"
             "The transaction should be sent using sendrawtransaction to the source chain\n"
-            "The finished export transaction should be also passed to "
+            "The finished burn transaction should be also passed to "
             "the \"migrate_createimporttransaction\" method on a KMD node to get the corresponding "
             "import transaction.\n"
         );
@@ -263,7 +264,7 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
     if (strcmp(ASSETCHAINS_SYMBOL, targetSymbol.c_str()) == 0)
         throw runtime_error("cant send a coin to the same chain");
 
-    std::string dest_addr = params[1].get_str();
+    std::string dest_addr_or_pubkey = params[1].get_str();
 
     CAmount burnAmount = (CAmount) ( atof( params[2].get_str().c_str() ) * COIN + 0.00000000499999 );
 
@@ -273,6 +274,14 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
     if (burnAmount > 1000000LL * COIN)
         throw JSONRPCError(RPC_TYPE_ERROR, "Cannot export more than 1 million coins per export.");
 
+    uint256 tokenid = zeroid;
+    if( params.size() == 4 )
+        tokenid = Parseuint256(params[3].get_str().c_str());
+
+    // check non-fungible tokens amount
+    if( !tokenid.IsNull() && burnAmount != 1 )
+        throw JSONRPCError(RPC_TYPE_ERROR, "For tokens amount should be equal to 1, only non-fungible tokens are supported.");
+
     CPubKey myPubKey = Mypubkey();
     struct CCcontract_info *cpDummy, C;
     cpDummy = CCinit(&C, EVAL_TOKENS);
@@ -280,16 +289,25 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     int64_t inputs;
     if ((inputs = AddNormalinputs(mtx, myPubKey, burnAmount+txfee, 60)) == 0) {
-        throw runtime_error("cannot find normal inputs\n");
+        throw runtime_error("Cannot find normal inputs\n");
     }
 
-    CTxDestination txdest = DecodeDestination(dest_addr.c_str());
-    CScript scriptPubKey = GetScriptForDestination( txdest );
-    if (!scriptPubKey.IsPayToPublicKeyHash()) {
-        throw JSONRPCError(RPC_TYPE_ERROR, "Incorrect destination addr.");
+    CScript scriptPubKey;
+    if (tokenid == zeroid) {        // coins
+        CTxDestination txdest = DecodeDestination(dest_addr_or_pubkey.c_str());
+        scriptPubKey = GetScriptForDestination(txdest);
+        if (!scriptPubKey.IsPayToPublicKeyHash()) {
+            throw JSONRPCError(RPC_TYPE_ERROR, "Incorrect destination addr.");
+        }
+        mtx.vout.push_back(CTxOut(burnAmount, scriptPubKey));               // 'model' vout
+    }
+    else    {   // tokens
+        
+        //mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, assetsupply, mypk));
+        //mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(cp->CChexstr) << OP_CHECKSIG));
+        //return(FinalizeCCTx(0, cp, mtx, mypk, txfee, EncodeTokenCreateOpRet('c', Mypubkey(), name, description)));
     }
 
-    mtx.vout.push_back(CTxOut(burnAmount, scriptPubKey));               // 'model' vout
     ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save 'model' vout
 
     const std::string chainSymbol(ASSETCHAINS_SYMBOL);
@@ -316,15 +334,16 @@ UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp)
 /*
  * The process to migrate funds from a chain to chain
  *
- * 1.Create a transaction on assetchain:
+ * 1.Create a transaction on assetchain (deprecated):
  * 1.1 generaterawtransaction
  * 1.2 migrate_converttoexport
  * 1.3 fundrawtransaction
  * 1.4 signrawtransaction
  *
- * alternatively, export transaction may be created with this new rpc call:
- * 1. migrate_createexporttransaction
+ * alternatively, burn (export) transaction may be created with this new rpc call:
+ * 1. migrate_createburntransaction
  *
+ * next steps:
  * 2. migrate_createimporttransaction
  * 3. migrate_completeimporttransaction
  */

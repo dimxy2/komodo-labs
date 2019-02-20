@@ -466,7 +466,7 @@ extern UniValue getNotarisationsForBlock(const UniValue& params, bool fHelp);
 extern UniValue scanNotarisationsDB(const UniValue& params, bool fHelp);
 extern UniValue getimports(const UniValue& params, bool fHelp);
 extern UniValue migrate_converttoexport(const UniValue& params, bool fHelp);
-extern UniValue migrate_createexporttransaction(const UniValue& params, bool fHelp);
+extern UniValue migrate_createburntransaction(const UniValue& params, bool fHelp);
 extern UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp);
 extern UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp);
 
