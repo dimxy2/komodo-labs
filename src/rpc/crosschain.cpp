@@ -265,7 +265,11 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
 
     std::string dest_addr_or_pubkey = params[1].get_str();
 
-    CAmount burnAmount = (CAmount) ( atof( params[2].get_str().c_str() ) * COIN + 0.00000000499999 );
+    CAmount burnAmount;
+    if(params.size() == 3)
+        burnAmount = (CAmount)( atof(params[2].get_str().c_str()) * COIN + 0.00000000499999 );
+    else
+        burnAmount = atoll(params[2].get_str().c_str());
 
 //    for (int i = 0; i<tx.vout.size(); i++) burnAmount += tx.vout[i].nValue;
     if (burnAmount <= 0)
