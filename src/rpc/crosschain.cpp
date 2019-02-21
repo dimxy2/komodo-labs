@@ -337,7 +337,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
 
         if (DecodeTokenCreateOpRet(tokenbasetx.vout.back().scriptPubKey, vorigpubkey, name, description, oprets) != 'c')
             throw runtime_error("Incorrect token creation tx\n");
-        GetOpretBlob(oprets, OPRETID_BURNDATA, vopretNonfungible);
+        GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vopretNonfungible);
         if( vopretNonfungible.empty() )
             throw runtime_error("No non-fungible token data\n");
 
