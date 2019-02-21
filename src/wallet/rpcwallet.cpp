@@ -8025,8 +8025,6 @@ UniValue test_heirmarker(const UniValue& params, bool fHelp)
 
 	cp = CCinit(&C, EVAL_HEIR);
 	return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, opret));
-
-
 }
 
 
@@ -8070,7 +8068,7 @@ UniValue test_burntx(const UniValue& params, bool fHelp)
     CPubKey unspPk = GetUnspendable(cp, tokenpriv);
     GetCCaddress(cp, unspendableTokenAddr, unspPk);
     CCaddr2set(cp, EVAL_TOKENS, unspPk, tokenpriv, unspendableTokenAddr);
-    return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, EncodeTokenOpRet(tokenid, voutPubkeys, CScript())));
+    return(FinalizeCCTx(0, cp, mtx, myPubkey, 10000, EncodeTokenOpRet(tokenid, voutPubkeys, std::make_pair(0, vopret_t()))));
 }
 
 UniValue test_proof(const UniValue& params, bool fHelp)
