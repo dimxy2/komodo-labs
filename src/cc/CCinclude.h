@@ -80,7 +80,7 @@ one other technical note is that komodod has the insight-explorer extensions bui
 };
 
  // find opret blob by opretid
- bool GetOpretBlob(const std::vector<std::pair<uint8_t, std::vector<uint8_t>>>  &oprets, uint8_t id, std::vector<uint8_t> &vopret)    {   
+ inline bool GetOpretBlob(const std::vector<std::pair<uint8_t, std::vector<uint8_t>>>  &oprets, uint8_t id, std::vector<uint8_t> &vopret)    {   
      vopret.clear();
      for(auto p : oprets)  if (p.first == id) { vopret = p.second; return true; }
      return false;
@@ -192,7 +192,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys, struct CCcontract_info *c
 
 bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx);
 
-CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, std::vector<uint8_t> vopretNonfungible);
+CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, vopret_t vopretNonfungible);
 // CScript EncodeTokenOpRet(uint8_t tokenFuncId, uint8_t evalCodeInOpret, uint256 tokenid, std::vector<CPubKey> voutPubkeys, CScript payload); //old version
 CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std::pair<uint8_t, vopret_t> opretWithId);
 CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std::vector<std::pair<uint8_t, vopret_t>> oprets);
