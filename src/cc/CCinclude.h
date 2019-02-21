@@ -74,7 +74,9 @@ one other technical note is that komodod has the insight-explorer extensions bui
     OPRETID_GATEWAYSDATA = 0x13,
     OPRETID_CHANNELSDATA = 0x14,
     OPRETID_HEIRDATA = 0x15,
-    OPRETID_BURNDATA = 0x16, OPRETID_LAST = OPRETID_BURNDATA             // last id
+    OPRETID_ROGUEGAMEDATA = 0x16,
+
+    OPRETID_BURNDATA = 0x70, OPRETID_LAST = OPRETID_BURNDATA             // last id
 };
 
  // find opret blob by opretid
