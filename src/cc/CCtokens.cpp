@@ -57,8 +57,14 @@ CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, 
     return(opret);
 }
 
-
 CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std::pair<uint8_t, vopret_t> opretWithId)
+{
+    std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+    oprets.push_back(opretWithId);
+    return EncodeTokenOpRet(tokenid, voutPubkeys, oprets);
+}
+
+CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std::vector<std::pair<uint8_t, vopret_t>> oprets)
 {
     CScript opret; 
 	uint8_t tokenFuncId = 't';
@@ -79,11 +85,12 @@ CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std:
     opret << OP_RETURN << E_MARSHAL(ss << evalCodeInOpret << tokenFuncId << tokenid << ccType;
         if (ccType >= 1) ss << voutPubkeys[0];
         if (ccType == 2) ss << voutPubkeys[1];
-        if (opretWithId.first != 0) {
-            ss << (uint8_t)opretWithId.first;
-            ss << opretWithId.second;
-        });
-
+        for (auto o : oprets) {
+            if (o.first != 0) {
+                ss << (uint8_t)o.first;
+                ss << o.second;
+            }
+        } );
 
     // bad opret cases (tries to attach payload without re-serialization): 
 
