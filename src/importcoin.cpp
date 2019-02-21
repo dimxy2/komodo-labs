@@ -71,16 +71,21 @@ bool UnmarshalImportTx(const CTransaction &importTx, TxProof &proof, CTransactio
 bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint32_t *targetCCid, uint256 &payoutsHash,std::vector<uint8_t>&rawproof)
 {
     std::vector<uint8_t> burnOpret; uint32_t ccid = 0;
-    if (burnTx.vout.size() == 0) return false;
+    uint8_t evalCode;
 
-    // find our opret:
-    for (auto v : burnTx.vout) {
-        if (GetOpReturnData(v.scriptPubKey, burnOpret) && !burnOpret.empty() && burnOpret.begin()[0] == EVAL_IMPORTCOIN)
-            return E_UNMARSHAL(burnOpret, ss >> VARINT(*targetCCid);
-                                          ss >> targetSymbol;
-                                          ss >> payoutsHash;
-                                          ss >> rawproof);
-    }
+    if (burnTx.vout.size() == 0) 
+        return false;
+
+    GetOpReturnData(burnTx.vout.back().scriptPubKey, burnOpret);
+    if (burnOpret.empty() || burnOpret.begin()[0] != EVAL_IMPORTCOIN)
+        return false;
+
+    return E_UNMARSHAL(burnOpret, ss >> evalCode;
+                                  ss >> VARINT(*targetCCid);
+                                  ss >> targetSymbol;
+                                  ss >> payoutsHash;
+                                  ss >> rawproof);
+    
 }
 
 
