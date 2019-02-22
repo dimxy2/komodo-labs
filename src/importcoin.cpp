@@ -24,6 +24,8 @@
 #include "script/sign.h"
 #include "wallet/wallet.h"
 
+#include "cc/CCinclude.h"
+
 int32_t komodo_nextheight();
 
 CTransaction MakeImportCoinTransaction(const TxProof proof, const CTransaction burnTx, const std::vector<CTxOut> payouts, uint32_t nExpiryHeightOverride)
@@ -77,15 +79,33 @@ bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint
         return false;
 
     GetOpReturnData(burnTx.vout.back().scriptPubKey, burnOpret);
-    if (burnOpret.empty() || burnOpret.begin()[0] != EVAL_IMPORTCOIN)
+    if (burnOpret.empty()) {
+        LOGSTREAM("importcoin", CCLOG_INFO, stream << "UnmarshalBurnTx() cannot unmarshal burn tx: empty burn opret" << std::endl);
         return false;
+    }
 
-    return E_UNMARSHAL(burnOpret, ss >> evalCode;
-                                  ss >> VARINT(*targetCCid);
-                                  ss >> targetSymbol;
-                                  ss >> payoutsHash;
-                                  ss >> rawproof);
-    
+    if (burnOpret.begin()[0] == EVAL_TOKENS) {
+        std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+        uint256 tokenid;
+        uint8_t evalCodeInOpret;
+        std::vector<CPubKey> voutTokenPubkeys;
+
+        //skip token opret:
+        if (DecodeTokenOpRet(burnTx.vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) == 0)
+            return false;
+
+        GetOpretBlob(oprets, OPRETID_BURNDATA, burnOpret);  // fetch burnOpret after token opret
+    }
+    if (burnOpret.begin()[0] == EVAL_IMPORTCOIN) {
+        return E_UNMARSHAL(burnOpret, ss >> evalCode;
+                                      ss >> VARINT(*targetCCid);
+                                      ss >> targetSymbol;
+                                      ss >> payoutsHash;
+                                      ss >> rawproof);
+    }
+
+    LOGSTREAM("importcoin", CCLOG_INFO, stream << "UnmarshalBurnTx() cannot unmarshal burn tx: incorrect evalcode" << std::endl);
+    return false;
 }
 
 
