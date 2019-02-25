@@ -352,7 +352,7 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 // helper funcs:
 
 // extract cc token vins' pubkeys:
-bool ExtractTokensCCVinPubkeys(CTransaction tx, std::vector<CPubKey> &vinPubkeys) {
+bool ExtractTokensCCVinPubkeys(const CTransaction &tx, std::vector<CPubKey> &vinPubkeys) {
 
 	bool found = false;
 	CPubKey pubkey;
