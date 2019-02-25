@@ -55,8 +55,9 @@ CTransaction MakeImportCoinTransaction(const TxProof proof, const CTransaction b
     vopret_t vopret;
     GetOpReturnData(mtx.vout.back().scriptPubKey, vopret);
     if (!vopret.empty() && vopret.begin()[0] == EVAL_TOKENS) {
-        vopret.pop_back(); //remove old opret
-        mtx.vout.push_back(CTxOut(0, CScript() << vopret << OPRETID_IMPORTDATA << importData));   // add importData to tokens opret:
+        CScript scriptTokensOpret = mtx.vout.back().scriptPubKey;
+        mtx.vout.pop_back(); //remove old opret
+        mtx.vout.push_back(CTxOut(0, scriptTokensOpret << OPRETID_IMPORTDATA << importData));   // add importData to tokens opret:
     }
     else {
         //mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));     // import tx's opret was in vout[0] 
@@ -88,6 +89,9 @@ bool UnmarshalImportTx(const CTransaction &importTx, TxProof &proof, CTransactio
     std::vector<uint8_t> vData;
     //GetOpReturnData(importTx.vout[0].scriptPubKey, vData);  // now it is in the back;
     GetOpReturnData(importTx.vout.back().scriptPubKey, vData);
+
+    if (vData.empty())
+        return false;
 
     if (vData.begin()[0] == EVAL_TOKENS) {          // if it is tokens
         std::vector<std::pair<uint8_t, vopret_t>>  oprets;
