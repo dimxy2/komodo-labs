@@ -76,7 +76,8 @@ one other technical note is that komodod has the insight-explorer extensions bui
     OPRETID_HEIRDATA = 0x15,
     OPRETID_ROGUEGAMEDATA = 0x16,
 
-    OPRETID_BURNDATA = 0x70, OPRETID_LAST = OPRETID_BURNDATA             // last id
+    OPRETID_BURNDATA = 0x70,
+    OPRETID_IMPORTDATA = 0x71,  OPRETID_LAST = OPRETID_IMPORTDATA             // last id
 };
 
  // find opret blob by opretid
@@ -200,6 +201,7 @@ uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t>
 uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description, std::vector<std::pair<uint8_t, vopret_t>>  &oprets);
 uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<std::pair<uint8_t, vopret_t>>  &oprets);
 void GetNonfungibleData(uint256 tokenid, vopret_t &vopretNonfungible);
+bool ExtractTokensCCVinPubkeys(CTransaction &tx, std::vector<CPubKey> &vinPubkeys);
 
 uint8_t DecodeOraclesData(const CScript &scriptPubKey,uint256 &oracletxid,uint256 &batontxid,CPubKey &pk,std::vector <uint8_t>&data);
 int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t *data,int32_t offset,int32_t datalen);

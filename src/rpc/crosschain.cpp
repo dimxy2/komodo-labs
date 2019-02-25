@@ -420,7 +420,14 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
     uint256 txid = burnTx.GetHash();
     TxProof proof = GetAssetchainProof(burnTx.GetHash(),burnTx);
 
-    CTransaction importTx = MakeImportCoinTransaction(proof, burnTx, payouts);
+    if( burnTx.vin.size() == 0 )
+        throw runtime_error("No vins in the burnTx");
+
+    CPubKey vinPubkey = CPubKey();  // clear for coins
+    if( IsCCInput( burnTx.vin[0].scriptSig) )
+        vinPubkey = check_signing_pubkey(burnTx.vin[0].scriptSig);  // extract vin pubkey, this is for the tokens case
+
+    CTransaction importTx = MakeImportCoinTransaction(proof, burnTx, payouts, vinPubkey);
 
     return HexStr(E_MARSHAL(ss << importTx));
 }
@@ -532,7 +539,9 @@ UniValue selfimport(const UniValue& params, bool fHelp)
 
         burnTx = templateMtx;					// complete the creation of 'quasi-burn' tx
 
-        std::string hextx = HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(proof, burnTx, vouts)));
+        CPubKey emptyVinPubkey = CPubKey();
+
+        std::string hextx = HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(proof, burnTx, vouts, emptyVinPubkey)));
 
         CTxDestination address;
         bool fValidAddress = ExtractDestination(scriptPubKey, address);
@@ -701,8 +710,9 @@ UniValue getimports(const UniValue& params, bool fHelp)
             {
                 objTx.push_back(Pair("address", CBitcoinAddress(importaddress).ToString()));
             }
-            UniValue objBurnTx(UniValue::VOBJ);            
-            if (UnmarshalImportTx(tx, proof, burnTx, payouts)) 
+            UniValue objBurnTx(UniValue::VOBJ);      
+            CPubKey vinPubkey;
+            if (UnmarshalImportTx(tx, proof, burnTx, payouts, vinPubkey)) 
             {
                 if (burnTx.vout.size() == 0)
                     continue;

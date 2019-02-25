@@ -293,7 +293,7 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 	}
 
     // validate spending from token cc addr: allowed only for burned non-fungible tokens:
-    if (ExtractTokensVinPubkeys(tx, vinTokenPubkeys) && std::find(vinTokenPubkeys.begin(), vinTokenPubkeys.end(), GetUnspendable(cp, NULL)) != vinTokenPubkeys.end()) {
+    if (ExtractTokensCCVinPubkeys(tx, vinTokenPubkeys) && std::find(vinTokenPubkeys.begin(), vinTokenPubkeys.end(), GetUnspendable(cp, NULL)) != vinTokenPubkeys.end()) {
         // validate spending from token unspendable cc addr:
         int64_t burnedAmount = HasBurnedTokensvouts(cp, eval, tx, tokenid);
         if (burnedAmount > 0) {
@@ -352,13 +352,14 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 // helper funcs:
 
 // extract cc token vins' pubkeys:
-bool ExtractTokensVinPubkeys(CTransaction tx, std::vector<CPubKey> &vinPubkeys) {
+bool ExtractTokensCCVinPubkeys(CTransaction tx, std::vector<CPubKey> &vinPubkeys) {
 
 	bool found = false;
 	CPubKey pubkey;
 	struct CCcontract_info *cpTokens, tokensC;
 
 	cpTokens = CCinit(&tokensC, EVAL_TOKENS);
+    vinPubkeys.clear();
 
 	for (int32_t i = 0; i < tx.vin.size(); i++)
 	{	
@@ -602,7 +603,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
 
 				// maybe it is single-eval or dual/three-eval token change?
 				std::vector<CPubKey> vinPubkeys, vinPubkeysUnfiltered;
-				ExtractTokensVinPubkeys(tx, vinPubkeysUnfiltered);
+				ExtractTokensCCVinPubkeys(tx, vinPubkeysUnfiltered);
                 FilterOutTokensUnspendablePk(vinPubkeysUnfiltered, vinPubkeys);  // cannot send tokens to token unspendable cc addr (only marker is allowed there)
 
 				for(std::vector<CPubKey>::iterator it = vinPubkeys.begin(); it != vinPubkeys.end(); it++) {
