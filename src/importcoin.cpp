@@ -173,9 +173,8 @@ CAmount GetCoinImportValue(const CTransaction &tx)
     TxProof proof;
     CTransaction burnTx;
     std::vector<CTxOut> payouts;
-    CPubKey vinPubkey;
 
-    if (UnmarshalImportTx(tx, proof, burnTx, payouts, vinPubkey)) {
+    if (UnmarshalImportTx(tx, proof, burnTx, payouts)) {
         if (burnTx.vout.size() > 0)  {
             vopret_t vburnOpret;
 
