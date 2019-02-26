@@ -225,7 +225,7 @@ void CompleteImportTransaction(CTransaction &importTx)
     CPubKey vinPubkey;
 
     if (!UnmarshalImportTx(importTx, proof, burnTx, payouts, vinPubkey))
-        throw std::runtime_error("Couldn't parse importTx");
+        throw std::runtime_error("Couldn't unmarshal importTx");
 
     std::string targetSymbol;
     uint32_t targetCCid;

@@ -55,7 +55,7 @@ CTransaction MakeImportCoinTransaction(const TxProof proof, const CTransaction b
     if (!vopret.empty() && vopret.begin()[0] == EVAL_TOKENS) {
         CScript scriptTokensOpret = mtx.vout.back().scriptPubKey;
         mtx.vout.pop_back(); //remove old opret
-        mtx.vout.push_back(CTxOut(0, scriptTokensOpret << (uint8_t)OPRETID_IMPORTDATA << importData));   // add importData to tokens opret:
+        mtx.vout.push_back(CTxOut(0, scriptTokensOpret << E_MARSHAL(ss << (uint8_t)OPRETID_IMPORTDATA << importData)));   // add importData to tokens opret:
     }
     else {
         //mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));     // import tx's opret was in vout[0] 
