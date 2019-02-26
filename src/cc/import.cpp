@@ -432,7 +432,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
         return Invalid("invalid-burn-tx-no-opret");
 
     // check burn amount
-    if( vburnOpret.begin()[0] == EVAL_IMPORTCOIN )
+    if( vburnOpret.begin()[0] == EVAL_IMPORTCOIN )  // for coins
     {
         uint64_t burnAmount = burnTx.vout.back().nValue;
         if (burnAmount == 0)
@@ -443,17 +443,20 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
         if (totalOut > burnAmount || totalOut < burnAmount-txfee )
             return Invalid("payout-too-high-or-too-low");
     }
-    else if (vburnOpret.begin()[0] == EVAL_TOKENS) {
-        uint64_t burnAmount = 0;
+    else if (vburnOpret.begin()[0] == EVAL_TOKENS) { // for tokens
+        struct CCcontract_info *cpTokens, tokensCCinfo;
+        cpTokens = CCinit(&tokensCCinfo, EVAL_TOKENS);
+
+        int64_t burnAmount = 0;
         for (auto v : burnTx.vout)
-            if (v.scriptPubKey.IsPayToCryptoCondition())  // burned value goes to cc vout with dead pubkey
+            if (v.scriptPubKey.IsPayToCryptoCondition() && CTxOut(v.nValue, v.scriptPubKey) == MakeCC1vout(EVAL_TOKENS, v.nValue, pubkey2pk(ParseHex(CC_BURNPUBKEY))) )  // burned to dead pubkey
                 burnAmount += v.nValue;
 
-        uint64_t importAmount = 0;
+        int64_t importAmount = 0;
         for (auto v : importTx.vout)
-            if (v.scriptPubKey.IsPayToCryptoCondition())  // burned value goes to cc vout with dead pubkey
+            if (v.scriptPubKey.IsPayToCryptoCondition() && CTxOut(v.nValue, v.scriptPubKey) != MakeCC1vout(EVAL_TOKENS, v.nValue, GetUnspendable(cpTokens, NULL)))  // not marker
                 importAmount += v.nValue;
-        if( burnAmount != importAmount)
+        if( burnAmount != importAmount )
             return Invalid("token-payout-too-high-or-too-low");
     }
     else {
