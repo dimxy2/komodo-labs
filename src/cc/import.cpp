@@ -408,7 +408,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
 {
     TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; uint64_t txfee = 10000;
     uint32_t targetCcid; std::string targetSymbol; uint256 payoutsHash; std::vector<uint8_t> rawproof;
-    CPubKey vinPubkey;
+    //CPubKey vinPubkey;
 
     if ( importTx.vout.size() < 2 )
         return Invalid("too-few-vouts");
@@ -422,7 +422,17 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
     // burn params
     if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof))
         return Invalid("invalid-burn-tx");
+    
+    if( burnTx.vout.size() == 0 )
+        return Invalid("invalid-burn-tx-no-vouts");
+
+    vopret_t vburnOpret;
+    GetOpReturnData(importTx.vout.back().scriptPubKey, vburnOpret);
+    if (vburnOpret.empty())
+        return Invalid("invalid-burn-tx-no-opret");
+
     // check burn amount
+    if( vburnOpret.begin()[0] == EVAL_IMPORTCOIN )
     {
         uint64_t burnAmount = burnTx.vout.back().nValue;
         if (burnAmount == 0)
@@ -433,6 +443,23 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
         if (totalOut > burnAmount || totalOut < burnAmount-txfee )
             return Invalid("payout-too-high-or-too-low");
     }
+    else if (vburnOpret.begin()[0] == EVAL_TOKENS) {
+        uint64_t burnAmount = 0;
+        for (auto v : burnTx.vout)
+            if (v.scriptPubKey.IsPayToCryptoCondition())  // burned value goes to cc vout with dead pubkey
+                burnAmount += v.nValue;
+
+        uint64_t importAmount = 0;
+        for (auto v : importTx.vout)
+            if (v.scriptPubKey.IsPayToCryptoCondition())  // burned value goes to cc vout with dead pubkey
+                importAmount += v.nValue;
+        if( burnAmount != importAmount)
+            return Invalid("token-payout-too-high-or-too-low");
+    }
+    else {
+        return Invalid("invalid-burn-tx-incorrect-opret");
+    }
+
     // Check burntx shows correct outputs hash
     if (payoutsHash != SerializeHash(payouts))
         return Invalid("wrong-payouts");
