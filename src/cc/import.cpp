@@ -508,5 +508,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
                 return Invalid("GATEWAY-import-failure");
         }
     }
+
+    return Invalid("test-invalid");
     return Valid();
 }
