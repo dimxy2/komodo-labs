@@ -199,13 +199,12 @@ std::string MakeGatewaysImportTx(uint64_t txfee, uint256 bindtxid, int32_t heigh
     BitcoinGetProofMerkleRoot(proof, leaftxids);
     MerkleBranch newBranch(0, leaftxids);
     TxProof txProof = std::make_pair(burntxid, newBranch);
-    CPubKey vinPubkeyTempEmpty;
 
     std::vector<CTxOut> vouts;
 
     // This is an unfinished func! To be implemented yet...
 
-    return  HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(txProof, burntx, vouts, vinPubkeyTempEmpty)));
+    return  HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(txProof, burntx, vouts)));
 
     /*if (AddNormalinputs(mtx, mypk, 3 * txfee, 4) > 0)
     {
@@ -414,11 +413,11 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
     if ( importTx.vout.size() < 2 )
         return Invalid("too-few-vouts");
     // params
-    if (!UnmarshalImportTx(importTx, proof, burnTx, payouts, vinPubkey))
+    if (!UnmarshalImportTx(importTx, proof, burnTx, payouts))
         return Invalid("invalid-params");
     // Control all aspects of this transaction
     // It should not be at all malleable
-    if (MakeImportCoinTransaction(proof, burnTx, payouts, vinPubkey, importTx.nExpiryHeight).GetHash() != importTx.GetHash())  // ExistsImportTombstone prevents from duplication
+    if (MakeImportCoinTransaction(proof, burnTx, payouts, importTx.nExpiryHeight).GetHash() != importTx.GetHash())  // ExistsImportTombstone prevents from duplication
         return Invalid("non-canonical");
     // burn params
     if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof))
