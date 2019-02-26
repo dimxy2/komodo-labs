@@ -454,9 +454,8 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
 
         cpTokens = CCinit(&tokensCCinfo, EVAL_TOKENS);
 
-        if (DecodeTokenOpRet(burnTx.vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) == 0)
+        if (DecodeTokenOpRet(importTx.vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) == 0)  // no nonfungible data in burn tx
             return false;
-
         GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vnonfungibleOpret);  
         if (!vnonfungibleOpret.empty())
             nonfungibleEvalCode = vnonfungibleOpret.begin()[0];
