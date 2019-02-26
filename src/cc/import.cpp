@@ -445,11 +445,25 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
     }
     else if (vburnOpret.begin()[0] == EVAL_TOKENS) { // for tokens
         struct CCcontract_info *cpTokens, tokensCCinfo;
+        std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+        uint256 tokenid;
+        uint8_t evalCodeInOpret;
+        std::vector<CPubKey> voutTokenPubkeys;
+        vopret_t vnonfungibleOpret;
+        uint8_t nonfungibleEvalCode = 0;
+
         cpTokens = CCinit(&tokensCCinfo, EVAL_TOKENS);
+
+        if (DecodeTokenOpRet(burnTx.vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) == 0)
+            return false;
+
+        GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vnonfungibleOpret);  
+        if (!vnonfungibleOpret.empty())
+            nonfungibleEvalCode = vnonfungibleOpret.begin()[0];
 
         int64_t burnAmount = 0;
         for (auto v : burnTx.vout)
-            if (v.scriptPubKey.IsPayToCryptoCondition() && CTxOut(v.nValue, v.scriptPubKey) == MakeCC1vout(EVAL_TOKENS, v.nValue, pubkey2pk(ParseHex(CC_BURNPUBKEY))) )  // burned to dead pubkey
+            if (v.scriptPubKey.IsPayToCryptoCondition() && CTxOut(v.nValue, v.scriptPubKey) == MakeTokensCC1vout(nonfungibleEvalCode ? nonfungibleEvalCode : EVAL_TOKENS, v.nValue, pubkey2pk(ParseHex(CC_BURNPUBKEY))) )  // burned to dead pubkey
                 burnAmount += v.nValue;
 
         int64_t importAmount = 0;
