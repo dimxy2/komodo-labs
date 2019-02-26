@@ -31,6 +31,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cpTokens, int64_t
 std::string CreateToken(int64_t txfee, int64_t assetsupply, std::string name, std::string description, std::vector<uint8_t> nonfungibleData);
 std::string TokenTransfer(int64_t txfee, uint256 assetid, std::vector<uint8_t> destpubkey, int64_t total);
 int64_t HasBurnedTokensvouts(struct CCcontract_info *cp, Eval* eval, const CTransaction& tx, uint256 reftokenid);
+CPubKey GetTokenOriginatorPubKey(CScript scriptPubKey);
 
 int64_t GetTokenBalance(CPubKey pk, uint256 tokenid);
 UniValue TokenInfo(uint256 tokenid);

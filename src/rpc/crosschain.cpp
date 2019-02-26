@@ -36,6 +36,7 @@
 
 #include "key_io.h"
 #include "cc/CCinclude.h"
+#include "cc/CCtokens.h"
 
 #include <stdint.h>
 #include <univalue.h>
@@ -418,16 +419,19 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
         throw runtime_error("Couldn't parse payouts");
 
     uint256 txid = burnTx.GetHash();
-    TxProof proof = GetAssetchainProof(burnTx.GetHash(),burnTx);
+    TxProof proof = GetAssetchainProof(burnTx.GetHash(), burnTx);
 
     if( burnTx.vin.size() == 0 )
         throw runtime_error("No vins in the burnTx");
 
-    CPubKey vinPubkey = CPubKey();  // clear for coins
-    if( IsCCInput( burnTx.vin[0].scriptSig) )
-        vinPubkey = check_signing_pubkey(burnTx.vin[0].scriptSig);  // extract vin pubkey, this is for the tokens case
+    if (burnTx.vout.size() == 0)
+        throw runtime_error("No vouts in the burnTx");
 
-    CTransaction importTx = MakeImportCoinTransaction(proof, burnTx, payouts, vinPubkey);
+    // let's find token issuer pubkey:
+    CPubKey origPubkey = GetTokenOriginatorPubKey(burnTx.vout.back().scriptPubKey);  //returns invalid pubkey if this is not token
+    LOGSTREAM("importcoin", CCLOG_DEBUG2, stream << "migrate_createimporttransaction() origPubkey=" << HexStr(origPubkey) << " IsValid()=" << origPubkey.IsValid() << std::endl);
+
+    CTransaction importTx = MakeImportCoinTransaction(proof, burnTx, payouts, origPubkey);
 
     return HexStr(E_MARSHAL(ss << importTx));
 }

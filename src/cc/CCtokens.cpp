@@ -921,6 +921,28 @@ int64_t HasBurnedTokensvouts(struct CCcontract_info *cp, Eval* eval, const CTran
     return burnedAmount;
 }
 
+CPubKey GetTokenOriginatorPubKey(CScript scriptPubKey) {
+
+    uint8_t funcId, evalCode;
+    uint256 tokenid;
+    std::vector<CPubKey> voutTokenPubkeys;
+    std::vector<std::pair<uint8_t, vopret_t>> oprets;
+
+    if ((funcId = DecodeTokenOpRet(scriptPubKey, evalCode, tokenid, voutTokenPubkeys, oprets)) != 0) {
+        CTransaction tokenbasetx;
+        uint256 hashBlock;
+
+        if (myGetTransaction(tokenid, tokenbasetx, hashBlock) && tokenbasetx.vout.size() > 0) {
+            vopret_t vorigpubkey;
+            std::string name, desc;
+            if (DecodeTokenCreateOpRet(tokenbasetx.vout.back().scriptPubKey, vorigpubkey, name, desc) != 0)
+                return pubkey2pk(vorigpubkey);
+        }
+    }
+    return CPubKey(); //return invalid pubkey
+}
+
+
 std::string CreateToken(int64_t txfee, int64_t tokensupply, std::string name, std::string description, vopret_t nonfungibleData)
 {
 	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());

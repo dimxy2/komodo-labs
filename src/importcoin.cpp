@@ -34,9 +34,7 @@ CTransaction MakeImportCoinTransaction(const TxProof proof, const CTransaction b
     CScript scriptSig;
     if (vinPubkey.IsValid()) {  
         // make payload for tokens:
-        CC *cond = MakeCCcond1(EVAL_IMPORTCOIN, vinPubkey);
-        scriptSig = CCSig(cond);
-        cc_free(cond);
+        scriptSig << E_MARSHAL(ss << EVAL_IMPORTCOIN);
     }
     else {
         // simple payload for coins:
@@ -89,27 +87,23 @@ bool UnmarshalImportTx(const CTransaction &importTx, TxProof &proof, CTransactio
     std::vector<uint8_t> vData;
     //GetOpReturnData(importTx.vout[0].scriptPubKey, vData);  // now it is in the back;
     GetOpReturnData(importTx.vout.back().scriptPubKey, vData);
-
     if (vData.empty())
         return false;
 
     if (vData.begin()[0] == EVAL_TOKENS) {          // if it is tokens
+        // get import data after token opret:
         std::vector<std::pair<uint8_t, vopret_t>>  oprets;
         uint256 tokenid;
         uint8_t evalCodeInOpret;
         std::vector<CPubKey> voutTokenPubkeys;
 
-        //skip token opret:
         if (DecodeTokenOpRet(importTx.vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) == 0)
             return false;
 
-        GetOpretBlob(oprets, OPRETID_BURNDATA, vData);  // fetch import data after token opret
+        GetOpretBlob(oprets, OPRETID_IMPORTDATA, vData);  // fetch import data after token opret
         payouts = std::vector<CTxOut>(importTx.vout.begin(), importTx.vout.end());   // let's importData remain in the token opret in payouts 
-
-        vinPubkey = check_signing_pubkey(importTx.vin[0].scriptSig);
-        CC *cond = MakeCCcond1(EVAL_IMPORTCOIN, vinPubkey);
-        CScript testScriptSig = CCSig(cond);
-        cc_free(cond);
+        
+        CScript testScriptSig = (CScript() << E_MARSHAL(ss << EVAL_IMPORTCOIN));
         if (importTx.vin[0].scriptSig != testScriptSig)
             return false;
     }
@@ -218,7 +212,7 @@ bool VerifyCoinImport(const CScript& scriptSig, TransactionSignatureChecker& che
             return false;
         if (evalScript.size() == 0)
             return false;
-        if (evalScript.begin()[0] != EVAL_IMPORTCOIN)   // should also work for tokens: 'cond = MakeCCcond1(EVAL_IMPORTCOIN, vinPubkey); scriptSig = CCSig(cond);'
+        if (evalScript.begin()[0] != EVAL_IMPORTCOIN)   
             return false;
         // Ok, all looks good so far...
         CC *cond = CCNewEval(evalScript);
