@@ -354,7 +354,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         // 'model' of destination vouts which would create the imported non-fungible token:
         mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens, NULL)));  // new marker to token cc addr, burnable and validated, vout pos now changed to 0 (from 1)
         mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, destPubKey));
-        mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenCreateOpRet('c', vorigpubkey, name, description, vopretNonfungible)));
+        mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenCreateOpRet('c', vorigpubkey, name, description, vopretNonfungible)));  // make token create opret
         ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save 'model' vouts
 
         mtx.vout.clear();  // remove 'model' vout
@@ -428,10 +428,10 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
         throw runtime_error("No vouts in the burnTx");
 
     // let's find token issuer pubkey:
-    CPubKey origPubkey = GetTokenOriginatorPubKey(burnTx.vout.back().scriptPubKey);  //returns invalid pubkey if this is not token
-    LOGSTREAM("importcoin", CCLOG_DEBUG2, stream << "migrate_createimporttransaction() origPubkey=" << HexStr(origPubkey) << " IsValid()=" << origPubkey.IsValid() << std::endl);
+    //CPubKey origPubkey = GetTokenOriginatorPubKey(burnTx.vout.back().scriptPubKey);  //returns invalid pubkey if this is not token
+    //LOGSTREAM("importcoin", CCLOG_DEBUG2, stream << "migrate_createimporttransaction() origPubkey=" << HexStr(origPubkey) << " IsValid()=" << origPubkey.IsValid() << std::endl);
 
-    CTransaction importTx = MakeImportCoinTransaction(proof, burnTx, payouts, origPubkey);
+    CTransaction importTx = MakeImportCoinTransaction(proof, burnTx, payouts);
 
     return HexStr(E_MARSHAL(ss << importTx));
 }
@@ -543,9 +543,7 @@ UniValue selfimport(const UniValue& params, bool fHelp)
 
         burnTx = templateMtx;					// complete the creation of 'quasi-burn' tx
 
-        CPubKey emptyVinPubkey = CPubKey();
-
-        std::string hextx = HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(proof, burnTx, vouts, emptyVinPubkey)));
+        std::string hextx = HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(proof, burnTx, vouts)));
 
         CTxDestination address;
         bool fValidAddress = ExtractDestination(scriptPubKey, address);
@@ -716,7 +714,7 @@ UniValue getimports(const UniValue& params, bool fHelp)
             }
             UniValue objBurnTx(UniValue::VOBJ);      
             CPubKey vinPubkey;
-            if (UnmarshalImportTx(tx, proof, burnTx, payouts, vinPubkey)) 
+            if (UnmarshalImportTx(tx, proof, burnTx, payouts)) 
             {
                 if (burnTx.vout.size() == 0)
                     continue;

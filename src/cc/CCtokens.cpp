@@ -45,7 +45,7 @@
 // for tokens to be used there should be at least one 't' tx with other contract's custom opret
 CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, vopret_t vopretNonfungible)
 {
-    CScript opret; 
+ /*   CScript opret; 
     uint8_t evalcode = EVAL_TOKENS;
     funcid = 'c'; // override the param
 
@@ -53,9 +53,31 @@ CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, 
         if (!vopretNonfungible.empty()) {
             ss << (uint8_t)OPRETID_NONFUNGIBLEDATA;
             ss << vopretNonfungible;
+        });  */
+
+    std::vector<std::pair<uint8_t, vopret_t>> oprets;
+
+    oprets.push_back(std::make_pair(OPRETID_NONFUNGIBLEDATA, vopretNonfungible));
+    return EncodeTokenCreateOpRet(funcid, origpubkey, name, description, oprets);
+}
+
+CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, std::vector<std::pair<uint8_t, vopret_t>> oprets)
+{
+    CScript opret;
+    uint8_t evalcode = EVAL_TOKENS;
+    funcid = 'c'; // override the param
+
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << origpubkey << name << description; 
+        for (auto o : oprets) {
+            if (o.first != 0) {
+                ss << (uint8_t)o.first;
+                ss << o.second;
+            }
         });
     return(opret);
 }
+
+
 
 CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std::pair<uint8_t, vopret_t> opretWithId)
 {

@@ -222,9 +222,8 @@ cont:
 void CompleteImportTransaction(CTransaction &importTx)
 {
     TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; std::vector<uint8_t> rawproof;
-    CPubKey vinPubkey;
 
-    if (!UnmarshalImportTx(importTx, proof, burnTx, payouts, vinPubkey))
+    if (!UnmarshalImportTx(importTx, proof, burnTx, payouts))
         throw std::runtime_error("Couldn't unmarshal importTx");
 
     std::string targetSymbol;
@@ -235,7 +234,7 @@ void CompleteImportTransaction(CTransaction &importTx)
 
     proof = GetCrossChainProof(burnTx.GetHash(), targetSymbol.data(), targetCCid, proof);
 
-    importTx = MakeImportCoinTransaction(proof, burnTx, payouts, vinPubkey);
+    importTx = MakeImportCoinTransaction(proof, burnTx, payouts);
 }
 
 

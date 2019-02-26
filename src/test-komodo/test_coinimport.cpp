@@ -38,8 +38,7 @@ public:
     void SetImportTx() {
         burnTx.vout.resize(0);
         burnTx.vout.push_back(MakeBurnOutput(amount, testCcid, testSymbol, payouts,rawproof));
-        CPubKey vinPubkeyEmpty;
-        importTx = CMutableTransaction(MakeImportCoinTransaction(proof, CTransaction(burnTx), payouts, vinPubkeyEmpty));
+        importTx = CMutableTransaction(MakeImportCoinTransaction(proof, CTransaction(burnTx), payouts));
         MoMoM = burnTx.GetHash();  // TODO: an actual branch
     }
 
@@ -173,8 +172,7 @@ TEST_F(TestCoinImport, testInvalidBurnOutputs)
 {
     burnTx.vout.resize(0);
     MoMoM = burnTx.GetHash();  // TODO: an actual branch
-    CPubKey vinPubkeyEmpty;
-    CTransaction tx = MakeImportCoinTransaction(proof, CTransaction(burnTx), payouts, vinPubkeyEmpty);
+    CTransaction tx = MakeImportCoinTransaction(proof, CTransaction(burnTx), payouts);
     TestRunCCEval(tx);
     EXPECT_EQ("invalid-burn-tx", state.GetRejectReason());
 }
@@ -184,8 +182,7 @@ TEST_F(TestCoinImport, testInvalidBurnParams)
 {
     burnTx.vout.back().scriptPubKey = CScript() << OP_RETURN << E_MARSHAL(ss << VARINT(testCcid));
     MoMoM = burnTx.GetHash();  // TODO: an actual branch
-    CPubKey vinPubkeyEmpty;
-    CTransaction tx = MakeImportCoinTransaction(proof, CTransaction(burnTx), payouts, vinPubkeyEmpty);
+    CTransaction tx = MakeImportCoinTransaction(proof, CTransaction(burnTx), payouts);
     TestRunCCEval(tx);
     EXPECT_EQ("invalid-burn-tx", state.GetRejectReason());
 }
@@ -203,8 +200,7 @@ TEST_F(TestCoinImport, testInvalidBurnAmount)
 {
     burnTx.vout.back().nValue = 0;
     MoMoM = burnTx.GetHash();  // TODO: an actual branch
-    CPubKey vinPubkeyEmpty;
-    CTransaction tx = MakeImportCoinTransaction(proof, CTransaction(burnTx), payouts, vinPubkeyEmpty);
+    CTransaction tx = MakeImportCoinTransaction(proof, CTransaction(burnTx), payouts);
     TestRunCCEval(tx);
     EXPECT_EQ("invalid-burn-amount", state.GetRejectReason());
 }
