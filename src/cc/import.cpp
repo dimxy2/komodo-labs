@@ -404,11 +404,12 @@ int32_t CheckPUBKEYimport(TxProof proof,std::vector<uint8_t> rawproof,CTransacti
     return(0);
 }
 
-bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &importTx,unsigned int nIn)
+bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &importTx, unsigned int nIn)
 {
     TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; uint64_t txfee = 10000;
     uint32_t targetCcid; std::string targetSymbol; uint256 payoutsHash; std::vector<uint8_t> rawproof;
-    //CPubKey vinPubkey;
+
+    LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "Validating import tx..., txid=" << importTx.GetHash().GetHex() << std::endl);
 
     if ( importTx.vout.size() < 2 )
         return Invalid("too-few-vouts");
@@ -522,6 +523,8 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
         }
     }
 
-    return Invalid("test-invalid");
+    // return Invalid("test-invalid");
+    LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "Valid import tx! txid=" << importTx.GetHash().GetHex() << std::endl);
+
     return Valid();
 }
