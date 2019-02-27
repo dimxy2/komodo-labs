@@ -46,6 +46,8 @@ CScript EncodeTokenImportOpRet(std::vector<uint8_t> origpubkey, std::string name
     uint8_t evalcode = EVAL_TOKENS;
     uint8_t funcid = 'i';
 
+    srctokenid = revuint256(srctokenid); // do not forget this
+
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << origpubkey << name << description << srctokenid;
     for (auto o : oprets) {
         if (o.first != 0) {
@@ -171,6 +173,7 @@ uint8_t DecodeTokenImportOpRet(const CScript &scriptPubKey, std::vector<uint8_t>
             }
         }))
         {
+            srctokenid = revuint256(srctokenid); // do not forget this
             return(funcid);
         }
     }
