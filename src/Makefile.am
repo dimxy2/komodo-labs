@@ -335,7 +335,6 @@ libbitcoin_server_a_SOURCES = \
   policy/fees.cpp \
   pow.cpp \
   rest.cpp \
-  importcoin.cpp \
   rpc/blockchain.cpp \
   rpc/crosschain.cpp \
   rpc/mining.cpp \
@@ -471,6 +470,7 @@ libbitcoin_common_a_SOURCES = \
   crypto/verus_hash.h \
   crypto/verus_hash.cpp \
   hash.cpp \
+  importcoin.cpp \
   key.cpp \
   key_io.cpp \
   keystore.cpp \
@@ -490,6 +490,7 @@ libbitcoin_common_a_SOURCES = \
   script/sign.cpp \
   script/standard.cpp \
   transaction_builder.cpp \
+  cc/CCtokensOpRet.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
