@@ -46,7 +46,7 @@ CScript EncodeTokenImportOpRet(std::vector<uint8_t> origpubkey, std::string name
     uint8_t evalcode = EVAL_TOKENS;
     uint8_t funcid = 'i';
 
-    srctokenid = revuint256(srctokenid); // do not forget this
+  //  srctokenid = revuint256(srctokenid); // do not forget this
 
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << origpubkey << name << description << srctokenid;
     for (auto o : oprets) {
@@ -73,7 +73,7 @@ CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std:
     uint8_t tokenFuncId = 't';
     uint8_t evalCodeInOpret = EVAL_TOKENS;
 
-    tokenid = revuint256(tokenid);
+//    tokenid = revuint256(tokenid);
 
     uint8_t ccType = 0;
     if (voutPubkeys.size() >= 0 && voutPubkeys.size() <= 2)
@@ -173,7 +173,7 @@ uint8_t DecodeTokenImportOpRet(const CScript &scriptPubKey, std::vector<uint8_t>
             }
         }))
         {
-            srctokenid = revuint256(srctokenid); // do not forget this
+          //  srctokenid = revuint256(srctokenid); // do not forget this
             return(funcid);
         }
     }
@@ -233,7 +233,7 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
             }))
             {
                 if (!(ccType >= 0 && ccType <= 2)) { //incorrect ccType
-                    LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() incorrect ccType=" << (int)ccType << " tokenid=" << revuint256(tokenid).GetHex() << std::endl);
+                    LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() incorrect ccType=" << (int)ccType << " tokenid=" << /*revuint256(tokenid).GetHex()*/0 << std::endl);
                     return (uint8_t)0;
                 }
 
@@ -244,10 +244,10 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
                 if (voutPubkey2.IsValid())
                     voutPubkeys.push_back(voutPubkey2);
 
-                tokenid = revuint256(tokenid);
+//                tokenid = revuint256(tokenid);
                 return(funcId);
             }
-            LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() bad opret format," << " ccType=" << (int)ccType << " tokenid=" << revuint256(tokenid).GetHex() << std::endl);
+            LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() bad opret format," << " ccType=" << (int)ccType << " tokenid=" << /* revuint256(tokenid).GetHex()*/0 << std::endl);
             return (uint8_t)0;
 
         default:
