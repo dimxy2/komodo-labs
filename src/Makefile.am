@@ -470,6 +470,7 @@ libbitcoin_common_a_SOURCES = \
   crypto/verus_hash.h \
   crypto/verus_hash.cpp \
   hash.cpp \
+  importcoin.cpp \
   key.cpp \
   key_io.cpp \
   keystore.cpp \
