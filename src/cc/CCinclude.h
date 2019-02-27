@@ -243,7 +243,7 @@ int32_t CClib_initcp(struct CCcontract_info *cp,uint8_t evalcode);
 bool IsCCInput(CScript const& scriptSig);
 int32_t unstringbits(char *buf,uint64_t bits);
 uint64_t stringbits(char *str);
-uint256 revuint256(uint256 txid);
+inline uint256 revuint256(uint256 txid);
 bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 char *uint256_str(char *dest,uint256 txid);
 char *pubkey33_str(char *dest,uint8_t *pubkey33);
