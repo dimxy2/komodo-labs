@@ -192,14 +192,6 @@ uint64_t stringbits(char *str)
     return(bits);
 }
 
-uint256 revuint256(uint256 txid)
-{
-    uint256 revtxid; int32_t i;
-    for (i=31; i>=0; i--)
-        ((uint8_t *)&revtxid)[31-i] = ((uint8_t *)&txid)[i];
-    return(revtxid);
-}
-
 char *uint256_str(char *dest,uint256 txid)
 {
     int32_t i,j=0;
