@@ -82,7 +82,7 @@ CScript EncodeTokenImportOpRet(std::vector<uint8_t> origpubkey, std::string name
 {
     CScript opret;
     uint8_t evalcode = EVAL_TOKENS;
-    uint8_t funcid = 'i'; // override the param
+    uint8_t funcid = 'i'; 
 
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << origpubkey << name << description << srctokenid;
     for (auto o : oprets) {
@@ -157,13 +157,13 @@ CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std:
 //}
 
 // overload for fungible tokens (no additional data in opret):
-uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, vscript_t &origpubkey, std::string &name, std::string &description) {
+uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description) {
     //vopret_t  vopretNonfungibleDummy;
     std::vector<std::pair<uint8_t, vscript_t>>  opretsDummy;
     return DecodeTokenCreateOpRet(scriptPubKey, origpubkey, name, description, opretsDummy);
 }
 
-uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, vscript_t &origpubkey, std::string &name, std::string &description, std::vector<std::pair<uint8_t, vscript_t>> &oprets)
+uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description, std::vector<std::pair<uint8_t, vscript_t>> &oprets)
 {
     vscript_t vopret, vblob;
     uint8_t dummyEvalcode, funcid, opretId = 0;
@@ -190,7 +190,7 @@ uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, vscript_t &origpubke
 }
 
 // for imported tokens
-uint8_t DecodeTokenImportOpRet(const CScript &scriptPubKey, vscript_t &origpubkey, std::string &name, std::string &description, uint256 srctokenid, std::vector<std::pair<uint8_t, vscript_t>>  &oprets)
+uint8_t DecodeTokenImportOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description, uint256 &srctokenid, std::vector<std::pair<uint8_t, vscript_t>>  &oprets)
 {
     vscript_t vopret, vblob;
     uint8_t dummyEvalcode, funcid, opretId = 0;
@@ -216,29 +216,9 @@ uint8_t DecodeTokenImportOpRet(const CScript &scriptPubKey, vscript_t &origpubke
     return (uint8_t)0;
 }
 
-// overload for compatibility allows only usual fungible tokens:
-// warning: it makes vopret marshalling to CScript because this is what caller would expect
-/*uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCode, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, vopret_t  &vopretExtra) {
-    vopret_t  vopret1, vopret2;
-    uint8_t funcId = DecodeTokenOpRet(scriptPubKey, evalCode, tokenid, voutPubkeys, vopret1, vopret2);
-
-    CScript opretExtra;
-    vopretExtra.clear();
-
-    // make marshalling for compatibility
-    // callers of this func expect length of full array at the beginning (and they will make 'vopretStripped' from vopretExtra)
-    if (vopret2.empty())
-        opretExtra << OP_RETURN << E_MARSHAL(ss << vopret1);  // if first opret (or no oprets)
-    else
-        opretExtra << OP_RETURN << E_MARSHAL(ss << vopret2);  // if both oprets present, return assets/heir/gateways/... opret (dump non-fungible opret) 
-
-    GetOpReturnData(opretExtra, vopretExtra);
-    return funcId;
-} */
-
 // decodes token opret: 
 // for 't' returns all data from opret, vopretExtra contains other contract's data (currently only assets'). 
-// for 'c' returns only funcid. NOTE: nonfungible data is not returned
+// for 'c' and 'i' returns only funcid. NOTE: nonfungible data is not returned
 uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<std::pair<uint8_t, vscript_t>>  &oprets)
 {
     vscript_t vopret, vblob, dummyPubkey, vnonfungibleDummy;

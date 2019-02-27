@@ -165,7 +165,7 @@ bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint
         GetOpretBlob(oprets, OPRETID_BURNDATA, vburnOpret);  // fetch burnOpret after token opret
     }
     if (vburnOpret.begin()[0] == EVAL_IMPORTCOIN) {
-        return E_UNMARSHAL(vburnOpret, ss >> evalCode;
+        return E_UNMARSHAL(vburnOpret, ss >> evalCode;  // TODO: remove this
                                        ss >> VARINT(*targetCCid);
                                        ss >> targetSymbol;
                                        ss >> payoutsHash;
