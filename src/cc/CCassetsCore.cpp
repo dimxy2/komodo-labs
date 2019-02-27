@@ -239,9 +239,9 @@ CScript EncodeAssetCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,st
 }
 */
 
-vopret_t EncodeAssetOpRet(uint8_t assetFuncId, uint256 assetid2, int64_t price, std::vector<uint8_t> origpubkey)
+vscript_t EncodeAssetOpRet(uint8_t assetFuncId, uint256 assetid2, int64_t price, std::vector<uint8_t> origpubkey)
 {
-    vopret_t vopret; 
+    vscript_t vopret; 
 	uint8_t evalcode = EVAL_ASSETS;
 
     switch ( assetFuncId )
@@ -281,11 +281,11 @@ bool DecodeAssetCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &o
 
 uint8_t DecodeAssetTokenOpRet(const CScript &scriptPubKey, uint8_t &assetsEvalCode, uint256 &tokenid, uint256 &assetid2, int64_t &price, std::vector<uint8_t> &origpubkey)
 {
-    vopret_t vopretAssets; //, vopretAssetsStripped;
+    vscript_t vopretAssets; //, vopretAssetsStripped;
 	uint8_t *script, funcId = 0, assetsFuncId = 0, dummyEvalCode, dummyAssetFuncId;
 	uint256 dummyTokenid;
 	std::vector<CPubKey> voutPubkeysDummy;
-    std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
 
 	tokenid = zeroid;
 	assetid2 = zeroid;

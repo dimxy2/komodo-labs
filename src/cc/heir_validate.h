@@ -7,8 +7,8 @@
 #define IS_CHARINSTR(c, str) (std::string(str).find((char)(c)) != std::string::npos)
 
 // makes coin initial tx opret
-vopret_t EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, std::string memo);
-vopret_t EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t isHeirSpendingBegan);
+vscript_t EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, std::string memo);
+vscript_t EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t isHeirSpendingBegan);
 
 uint256 FindLatestFundingTx(uint256 fundingtxid, uint256 &tokenid, CScript& opRetScript, uint8_t &isHeirSpendingBegan);
 //uint8_t DecodeHeirOpRet(CScript scriptPubKey, uint256& fundingtxid, uint8_t &isHeirSpendingBegan, bool noLogging = false);

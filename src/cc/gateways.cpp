@@ -157,7 +157,7 @@ CScript EncodeGatewaysBindOpRet(uint8_t funcid,uint256 tokenid,std::string coin,
 {
     CScript opret; uint8_t evalcode = EVAL_GATEWAYS; struct CCcontract_info *cp,C; CPubKey gatewayspk;
     std::vector<CPubKey> pubkeys;
-    vopret_t vopret;
+    vscript_t vopret;
     
     cp = CCinit(&C,EVAL_GATEWAYS);
     gatewayspk = GetUnspendable(cp,0);
@@ -168,7 +168,7 @@ CScript EncodeGatewaysBindOpRet(uint8_t funcid,uint256 tokenid,std::string coin,
 
 uint8_t DecodeGatewaysBindOpRet(char *depositaddr,const CScript &scriptPubKey,uint256 &tokenid,std::string &coin,int64_t &totalsupply,uint256 &oracletxid,uint8_t &M,uint8_t &N,std::vector<CPubKey> &gatewaypubkeys,uint8_t &taddr,uint8_t &prefix,uint8_t &prefix2,uint8_t wiftype)
 {
-    std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
     std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f,tokenevalcode; std::vector<CPubKey> pubkeys;
 
     if (DecodeTokenOpRet(scriptPubKey,tokenevalcode,tokenid,pubkeys,oprets)!=0 && GetOpretBlob(oprets, OPRETID_GATEWAYSDATA, vOpretExtra) && tokenevalcode==EVAL_TOKENS && vOpretExtra.size()>0)
@@ -223,7 +223,7 @@ CScript EncodeGatewaysClaimOpRet(uint8_t funcid,uint256 tokenid,uint256 bindtxid
 {
     CScript opret; uint8_t evalcode = EVAL_GATEWAYS; struct CCcontract_info *cp,C; CPubKey gatewayspk;
     std::vector<CPubKey> pubkeys;
-    vopret_t vopret;
+    vscript_t vopret;
 
     pubkeys.push_back(destpub);
     vopret = /*<< OP_RETURN <<*/ E_MARSHAL(ss << evalcode << funcid << bindtxid << refcoin << deposittxid << destpub << amount);        
@@ -232,7 +232,7 @@ CScript EncodeGatewaysClaimOpRet(uint8_t funcid,uint256 tokenid,uint256 bindtxid
 
 uint8_t DecodeGatewaysClaimOpRet(const CScript &scriptPubKey,uint256 &tokenid,uint256 &bindtxid,std::string &refcoin,uint256 &deposittxid,CPubKey &destpub,int64_t &amount)
 {
-    std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
     std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f,tokenevalcode; std::vector<CPubKey> pubkeys;
 
     if (DecodeTokenOpRet(scriptPubKey,tokenevalcode,tokenid,pubkeys, oprets)!=0 && GetOpretBlob(oprets, OPRETID_GATEWAYSDATA, vOpretExtra) && tokenevalcode==EVAL_TOKENS && vOpretExtra.size()>0)
@@ -252,7 +252,7 @@ CScript EncodeGatewaysWithdrawOpRet(uint8_t funcid,uint256 tokenid,uint256 bindt
 {
     CScript opret; uint8_t evalcode = EVAL_GATEWAYS; struct CCcontract_info *cp,C; CPubKey gatewayspk;
     std::vector<CPubKey> pubkeys;
-    vopret_t vopret;
+    vscript_t vopret;
 
     cp = CCinit(&C,EVAL_GATEWAYS);
     gatewayspk = GetUnspendable(cp,0);
@@ -263,7 +263,7 @@ CScript EncodeGatewaysWithdrawOpRet(uint8_t funcid,uint256 tokenid,uint256 bindt
 
 uint8_t DecodeGatewaysWithdrawOpRet(const CScript &scriptPubKey, uint256& tokenid, uint256 &bindtxid, std::string &refcoin, CPubKey &withdrawpub, int64_t &amount)
 {
-    std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
     std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f,tokenevalcode; std::vector<CPubKey> pubkeys;
 
     if (DecodeTokenOpRet(scriptPubKey,tokenevalcode,tokenid,pubkeys, oprets)!=0 && GetOpretBlob(oprets, OPRETID_GATEWAYSDATA, vOpretExtra) && tokenevalcode==EVAL_TOKENS && vOpretExtra.size()>0)
@@ -342,7 +342,7 @@ uint8_t DecodeGatewaysMarkDoneOpRet(const CScript &scriptPubKey, uint256 &withdr
 
 uint8_t DecodeGatewaysOpRet(const CScript &scriptPubKey)
 {
-    std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
     std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f,tokenevalcode; std::vector<CPubKey> pubkeys; uint256 tokenid;
 
     if (DecodeTokenOpRet(scriptPubKey,tokenevalcode,tokenid,pubkeys, oprets)!=0 && GetOpretBlob(oprets, OPRETID_GATEWAYSDATA, vOpretExtra) && tokenevalcode==EVAL_TOKENS && vOpretExtra.size()>0)

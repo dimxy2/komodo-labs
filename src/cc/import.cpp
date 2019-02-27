@@ -426,7 +426,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
     if( burnTx.vout.size() == 0 )
         return Invalid("invalid-burn-tx-no-vouts");
 
-    vopret_t vburnOpret;
+    vscript_t vburnOpret;
     GetOpReturnData(importTx.vout.back().scriptPubKey, vburnOpret);
     if (vburnOpret.empty())
         return Invalid("invalid-burn-tx-no-opret");
@@ -444,15 +444,15 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
             return Invalid("payout-too-high-or-too-low");
     }
     else if (vburnOpret.begin()[0] == EVAL_TOKENS) { // for tokens
-        struct CCcontract_info *cpTokens, tokensCCinfo;
-        std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+        struct CCcontract_info *cpTokens, CCtokens_info;
+        std::vector<std::pair<uint8_t, vscript_t>>  oprets;
         uint256 tokenid;
         uint8_t evalCodeInOpret;
         std::vector<CPubKey> voutTokenPubkeys;
-        vopret_t vnonfungibleOpret;
+        vscript_t vnonfungibleOpret;
         uint8_t nonfungibleEvalCode = 0;
 
-        cpTokens = CCinit(&tokensCCinfo, EVAL_TOKENS);
+        cpTokens = CCinit(&CCtokens_info, EVAL_TOKENS);
 
         if (DecodeTokenOpRet(importTx.vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) == 0)  // no nonfungible data in burn tx
             return false;

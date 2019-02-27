@@ -1479,7 +1479,7 @@ UniValue decodeccopret(const UniValue& params, bool fHelp)
     }
     std::vector<unsigned char> hex(ParseHex(params[0].get_str()));
     CScript scripthex(hex.begin(),hex.end());
-    std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
     if (DecodeTokenOpRet(scripthex,tokenevalcode,tokenid,pubkeys, oprets)!=0 && tokenevalcode==EVAL_TOKENS && oprets.size()>0)
     {
         // seems we need a loop here

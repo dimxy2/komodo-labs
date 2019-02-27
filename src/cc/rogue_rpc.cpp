@@ -169,7 +169,7 @@ CScript rogue_highlanderopret(uint8_t funcid,uint256 gametxid,int32_t regslot,CP
 uint8_t rogue_highlanderopretdecode(uint256 &gametxid, uint256 &tokenid, int32_t &regslot, CPubKey &pk, std::vector<uint8_t> &playerdata, std::string &symbol, std::string &pname,CScript scriptPubKey)
 {
     std::string name, description; std::vector<uint8_t> vorigPubkey;
-    std::vector<std::pair<uint8_t, vopret_t>>  oprets, opretsDummy;
+    std::vector<std::pair<uint8_t, vscript_t>>  oprets, opretsDummy;
     std::vector<uint8_t> vopretNonfungible, vopret, vopretDummy,origpubkey;
     uint8_t e, f,*script; std::vector<CPubKey> voutPubkeys;
     tokenid = zeroid;
@@ -208,7 +208,7 @@ uint8_t rogue_keystrokesopretdecode(uint256 &gametxid,uint256 &batontxid,CPubKey
 uint8_t rogue_registeropretdecode(uint256 &gametxid,uint256 &tokenid,uint256 &playertxid,CScript scriptPubKey)
 {
     std::string name, description; std::vector<uint8_t> vorigPubkey;
-    std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
     std::vector<uint8_t> vopretNonfungible, vopret, vopretDummy,origpubkey;
     uint8_t e, f,*script; std::vector<CPubKey> voutPubkeys;
     tokenid = zeroid;
@@ -790,13 +790,13 @@ UniValue rogue_register(uint64_t txfee,struct CCcontract_info *cp,cJSON *params)
                     voutPubkeysEmpty.push_back(burnpk);
                     if ( myGetTransaction(playertxid,playertx,hashBlock) != 0 )
                     {
-                        std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+                        std::vector<std::pair<uint8_t, vscript_t>>  oprets;
                         if ( (funcid= DecodeTokenOpRet(playertx.vout.back().scriptPubKey, e, tid, voutPubkeys, oprets)) != 0)
                         {  // if token in the opret
                             didtx = 1;
                             if ( funcid == 'c' )
                                 tid = tokenid == zeroid ? playertxid : tokenid;
-                            vopret_t vopretRegister;
+                            vscript_t vopretRegister;
                             GetOpReturnData(opretRegister, vopretRegister);
                             rawtx = FinalizeCCTx(0, cp, mtx, mypk, txfee,
                                 EncodeTokenOpRet(tid, voutPubkeysEmpty /*=never spent*/, std::make_pair(OPRETID_ROGUEGAMEDATA, vopretRegister)));

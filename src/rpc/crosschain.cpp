@@ -323,11 +323,11 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
     else    {   // tokens
         CTransaction tokenbasetx;
         uint256 hashBlock;
-        vopret_t vopretNonfungible;
-        vopret_t vopretBurnData;
+        vscript_t vopretNonfungible;
+        vscript_t vopretBurnData;
         std::vector<uint8_t> vorigpubkey, vdestpubkey;
         std::string name, description;
-        std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+        std::vector<std::pair<uint8_t, vscript_t>>  oprets;
 
         if (!myGetTransaction(tokenid, tokenbasetx, hashBlock)) 
             throw runtime_error("Could not load token creation tx\n");
@@ -354,7 +354,8 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         // destination vouts (payouts) which would create the import tx with non-fungible token:
         mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens, NULL)));  // new marker to token cc addr, burnable and validated, vout pos now changed to 0 (from 1)
         mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, destPubKey));
-        mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenCreateOpRet('c', vorigpubkey, name, description, vopretNonfungible)));  // make token create opret
+        mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenImportOpRet(vorigpubkey, name, description, tokenid, 
+            std::vector<std::pair<uint8_t, vscript_t>> {std::make_pair(OPRETID_NONFUNGIBLEDATA, vopretNonfungible)})));  // make token import opret
         ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save payouts for import tx
 
         CTxOut burnOut = MakeBurnOutput(0, ccid, targetSymbol, mtx.vout, rawproof);  //make opret with amount=0 because tokens are burned, not coins (see next vout) 
@@ -366,8 +367,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         voutTokenPubkeys.push_back(pubkey2pk(ParseHex(CC_BURNPUBKEY)));  // maybe we do not need this
 
         GetOpReturnData(burnOut.scriptPubKey, vopretBurnData);
-        // opret with token and burn data:
-        mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenOpRet(tokenid, voutTokenPubkeys, std::make_pair(OPRETID_BURNDATA, vopretBurnData))));  //should be the last vout
+        mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenOpRet(tokenid, voutTokenPubkeys, std::make_pair(OPRETID_BURNDATA, vopretBurnData))));  //token opret with burn data, should be the last vout
     }
 
     std::string exportTxHex = FinalizeCCTx(0, cpTokens, mtx, myPubKey, txfee, CScript()/*no opret*/);

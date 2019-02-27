@@ -44,19 +44,20 @@ CTransaction MakeImportCoinTransaction(const TxProof proof, const CTransaction b
     auto importData = E_MARSHAL(ss << proof; ss << burnTx);
 
     // if it is tokens:
-    vopret_t vopret;
+    vscript_t vopret;
     GetOpReturnData(mtx.vout.back().scriptPubKey, vopret);
     if (!vopret.empty() && vopret.begin()[0] == EVAL_TOKENS) {
-        vopret_t vorigpubkey;
+        vscript_t vorigpubkey;
         uint8_t funcId;
-        std::vector <std::pair<uint8_t, vopret_t>> oprets;
+        std::vector <std::pair<uint8_t, vscript_t>> oprets;
         std::string name, desc;
+        uint256 srctokenid;
 
-        DecodeTokenCreateOpRet(mtx.vout.back().scriptPubKey, vorigpubkey, name, desc, oprets);   // parse token opret
+        DecodeTokenImportOpRet(mtx.vout.back().scriptPubKey, vorigpubkey, name, desc, srctokenid, oprets);   // parse token 'i' opret
         mtx.vout.pop_back(); //remove old token opret
 
         oprets.push_back(std::make_pair(OPRETID_IMPORTDATA, importData));
-        mtx.vout.push_back(CTxOut(0, EncodeTokenCreateOpRet('c', vorigpubkey, name, desc, oprets)));   // make new token opret and add importData
+        mtx.vout.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srctokenid, oprets)));   // make new token 'i' opret with importData
                                                                                     
         scriptSig << E_MARSHAL(ss << EVAL_IMPORTCOIN);      // make payload for tokens
     }
@@ -100,25 +101,26 @@ bool UnmarshalImportTx(const CTransaction &importTx, TxProof &proof, CTransactio
 
     if (vData.begin()[0] == EVAL_TOKENS) {          // if it is tokens
         // get import data after token opret:
-        std::vector<std::pair<uint8_t, vopret_t>>  oprets;
-        vopret_t vorigpubkey;
+        std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+        vscript_t vorigpubkey;
         std::string name, desc;
+        uint256 srctokenid;
 
         //if (DecodeTokenOpRet(importTx.vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) == 0)
-        if (DecodeTokenCreateOpRet(importTx.vout.back().scriptPubKey, vorigpubkey, name, desc, oprets) == 0)
+        if (DecodeTokenImportOpRet(importTx.vout.back().scriptPubKey, vorigpubkey, name, desc, srctokenid, oprets) == 0)
             return false;
 
         GetOpretBlob(oprets, OPRETID_IMPORTDATA, vData);  // fetch import data after token opret
 
         // remove import data from token opret (it has not been in payouts)
-        for (std::vector<std::pair<uint8_t, vopret_t>>::const_iterator i = oprets.begin(); i != oprets.end(); i++)
+        for (std::vector<std::pair<uint8_t, vscript_t>>::const_iterator i = oprets.begin(); i != oprets.end(); i++)
             if ((*i).first == OPRETID_IMPORTDATA) {
                 oprets.erase(i);
                 break;
             }
 
         payouts = std::vector<CTxOut>(importTx.vout.begin(), importTx.vout.end()-1);    
-        payouts.push_back(CTxOut(0, EncodeTokenCreateOpRet('c', vorigpubkey, name, desc, oprets)));   // make payouts token opret 
+        payouts.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srctokenid, oprets)));   // make payouts token opret 
         
         CScript testScriptSig = (CScript() << E_MARSHAL(ss << EVAL_IMPORTCOIN));
         if (importTx.vin[0].scriptSig != testScriptSig)
@@ -151,7 +153,7 @@ bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint
     }
 
     if (vburnOpret.begin()[0] == EVAL_TOKENS) {      //if it is tokens
-        std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+        std::vector<std::pair<uint8_t, vscript_t>>  oprets;
         uint256 tokenid;
         uint8_t evalCodeInOpret;
         std::vector<CPubKey> voutTokenPubkeys;
@@ -186,7 +188,7 @@ CAmount GetCoinImportValue(const CTransaction &tx)
 
     if (UnmarshalImportTx(tx, proof, burnTx, payouts)) {
         if (burnTx.vout.size() > 0)  {
-            vopret_t vburnOpret;
+            vscript_t vburnOpret;
 
             GetOpReturnData(burnTx.vout.back().scriptPubKey, vburnOpret);
             if (vburnOpret.empty()) {

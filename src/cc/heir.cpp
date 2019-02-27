@@ -255,7 +255,7 @@ template <class Helper> int64_t IsHeirFundingVout(struct CCcontract_info* cp, co
 }
 
 // makes coin initial tx opret
-vopret_t EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, std::string memo)
+vscript_t EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heirPubkey, int64_t inactivityTimeSec, std::string heirName, std::string memo)
 {
     uint8_t evalcode = EVAL_HEIR;
     
@@ -263,7 +263,7 @@ vopret_t EncodeHeirCreateOpRet(uint8_t funcid, CPubKey ownerPubkey, CPubKey heir
 }
 
 // makes coin additional tx opret
-vopret_t EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t hasHeirSpendingBegun)
+vscript_t EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t hasHeirSpendingBegun)
 {
     uint8_t evalcode = EVAL_HEIR;
     
@@ -273,7 +273,7 @@ vopret_t EncodeHeirOpRet(uint8_t funcid,  uint256 fundingtxid, uint8_t hasHeirSp
 
 
 // decode opret vout for Heir contract
-uint8_t _DecodeHeirOpRet(vopret_t vopret, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, std::string& memo, uint256& fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging)
+uint8_t _DecodeHeirOpRet(vscript_t vopret, CPubKey& ownerPubkey, CPubKey& heirPubkey, int64_t& inactivityTime, std::string& heirName, std::string& memo, uint256& fundingTxidInOpret, uint8_t &hasHeirSpendingBegun, bool noLogging)
 {
     uint8_t evalCodeInOpret = 0;
     uint8_t heirFuncId = 0;
@@ -327,8 +327,8 @@ uint8_t _DecodeHeirEitherOpRet(CScript scriptPubKey, uint256 &tokenid, CPubKey& 
 {
 	uint8_t evalCodeTokens = 0;
 	std::vector<CPubKey> voutPubkeysDummy;
-    std::vector<std::pair<uint8_t, vopret_t>> oprets;
-    vopret_t vopretExtra /*, vopretStripped*/;
+    std::vector<std::pair<uint8_t, vscript_t>> oprets;
+    vscript_t vopretExtra /*, vopretStripped*/;
 
 
 	if (DecodeTokenOpRet(scriptPubKey, evalCodeTokens, tokenid, voutPubkeysDummy, oprets) != 0 && GetOpretBlob(oprets, OPRETID_HEIRDATA, vopretExtra)) {

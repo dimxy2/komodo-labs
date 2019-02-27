@@ -92,7 +92,7 @@ int64_t IsChannelsMarkervout(struct CCcontract_info *cp,const CTransaction& tx,C
 CScript EncodeChannelsOpRet(uint8_t funcid,uint256 tokenid,uint256 opentxid,CPubKey srcpub,CPubKey destpub,int32_t numpayments,int64_t payment,uint256 hashchain)
 {
     CScript opret; uint8_t evalcode = EVAL_CHANNELS;
-    vopret_t vopret;
+    vscript_t vopret;
 
     vopret = E_MARSHAL(ss << evalcode << funcid << opentxid << srcpub << destpub << numpayments << payment << hashchain);
     if (tokenid!=zeroid)
@@ -108,7 +108,7 @@ CScript EncodeChannelsOpRet(uint8_t funcid,uint256 tokenid,uint256 opentxid,CPub
 
 uint8_t DecodeChannelsOpRet(const CScript &scriptPubKey, uint256 &tokenid, uint256 &opentxid, CPubKey &srcpub,CPubKey &destpub,int32_t &numpayments,int64_t &payment,uint256 &hashchain)
 {
-    std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
     std::vector<uint8_t> vopret,vOpretExtra; uint8_t *script,e,f,tokenevalcode;
     std::vector<CPubKey> pubkeys;
 

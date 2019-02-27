@@ -43,7 +43,7 @@
 
 // NOTE: this inital tx won't be used by other contract
 // for tokens to be used there should be at least one 't' tx with other contract's custom opret
-CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, vopret_t vopretNonfungible)
+CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, vscript_t vopretNonfungible)
 {
  /*   CScript opret; 
     uint8_t evalcode = EVAL_TOKENS;
@@ -55,13 +55,13 @@ CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, 
             ss << vopretNonfungible;
         });  */
 
-    std::vector<std::pair<uint8_t, vopret_t>> oprets;
+    std::vector<std::pair<uint8_t, vscript_t>> oprets;
 
     oprets.push_back(std::make_pair(OPRETID_NONFUNGIBLEDATA, vopretNonfungible));
     return EncodeTokenCreateOpRet(funcid, origpubkey, name, description, oprets);
 }
 
-CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, std::vector<std::pair<uint8_t, vopret_t>> oprets)
+CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, std::vector<std::pair<uint8_t, vscript_t>> oprets)
 {
     CScript opret;
     uint8_t evalcode = EVAL_TOKENS;
@@ -77,16 +77,33 @@ CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, 
     return(opret);
 }
 
-
-
-CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std::pair<uint8_t, vopret_t> opretWithId)
+// opret 'i' for imported tokens
+CScript EncodeTokenImportOpRet(std::vector<uint8_t> origpubkey, std::string name, std::string description, uint256 srctokenid, std::vector<std::pair<uint8_t, vscript_t>> oprets)
 {
-    std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+    CScript opret;
+    uint8_t evalcode = EVAL_TOKENS;
+    uint8_t funcid = 'i'; // override the param
+
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << origpubkey << name << description << srctokenid;
+    for (auto o : oprets) {
+        if (o.first != 0) {
+            ss << (uint8_t)o.first;
+            ss << o.second;
+        }
+    });
+    return(opret);
+}
+
+
+
+CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std::pair<uint8_t, vscript_t> opretWithId)
+{
+    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
     oprets.push_back(opretWithId);
     return EncodeTokenOpRet(tokenid, voutPubkeys, oprets);
 }
 
-CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std::vector<std::pair<uint8_t, vopret_t>> oprets)
+CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std::vector<std::pair<uint8_t, vscript_t>> oprets)
 {
     CScript opret; 
 	uint8_t tokenFuncId = 't';
@@ -139,35 +156,63 @@ CScript EncodeTokenOpRet(uint256 tokenid, std::vector<CPubKey> voutPubkeys, std:
 //	return EncodeTokenOpRet(tokenid, voutPubkeys, payload);
 //}
 
-// overload for fungible:
-uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, vopret_t &origpubkey, std::string &name, std::string &description) {
+// overload for fungible tokens (no additional data in opret):
+uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, vscript_t &origpubkey, std::string &name, std::string &description) {
     //vopret_t  vopretNonfungibleDummy;
-    std::vector<std::pair<uint8_t, vopret_t>>  opretsDummy;
+    std::vector<std::pair<uint8_t, vscript_t>>  opretsDummy;
     return DecodeTokenCreateOpRet(scriptPubKey, origpubkey, name, description, opretsDummy);
 }
 
-uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey,vopret_t &origpubkey,std::string &name,std::string &description, std::vector<std::pair<uint8_t, vopret_t>>  &oprets)
+uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, vscript_t &origpubkey, std::string &name, std::string &description, std::vector<std::pair<uint8_t, vscript_t>> &oprets)
 {
-    vopret_t vopret, vblob;
-    uint8_t dummyEvalcode, funcid, *script, opretId = 0;
+    vscript_t vopret, vblob;
+    uint8_t dummyEvalcode, funcid, opretId = 0;
 
     GetOpReturnData(scriptPubKey, vopret);
-    script = (uint8_t *)vopret.data();
     oprets.clear();
 
-    if ( script != 0 && vopret.size() > 2 && script[0] == EVAL_TOKENS && script[1] == 'c' )
+    if (vopret.size() > 2 && vopret.begin()[0] == EVAL_TOKENS && vopret.begin()[1] == 'c' )
     {
-        if (E_UNMARSHAL(vopret, ss >> dummyEvalcode; ss >> funcid; ss >> origpubkey; ss >> name; ss >> description;     
-            // we suppose in 'c' opret it might be only non-fungible payload and not any assets/heir/etc payloads
-            while (!ss.eof()) {                                                 
-                ss >> opretId;                                               
+        if (E_UNMARSHAL(vopret, ss >> dummyEvalcode; ss >> funcid; ss >> origpubkey; ss >> name; ss >> description;
+            while (!ss.eof()) {
+                ss >> opretId;
                 if (!ss.eof()) {
                     ss >> vblob;
                     oprets.push_back(std::make_pair(opretId, vblob));
                 }
             }))
+        {
             return(funcid);
+        }
     }
+    LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenCreateOpRet() incorrect token create opret" << std::endl);
+    return (uint8_t)0;
+}
+
+// for imported tokens
+uint8_t DecodeTokenImportOpRet(const CScript &scriptPubKey, vscript_t &origpubkey, std::string &name, std::string &description, uint256 srctokenid, std::vector<std::pair<uint8_t, vscript_t>>  &oprets)
+{
+    vscript_t vopret, vblob;
+    uint8_t dummyEvalcode, funcid, opretId = 0;
+
+    GetOpReturnData(scriptPubKey, vopret);
+    oprets.clear();
+
+    if (vopret.size() > 2 && vopret.begin()[0] == EVAL_TOKENS && vopret.begin()[1] == 'i')
+    {
+        if (E_UNMARSHAL(vopret, ss >> dummyEvalcode; ss >> funcid; ss >> origpubkey; ss >> name; ss >> description; ss >> srctokenid;
+            while (!ss.eof()) {
+                ss >> opretId;
+                if (!ss.eof()) {
+                    ss >> vblob;
+                    oprets.push_back(std::make_pair(opretId, vblob));
+                }
+            }))
+        {
+            return(funcid);
+        }
+    }
+    LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenImportOpRet() incorrect token import opret" << std::endl);
     return (uint8_t)0;
 }
 
@@ -194,11 +239,12 @@ uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey,vopret_t &origpubkey,
 // decodes token opret: 
 // for 't' returns all data from opret, vopretExtra contains other contract's data (currently only assets'). 
 // for 'c' returns only funcid. NOTE: nonfungible data is not returned
-uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<std::pair<uint8_t, vopret_t>>  &oprets)
+uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<std::pair<uint8_t, vscript_t>>  &oprets)
 {
-    vopret_t vopret, vblob, dummyPubkey, vnonfungibleDummy;
+    vscript_t vopret, vblob, dummyPubkey, vnonfungibleDummy;
 	uint8_t funcId=0, *script, dummyEvalCode, dummyFuncId, ccType, opretId = 0;
 	std::string dummyName; std::string dummyDescription;
+    uint256 dummySrcTokenId;
 	CPubKey voutPubkey1, voutPubkey2;
 
     GetOpReturnData(scriptPubKey, vopret);
@@ -224,6 +270,8 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
         {
             case 'c': 
 				return DecodeTokenCreateOpRet(scriptPubKey, dummyPubkey, dummyName, dummyDescription, oprets);  
+            case 'i':
+                return DecodeTokenImportOpRet(scriptPubKey, dummyPubkey, dummyName, dummyDescription, dummySrcTokenId, oprets);
 				//break;
             case 't':  
 			//not used yet: case 'l':
@@ -275,8 +323,8 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 	CTxDestination address; CTransaction vinTx, createTx; uint256 hashBlock, tokenid, tokenid2;
 	int32_t i, starti, numvins, numvouts, preventCCvins, preventCCvouts;
 	int64_t remaining_price, nValue, tokenoshis, outputs, inputs, tmpprice, totalunits, ignore; 
-    std::vector<std::pair<uint8_t, vopret_t>>  oprets;
-	vopret_t /*vopretExtra,*/ tmporigpubkey, ignorepubkey;
+    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+	vscript_t /*vopretExtra,*/ tmporigpubkey, ignorepubkey;
 	uint8_t funcid, evalCodeInOpret;
 	char destaddr[64], origaddr[64], CCaddr[64];
 	std::vector<CPubKey> voutTokenPubkeys, vinTokenPubkeys;
@@ -319,7 +367,7 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
         // validate spending from token unspendable cc addr:
         int64_t burnedAmount = HasBurnedTokensvouts(cp, eval, tx, tokenid);
         if (burnedAmount > 0) {
-            vopret_t vopretNonfungible;
+            vscript_t vopretNonfungible;
             GetNonfungibleData(tokenid, vopretNonfungible);
             if( vopretNonfungible.empty() )
                 return eval->Invalid("spending cc marker not supported for fungible tokens");
@@ -428,7 +476,7 @@ uint8_t ValidateTokenOpret(CTransaction tx, uint256 tokenid) {
 	uint8_t funcid;
 	uint8_t dummyEvalCode;
     std::vector<CPubKey> voutPubkeysDummy;
-    std::vector<std::pair<uint8_t, vopret_t>>  opretsDummy;
+    std::vector<std::pair<uint8_t, vscript_t>>  opretsDummy;
 
 	// this is just for log messages indentation fur debugging recursive calls:
 	std::string indentStr = std::string().append(tokenValIndentSize, '.');
@@ -444,13 +492,23 @@ uint8_t ValidateTokenOpret(CTransaction tx, uint256 tokenid) {
 	else if (funcid == 'c')
 	{
 		if (tokenid != zeroid && tokenid == tx.GetHash()) {
-            LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << indentStr << "ValidateTokenOpret() this is the tokenbase 'c' tx, txid=" << tx.GetHash().GetHex() << " returning true" << std::endl);
+            LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << indentStr << "ValidateTokenOpret() this is tokenbase 'c' tx, txid=" << tx.GetHash().GetHex() << " returning true" << std::endl);
 			return funcid;
 		}
         else {
             LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << indentStr << "ValidateTokenOpret() not my tokenbase txid=" << tx.GetHash().GetHex() << std::endl);
         }
 	}
+    else if (funcid == 'i')
+    {
+        if (tokenid != zeroid && tokenid == tx.GetHash()) {
+            LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << indentStr << "ValidateTokenOpret() this is import 'i' tx, txid=" << tx.GetHash().GetHex() << " returning true" << std::endl);
+            return funcid;
+        }
+        else {
+            LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << indentStr << "ValidateTokenOpret() not my import txid=" << tx.GetHash().GetHex() << std::endl);
+        }
+    }
 	else if (funcid == 't')  
 	{
 		//std::cerr << indentStr << "ValidateTokenOpret() tokenid=" << tokenid.GetHex() << " tokenIdOpret=" << tokenidOpret.GetHex() << " txid=" << tx.GetHash().GetHex() << std::endl;
@@ -481,7 +539,7 @@ void FilterOutTokensUnspendablePk(const std::vector<CPubKey> &sourcePubkeys, std
 
 }
 
-void FilterOutBurnOpret(const std::vector<std::pair<uint8_t, vopret_t>>  &oprets, vopret_t vopret) {
+void FilterOutBurnOpret(const std::vector<std::pair<uint8_t, vscript_t>>  &oprets, vscript_t vopret) {
 
     vopret.clear();
 
@@ -546,8 +604,8 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
             uint8_t dummyEvalCode;
             uint256 tokenIdOpret;
             std::vector<CPubKey> voutPubkeys, voutPubkeysInOpret;
-            vopret_t vopretExtra, vopretNonfungible;
-            std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+            vscript_t vopretExtra, vopretNonfungible;
+            std::vector<std::pair<uint8_t, vscript_t>>  oprets;
 
             uint8_t evalCode = EVAL_TOKENS;     // if both payloads are empty maybe it is a transfer to non-payload-one-eval-token vout like GatewaysClaim
             uint8_t evalCode2 = 0;              // will be checked if zero or not
@@ -575,7 +633,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
                 evalCode2 = vopretExtra.begin()[0];
 
             if (evalCode == EVAL_TOKENS && evalCode2 != 0)  {
-                evalCode = evalCode2;
+                evalCode = evalCode2;   // for using MakeTokensCC1vout(evalcode,...) instead of MakeCC1vout(EVAL_TOKENS, evalcode...)
                 evalCode2 = 0;
             }
             
@@ -640,9 +698,9 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
 			}
 			else	{
                 CPubKey origPubkey;
-                vopret_t vorigPubkey;
+                vscript_t vorigPubkey;
                 std::string  dummyName, dummyDescription;
-                std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+                std::vector<std::pair<uint8_t, vscript_t>>  oprets;
 
                 if (DecodeTokenCreateOpRet(tx.vout.back().scriptPubKey, vorigPubkey, dummyName, dummyDescription, oprets) == 0) {
                     LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << indentStr << "IsTokensvout() could not decode create opret" << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl);
@@ -752,7 +810,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cp, int64_t &inpu
 
 
 // get non-fungible data from 'tokenbase' tx (the data might be empty)
-void GetNonfungibleData(uint256 tokenid, vopret_t &vopretNonfungible)
+void GetNonfungibleData(uint256 tokenid, vscript_t &vopretNonfungible)
 {
     CTransaction tokenbasetx;
     uint256 hashBlock;
@@ -767,7 +825,7 @@ void GetNonfungibleData(uint256 tokenid, vopret_t &vopretNonfungible)
     if (tokenbasetx.vout.size() > 0) {
         std::vector<uint8_t> origpubkey;
         std::string name, description;
-        std::vector<std::pair<uint8_t, vopret_t>>  oprets;
+        std::vector<std::pair<uint8_t, vscript_t>>  oprets;
 
         if (DecodeTokenCreateOpRet(tokenbasetx.vout.back().scriptPubKey, origpubkey, name, description, oprets) == 'c') {
             GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vopretNonfungible);
@@ -778,13 +836,13 @@ void GetNonfungibleData(uint256 tokenid, vopret_t &vopretNonfungible)
 
 // overload, adds inputs from token cc addr
 int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs) {
-    vopret_t vopretNonfungibleDummy;
+    vscript_t vopretNonfungibleDummy;
     return AddTokenCCInputs(cp, mtx, pk, tokenid, total, maxinputs, vopretNonfungibleDummy);
 }
 
 // adds inputs from token cc addr and returns non-fungible opret payload if present
 // also sets evalcode in cp, if needed
-int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs, vopret_t &vopretNonfungible)
+int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, CPubKey pk, uint256 tokenid, int64_t total, int32_t maxinputs, vscript_t &vopretNonfungible)
 {
 	char tokenaddr[64], destaddr[64]; 
 	int64_t threshold, nValue, price, totalinputs = 0;  
@@ -836,7 +894,7 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
 			{
 				//for non-fungible tokens check payload:
                 if (!vopretNonfungible.empty()) {
-                    vopret_t vopret;
+                    vscript_t vopret;
 
                     // check if it is non-fungible token:
                     GetNonfungibleData(tokenid, vopret);
@@ -872,8 +930,8 @@ int64_t HasBurnedTokensvouts(struct CCcontract_info *cp, Eval* eval, const CTran
     uint8_t dummyEvalCode;
     uint256 tokenIdOpret;
     std::vector<CPubKey> voutPubkeys, voutPubkeysDummy;
-    std::vector<std::pair<uint8_t, vopret_t>>  oprets;
-    vopret_t vopretExtra, vopretNonfungible;
+    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+    vscript_t vopretExtra, vopretNonfungible;
 
     uint8_t evalCode = EVAL_TOKENS;     // if both payloads are empty maybe it is a transfer to non-payload-one-eval-token vout like GatewaysClaim
     uint8_t evalCode2 = 0;              // will be checked if zero or not
@@ -948,14 +1006,14 @@ CPubKey GetTokenOriginatorPubKey(CScript scriptPubKey) {
     uint8_t funcId, evalCode;
     uint256 tokenid;
     std::vector<CPubKey> voutTokenPubkeys;
-    std::vector<std::pair<uint8_t, vopret_t>> oprets;
+    std::vector<std::pair<uint8_t, vscript_t>> oprets;
 
     if ((funcId = DecodeTokenOpRet(scriptPubKey, evalCode, tokenid, voutTokenPubkeys, oprets)) != 0) {
         CTransaction tokenbasetx;
         uint256 hashBlock;
 
         if (myGetTransaction(tokenid, tokenbasetx, hashBlock) && tokenbasetx.vout.size() > 0) {
-            vopret_t vorigpubkey;
+            vscript_t vorigpubkey;
             std::string name, desc;
             if (DecodeTokenCreateOpRet(tokenbasetx.vout.back().scriptPubKey, vorigpubkey, name, desc) != 0)
                 return pubkey2pk(vorigpubkey);
@@ -965,7 +1023,7 @@ CPubKey GetTokenOriginatorPubKey(CScript scriptPubKey) {
 }
 
 
-std::string CreateToken(int64_t txfee, int64_t tokensupply, std::string name, std::string description, vopret_t nonfungibleData)
+std::string CreateToken(int64_t txfee, int64_t tokensupply, std::string name, std::string description, vscript_t nonfungibleData)
 {
 	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
 	CPubKey mypk; struct CCcontract_info *cp, C;
@@ -1014,11 +1072,11 @@ std::string CreateToken(int64_t txfee, int64_t tokensupply, std::string name, st
 
 // transfer tokens to another pubkey
 // param additionalEvalCode allows transfer of dual-eval non-fungible tokens
-std::string TokenTransfer(int64_t txfee, uint256 tokenid, vopret_t destpubkey, int64_t total)
+std::string TokenTransfer(int64_t txfee, uint256 tokenid, vscript_t destpubkey, int64_t total)
 {
 	CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
 	CPubKey mypk; uint64_t mask; int64_t CCchange = 0, inputs = 0;  struct CCcontract_info *cp, C;
-	vopret_t vopretNonfungible, vopretEmpty;
+	vscript_t vopretNonfungible, vopretEmpty;
 
 	if (total < 0)	{
         CCerror = strprintf("negative total");
@@ -1099,8 +1157,8 @@ UniValue TokenInfo(uint256 tokenid)
     uint256 hashBlock; 
     CTransaction vintx; 
     std::vector<uint8_t> origpubkey; 
-    std::vector<std::pair<uint8_t, vopret_t>>  oprets;
-    vopret_t vopretNonfungible;
+    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+    vscript_t vopretNonfungible;
     std::string name, description; 
     struct CCcontract_info *cpTokens, tokensCCinfo;
 
