@@ -220,7 +220,7 @@ char *pubkey33_str(char *dest,uint8_t *pubkey33)
     return(dest);
 }
 
-uint256 Parseuint256(char *hexstr)
+uint256 Parseuint256(const char *hexstr)
 {
     uint256 txid; int32_t i; std::vector<unsigned char> txidbytes(ParseHex(hexstr));
     memset(&txid,0,sizeof(txid));
