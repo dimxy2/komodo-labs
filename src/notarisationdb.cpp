@@ -45,6 +45,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
             if ( is_STAKED(data.symbol) == 255 )
             {
                 // this chain is banned... we will discard its notarisation. 
+                LogPrintf("ScanBlockNotarisations() is_STAKED(data.symbol) == 255! \n");
                 continue;
             }
             // We need to create auth_STAKED dynamically here based on timestamp
@@ -52,22 +53,26 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
             if ( staked_era == 0 ) 
             {
                 // this is an ERA GAP, so we will ignore this notarization
+                LogPrintf("ScanBlockNotarisations() staked_era == 0! \n");
                 continue;
             } 
             // pass era slection off to notaries_staked.cpp file
             auth_STAKED = Choose_auth_STAKED(staked_era);
-            if (!CheckTxAuthority(tx, auth_STAKED))
+            if (!CheckTxAuthority(tx, auth_STAKED)) {
+                LogPrintf("ScanBlockNotarisations() !CheckTxAuthority()==true! \n");
                 continue;
+            }
         }
-        LogPrintf("ScanBlockNotarisations Authorised notarisation data for %s \n",data.symbol);
+        LogPrintf("ScanBlockNotarisations() Authorised notarisation data for %s \n",data.symbol);
         if (parsed) 
         {
             vNotarisations.push_back(std::make_pair(tx.GetHash(), data));
-            LogPrintf("Parsed a notarisation for: %s, txid:%s, ccid:%i, momdepth:%i\n",
+            LogPrintf("ScanBlockNotarisations() Parsed a notarisation for: %s, txid:%s, ccid:%i, momdepth:%i\n",
                   data.symbol, tx.GetHash().GetHex().data(), data.ccId, data.MoMDepth);
-            if (!data.MoMoM.IsNull()) printf("MoMoM:%s\n", data.MoMoM.GetHex().data());
+            if (!data.MoMoM.IsNull()) 
+                LogPrintf("ScanBlockNotarisations() MoMoM:%s\n", data.MoMoM.GetHex().data());
         } else
-            LogPrintf("WARNING: Couldn't parse notarisation for tx: %s at height %i\n",
+            LogPrintf("ScanBlockNotarisations() WARNING: Couldn't parse notarisation for tx: %s at height %i\n",
                     tx.GetHash().GetHex().data(), nHeight);
     }
     return vNotarisations;
