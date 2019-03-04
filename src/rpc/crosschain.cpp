@@ -255,7 +255,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
     uint32_t ccid = ASSETCHAINS_CC;
     int64_t txfee = 10000;
 
-    if (fHelp || params.size() != 3 || params.size() != 4)
+    if (fHelp || params.size() != 3 && params.size() != 4)
         throw runtime_error(
             "migrate_createburntransaction dest_symbol dest_addr amount [tokenid]\n"
             "\nCreates a raw burn transaction to make a cross-chain coin or non-fungible token transfer.\n"
