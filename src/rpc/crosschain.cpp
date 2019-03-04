@@ -148,7 +148,7 @@ UniValue MoMoMdata(const UniValue& params, bool fHelp)
     
     uint256 destNotarisationTxid;
     std::vector<uint256> moms;
-    //fprintf(stderr, "symbol.%s CCid.%i kmdHeight.%i\n", symbol, ccid, kmdheight);
+    LogPrintf("MoMoMdata() symbol.%s CCid.%i kmdHeight.%i\n", symbol, ccid, kmdheight);
     uint256 MoMoM = CalculateProofRoot(symbol, ccid, kmdheight, moms, destNotarisationTxid);
     if ( MoMoM.IsNull() ) // || kmdheight > notarized_height )
     {

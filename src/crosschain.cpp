@@ -69,7 +69,10 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
     int authority = GetSymbolAuthority(symbol);
 
     for (int i=0; i<NOTARISATION_SCAN_LIMIT_BLOCKS; i++) {
-        if (i > kmdHeight) break;
+        if (i > kmdHeight) {
+            LogPrintf("CalculateProofRoot if(i > kmdHeight) is true, lasti=%d\n", i);
+            break;
+        }
         NotarisationsInBlock notarisations;
         uint256 blockHash = *chainActive[kmdHeight-i]->phashBlock;
         if (!GetBlockNotarisations(blockHash, notarisations))
@@ -87,6 +90,7 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
                     destNotarisationTxid = nota.first;
                 else if (seenOwnNotarisations == 3)
                 {
+                    LogPrintf("CalculateProofRoot if(seenOwnNotarisations == 3) is true, lasti=%d\n", i);
                     goto end;
                 }
                 //break;
@@ -102,7 +106,7 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
                 if (GetSymbolAuthority(nota.second.symbol) == authority)
                     if (nota.second.ccId == targetCCid) {
                         moms.push_back(nota.second.MoM);
-                        //fprintf(stderr, "added mom: %s\n",nota.second.MoM.GetHex().data());
+                        LogPrintf("CalculateProofRoot() added mom: %s\n", nota.second.MoM.GetHex().data());
                     }
             }
         }
@@ -137,6 +141,7 @@ int ScanNotarisationsFromHeight(int nHeight, const IsTarget f, Notarisation &fou
 
         BOOST_FOREACH(found, notarisations) {
             if (f(found)) {
+                LogPrintf("ScanNotarisationsFromHeight() found==true start=%d h=%d\n", start, h);
                 return h;
             }
         }
@@ -192,12 +197,12 @@ TxProof GetCrossChainProof(const uint256 txid, const char* targetSymbol, uint32_
     // Get MoMs for kmd height and symbol
     std::vector<uint256> moms;
     uint256 targetChainNotarisationTxid;
-    fprintf(stderr, "targetsymbol.%s targetCCid.%i kmdHeight.%i\n", targetSymbol, targetCCid, kmdHeight);
+    LogPrintf("GetCrossChainProof() targetsymbol.%s targetCCid.%i kmdHeight.%i\n", targetSymbol, targetCCid, kmdHeight);
     uint256 MoMoM = CalculateProofRoot(targetSymbol, targetCCid, kmdHeight, moms, targetChainNotarisationTxid);
     if (MoMoM.IsNull())
         throw std::runtime_error("No MoMs found");
         
-    fprintf(stderr, "MoMoM in KMD.%s\n", MoMoM.ToString().c_str());
+    LogPrintf("GetCrossChainProof() MoMoM in KMD.%s\n", MoMoM.ToString().c_str());
 
     // Find index of source MoM in MoMoM
     int nIndex;

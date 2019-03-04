@@ -8,10 +8,10 @@ int GetSymbolAuthority(const char* symbol)
     if (strncmp(symbol, "TXSCL", 5) == 0)
         return CROSSCHAIN_TXSCL;
     if (is_STAKED(symbol) != 0) {
-        //printf("RETURNED CROSSCHAIN STAKED AS TRUE\n");
+        LogPrintf("GetSymbolAuthority RETURNED CROSSCHAIN STAKED AS TRUE\n");
         return CROSSCHAIN_STAKED;
     }
-    //printf("RETURNED CROSSCHAIN KOMODO AS TRUE\n");
+    LogPrintf("GetSymbolAuthority RETURNED CROSSCHAIN KOMODO AS TRUE\n");
     return CROSSCHAIN_KOMODO;
 }
 
@@ -44,7 +44,7 @@ bool CheckTxAuthority(const CTransaction &tx, CrosschainAuthority auth)
                     seen[i] = 1;
                     goto found;
                 } else {
-                    //printf("notary.%i is not valid!\n",i);
+                    LogPrintf("CheckTxAuthority notary.%i is not valid!\n",i);
                 }
             }
         }

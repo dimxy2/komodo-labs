@@ -32,9 +32,9 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
         if (strlen(data.symbol) == 0)
           continue;
 
-        printf("Checked notarisation data for %s \n",data.symbol);
+        LogPrintf("ScanBlockNotarisations() Checked notarisation data for %s \n",data.symbol);
         int authority = GetSymbolAuthority(data.symbol);
-
+        LogPrintf("ScanBlockNotarisations() authority=%d \n", authority);
         if (authority == CROSSCHAIN_KOMODO) 
         {
             if (!eval->CheckNotaryInputs(tx, nHeight, block.nTime))
@@ -59,11 +59,11 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
             if (!CheckTxAuthority(tx, auth_STAKED))
                 continue;
         }
-        printf("Authorised notarisation data for %s \n",data.symbol);
+        LogPrintf("ScanBlockNotarisations Authorised notarisation data for %s \n",data.symbol);
         if (parsed) 
         {
             vNotarisations.push_back(std::make_pair(tx.GetHash(), data));
-            printf("Parsed a notarisation for: %s, txid:%s, ccid:%i, momdepth:%i\n",
+            LogPrintf("Parsed a notarisation for: %s, txid:%s, ccid:%i, momdepth:%i\n",
                   data.symbol, tx.GetHash().GetHex().data(), data.ccId, data.MoMDepth);
             if (!data.MoMoM.IsNull()) printf("MoMoM:%s\n", data.MoMoM.GetHex().data());
         } else
@@ -101,6 +101,7 @@ void WriteBackNotarisations(const NotarisationsInBlock notarisations, CDBBatch &
     {
         if (!n.second.txHash.IsNull()) {
             batch.Write(n.second.txHash, n);
+            LogPrintf("WriteBackNotarisations() written n.txHash=%s height=%d momDepth=%d momomDepth=%d\n", n.second.txHash.GetHex().c_str(), n.second.height, n.second.MoMDepth, n.second.MoMoMDepth);
             wrote++;
         }
     }
@@ -111,8 +112,10 @@ void EraseBackNotarisations(const NotarisationsInBlock notarisations, CDBBatch &
 {
     BOOST_FOREACH(const Notarisation &n, notarisations)
     {
-        if (!n.second.txHash.IsNull())
+        if (!n.second.txHash.IsNull()) {
             batch.Erase(n.second.txHash);
+            LogPrintf("EraseBackNotarisations() erased n.txHash=%s\n", n.second.txHash.GetHex().c_str(), n.second.height, n.second.MoMDepth, n.second.MoMoMDepth);
+        }
     }
 }
 
@@ -139,8 +142,8 @@ int ScanNotarisationsDB(int height, std::string symbol, int scanLimitBlocks, Not
             {
                 out = nota;
                 return height-i;
-                //if ( nota.second.MoMoM.GetHex() == "0000000000000000000000000000000000000000000000000000000000000000" )
-                //    printf("KMD_TXID.%s \n", nota.second.txHash.GetHex().c_str());
+                if ( nota.second.MoMoM.GetHex() == "0000000000000000000000000000000000000000000000000000000000000000" )
+                    LogPrintf("ScanNotarisationsDB() KMD_TXID.%s \n", nota.second.txHash.GetHex().c_str());
             }
         }
     }
