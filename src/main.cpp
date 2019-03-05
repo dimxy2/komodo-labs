@@ -1760,7 +1760,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                         if (pfMissingInputs)
                             *pfMissingInputs = true;
                         //fprintf(stderr,"missing inputs\n");
-                        std::cerr << "tx inputs not found tx=" << tx.GetHash().GetHex() << std::endl;
+                        std::cerr << "tx inputs not found tx=" << tx.GetHash().GetHex() << " prev=" << txin.prevout.hash.GetHex() << std::endl;
                         return state.DoS(0, error("AcceptToMemoryPool: tx inputs not found"),REJECT_INVALID, "bad-txns-inputs-missing");
                     }
                 }
