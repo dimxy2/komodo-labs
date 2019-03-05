@@ -42,9 +42,10 @@ bool CheckTxAuthority(const CTransaction &tx, CrosschainAuthority auth)
             if (!seen[i]) {
                 if (memcmp(pk, auth.notaries[i], 33) == 0) {
                     seen[i] = 1;
+                    LogPrintf("CheckTxAuthority found notary.%i\n",i);
                     goto found;
                 } else {
-                    LogPrintf("CheckTxAuthority notary.%i is not valid!\n",i);
+                    //LogPrintf("CheckTxAuthority notary.%i is not valid!\n",i);
                 }
             }
         }

@@ -70,7 +70,7 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
 
     for (int i=0; i<NOTARISATION_SCAN_LIMIT_BLOCKS; i++) {
         if (i > kmdHeight) {
-            LogPrintf("CalculateProofRoot if(i > kmdHeight) is true, lasti=%d\n", i);
+            LogPrintf("CalculateProofRoot if(i > kmdHeight) is true, last i=%d\n", i);
             break;
         }
         NotarisationsInBlock notarisations;
@@ -90,7 +90,7 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
                     destNotarisationTxid = nota.first;
                 else if (seenOwnNotarisations == 3)
                 {
-                    LogPrintf("CalculateProofRoot if(seenOwnNotarisations == 3) is true, lasti=%d\n", i);
+                    LogPrintf("CalculateProofRoot if(seenOwnNotarisations == 3) is true, last i=%d\n", i);
                     goto end;
                 }
                 //break;

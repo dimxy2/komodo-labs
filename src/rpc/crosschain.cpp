@@ -514,6 +514,11 @@ UniValue selfimport(const UniValue& params, bool fHelp)
        
         result.push_back(Pair("sourceTxHex", rawsourcetx));
         result.push_back(Pair("importTxHex", hextx));
+
+        vouts[0].nValue += 1;
+        std::string hextxTest = HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(proof, burnTx, vouts)));
+        result.push_back(Pair("importTxHexTest", hextxTest));
+
         result.push_back(Pair("UsedRawtxVout", ivout));   // notify user about the used vout of rawtx
         result.push_back(Pair("DestinationAddress", EncodeDestination(address)));  // notify user about the address where the funds will be sent
 
