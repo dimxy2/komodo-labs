@@ -421,7 +421,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
     if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof))
         return Invalid("invalid-burn-tx");
     // check burn amount
-    {
+    /*{
         uint64_t burnAmount = burnTx.vout.back().nValue;
         if (burnAmount == 0)
             return Invalid("invalid-burn-amount");
@@ -430,7 +430,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
             totalOut += importTx.vout[i].nValue;
         if (totalOut > burnAmount || totalOut < burnAmount-txfee )
             return Invalid("payout-too-high-or-too-low");
-    }
+    } */
     // Check burntx shows correct outputs hash
     if (payoutsHash != SerializeHash(payouts))
         return Invalid("wrong-payouts");
