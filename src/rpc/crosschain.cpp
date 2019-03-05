@@ -515,8 +515,14 @@ UniValue selfimport(const UniValue& params, bool fHelp)
         result.push_back(Pair("sourceTxHex", rawsourcetx));
         result.push_back(Pair("importTxHex", hextx));
 
+
         vouts[0].nValue += 1;
+        burnOut = MakeBurnOutput(burnAmount+1, 0xffffffff, ASSETCHAINS_SELFIMPORT, vouts, rawproofEmpty);
+        templateMtx.vout.clear();
+        templateMtx.vout.push_back(burnOut);	// burn tx has only opret with vouts and optional proof
+        burnTx = templateMtx;					// complete the creation of 'quasi-burn' tx
         std::string hextxTest = HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(proof, burnTx, vouts)));
+
         result.push_back(Pair("importTxHexTest", hextxTest));
 
         result.push_back(Pair("UsedRawtxVout", ivout));   // notify user about the used vout of rawtx
