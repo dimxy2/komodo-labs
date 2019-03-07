@@ -244,7 +244,7 @@ cont:
  */
 void CompleteImportTransaction(CTransaction &importTx)
 {
-    TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; std::vector<uint8_t> rawproof;
+    ImportProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; std::vector<uint8_t> rawproof;
     if (!UnmarshalImportTx(importTx, proof, burnTx, payouts))
         throw std::runtime_error("Couldn't parse importTx");
 
@@ -254,9 +254,13 @@ void CompleteImportTransaction(CTransaction &importTx)
     if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash, rawproof))
         throw std::runtime_error("Couldn't parse burnTx");
 
-    proof = GetCrossChainProof(burnTx.GetHash(), targetSymbol.data(), targetCCid, proof);
+    TxProof merkleBranch;
+    if( !proof.IsMerkleBranch(merkleBranch))
+        throw std::runtime_error("Incorrect import tx proof");
+    TxProof newMerkleBranch = GetCrossChainProof(burnTx.GetHash(), targetSymbol.data(), targetCCid, merkleBranch);
+    ImportProof newProof(newMerkleBranch);
 
-    importTx = MakeImportCoinTransaction(proof, burnTx, payouts);
+    importTx = MakeImportCoinTransaction(newProof, burnTx, payouts);
 }
 
 
@@ -323,15 +327,13 @@ bool CheckMoMoM(uint256 kmdNotarisationHash, uint256 momom)
 
 /*
 * Check for notaries approvals of burn tx proof on the source chain
-* (alternate check if MoMoM check has been failed)
+* (alternate check if MoMoM check has failed)
 * Params:
 * burntxid - txid of burn tx on the source chain
 * rawproof - array of txids of notaries' proofs
 */
-bool CheckNotariesApproval(uint256 burntxid, std::vector<uint8_t> rawproof) {
-
-    std::vector<uint256> prooftxids;
-    uint256 notarytxid;
+bool CheckNotariesApproval(uint256 burntxid, const std::vector<uint256> & notaryTxids) 
+{
     int count = 0;
 
     // get notaries:
@@ -339,7 +341,7 @@ bool CheckNotariesApproval(uint256 burntxid, std::vector<uint8_t> rawproof) {
     std::vector< std::vector<uint8_t> > alreadySigned;
 
     //unmarshal notaries approval txids
-    while (E_UNMARSHAL(rawproof, ss >> notarytxid)) {
+    for(auto notarytxid : notaryTxids ) {
         EvalRef eval;
         CBlockIndex block;
         CTransaction notarytx;  // tx with notary approval of txproof existence
@@ -381,7 +383,7 @@ bool CheckNotariesApproval(uint256 burntxid, std::vector<uint8_t> rawproof) {
                                 }
                             }
                             else {
-                                fprintf(stderr, "cannot receive notaries\n");
+                                fprintf(stderr, "cannot get current notaries pubkeys\n");
                             }
                         }
                     }

@@ -20,10 +20,6 @@
 #include "primitives/transaction.h"
 #include "cc/CCinclude.h"
 
-//#define LEV_INFO 0
-//#define LEV_DEBUG1 1
-//#define LOGSTREAM(category, level, logoperator) { std::ostringstream stream; logoperator; for(int i = 0; i < level; i ++) if( LogAcceptCategory( (std::string(category) + (level > 0 ? std::string("-")+std::to_string(level) : std::string("") )).c_str() ) ) LogPrintStr(stream.str()); }
-
 /*
  * CC Eval method for import coin.
  *
@@ -243,7 +239,7 @@ std::string MakeSelfImportSourceTx(CTxDestination &dest, int64_t amount, CMutabl
     return FinalizeCCTx(0, cpDummy, mtx, myPubKey, txfee, CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_IMPORTCOIN << (uint8_t)'A' << amount));
 }
 
-// make sure vin0 is signed by ASSETCHAINS_OVERRIDE_PUBKEY33
+// make sure vin is signed by pubkey33
 bool CheckVinPubKey(const CTransaction &sourcetx, int32_t i, uint8_t pubkey33[33])
 {
     CTransaction vintx;
@@ -409,7 +405,7 @@ int32_t CheckPUBKEYimport(TxProof proof,std::vector<uint8_t> rawproof,CTransacti
 
 bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &importTx,unsigned int nIn)
 {
-    TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; uint64_t txfee = 10000;
+    ImportProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; uint64_t txfee = 10000;
     uint32_t targetCcid; std::string targetSymbol; uint256 payoutsHash; std::vector<uint8_t> rawproof;
     if ( importTx.vout.size() < 2 )
         return Invalid("too-few-vouts");
@@ -444,43 +440,60 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
     {
         if ( targetCcid != GetAssetchainsCC() || targetSymbol != GetAssetchainsSymbol() )
             return Invalid("importcoin-wrong-chain");
-        uint256 target = proof.second.Exec(burnTx.GetHash());
-        if (!CheckMoMoM(proof.first, target)) {
-            LOGSTREAM("importcoin", CCLOG_INFO, stream << "MoMoM check failed for importtx=" << importTx.GetHash().GetHex() << std::endl);
-            if (!CheckNotariesApproval(burnTx.GetHash(), rawproof)) {
-                LOGSTREAM("importcoin", CCLOG_INFO, stream << "Notaries approval check failed for importtx=" << importTx.GetHash().GetHex() << std::endl);
-                return Invalid("momom-and-notaries-approval-check-fail");
+
+        TxProof merkleBranchProof;
+        std::vector<uint256> notaryTxids;
+
+        if (proof.IsMerkleBranch(merkleBranchProof)) {
+            uint256 target = merkleBranchProof.second.Exec(burnTx.GetHash());
+            if (!CheckMoMoM(merkleBranchProof.first, target)) {
+                LOGSTREAM("importcoin", CCLOG_INFO, stream << "MoMoM check failed for importtx=" << importTx.GetHash().GetHex() << std::endl);
+                return Invalid("momom-check-fail");
             }
+        } else if (proof.IsNotaryTxids(notaryTxids)) {
+            if (!CheckNotariesApproval(burnTx.GetHash(), notaryTxids)) {
+                LOGSTREAM("importcoin", CCLOG_INFO, stream << "Notaries approval check failed for importtx=" << importTx.GetHash().GetHex() << std::endl);
+                return Invalid("notaries-approval-check-fail");
+            }
+        }
+        else  {
+            return Invalid("invalid-import-proof");
         }
     }
     else
     {
+        TxProof merkleBranchProof;
+
+        if (!proof.IsMerkleBranch(merkleBranchProof)) 
+            return Invalid("invalid-import-proof-for-0xFFFFFFFF");
+
+
         if ( targetSymbol == "BEAM" )
         {
             if ( ASSETCHAINS_BEAMPORT == 0 )
                 return Invalid("BEAM-import-without-port");
-            else if ( CheckBEAMimport(proof,rawproof,burnTx,payouts) < 0 )
+            else if ( CheckBEAMimport(merkleBranchProof,rawproof,burnTx,payouts) < 0 )
                 return Invalid("BEAM-import-failure");
         }
         else if ( targetSymbol == "CODA" )
         {
             if ( ASSETCHAINS_CODAPORT == 0 )
                 return Invalid("CODA-import-without-port");
-            else if ( CheckCODAimport(proof,rawproof,burnTx,payouts) < 0 )
+            else if ( CheckCODAimport(merkleBranchProof,rawproof,burnTx,payouts) < 0 )
                 return Invalid("CODA-import-failure");
         }
         else if ( targetSymbol == "PUBKEY" )
         {
             if ( ASSETCHAINS_SELFIMPORT != "PUBKEY" )
                 return Invalid("PUBKEY-import-when-notPUBKEY");
-            else if ( CheckPUBKEYimport(proof,rawproof,burnTx,payouts) < 0 )
+            else if ( CheckPUBKEYimport(merkleBranchProof,rawproof,burnTx,payouts) < 0 )
                 return Invalid("PUBKEY-import-failure");
         }
         else
         {
             if ( targetSymbol != ASSETCHAINS_SELFIMPORT )
                 return Invalid("invalid-gateway-import-coin");
-            else if ( CheckGATEWAYimport(proof,rawproof,burnTx,payouts) < 0 )
+            else if ( CheckGATEWAYimport(merkleBranchProof,rawproof,burnTx,payouts) < 0 )
                 return Invalid("GATEWAY-import-failure");
         }
     }

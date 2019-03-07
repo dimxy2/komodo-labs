@@ -376,9 +376,11 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
 
 UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 2)
-        throw runtime_error("migrate_createimporttransaction burnTx payouts\n\n"
-                "Create an importTx given a burnTx and the corresponding payouts, hex encoded");
+    if (fHelp || params.size() < 2)
+        throw runtime_error("migrate_createimporttransaction burnTx payouts [notarytxid-1]..[notarytxid-N]\n\n"
+                "Create an importTx given a burnTx and the corresponding payouts, hex encoded\n"
+                "optional notarytxids are txids of notary operator proofs of burn tx existense (from destination chain).\n"
+                "Do not make subsequent call to migrate_completeimporttransaction if notary txids are set");
 
     if (ASSETCHAINS_CC < KOMODO_FIRSTFUNGIBLEID)
         throw runtime_error("-ac_cc < KOMODO_FIRSTFUNGIBLEID");
@@ -392,15 +394,28 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
     if (!E_UNMARSHAL(txData, ss >> burnTx))
         throw runtime_error("Couldn't parse burnTx");
 
-
     vector<CTxOut> payouts;
     if (!E_UNMARSHAL(ParseHexV(params[1], "argument 2"), ss >> payouts))
         throw runtime_error("Couldn't parse payouts");
 
-    uint256 txid = burnTx.GetHash();
-    TxProof proof = GetAssetchainProof(burnTx.GetHash(),burnTx);
+    ImportProof importProof;
+    if (params.size() == 2) {
+        // get MoM import proof
+        importProof = ImportProof(GetAssetchainProof(burnTx.GetHash(), burnTx));
+    }
+    else   {
+        // get notary import proof
+        std::vector<uint256> notaryTxids;
+        for (int i = 2; i < params.size(); i++) {
+            uint256 txid = Parseuint256(params[i].get_str().c_str());
+            if (txid.IsNull())
+                throw runtime_error("Incorrect notary approval txid");
+            notaryTxids.push_back(txid);
+        }
+        importProof = ImportProof(notaryTxids);
+    }
 
-    CTransaction importTx = MakeImportCoinTransaction(proof, burnTx, payouts);
+    CTransaction importTx = MakeImportCoinTransaction(importProof, burnTx, payouts);
 
     return HexStr(E_MARSHAL(ss << importTx));
 }
@@ -762,7 +777,7 @@ UniValue getimports(const UniValue& params, bool fHelp)
         {
             UniValue objTx(UniValue::VOBJ);
             objTx.push_back(Pair("txid",tx.GetHash().ToString()));
-            TxProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; CTxDestination importaddress;
+            ImportProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; CTxDestination importaddress;
             TotalImported += tx.vout[1].nValue;
             objTx.push_back(Pair("amount", ValueFromAmount(tx.vout[1].nValue)));
             if (ExtractDestination(tx.vout[1].scriptPubKey, importaddress))
