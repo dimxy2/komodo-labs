@@ -40,4 +40,6 @@ void AddImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs, i
 void RemoveImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs);
 int ExistsImportTombstone(const CTransaction &importTx, const CCoinsViewCache &inputs);
 
+bool CheckVinPubKey(const CTransaction &sourcetx, int32_t i, uint8_t pubkey33[33]);
+
 #endif /* IMPORTCOIN_H */

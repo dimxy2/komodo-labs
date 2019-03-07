@@ -244,25 +244,28 @@ std::string MakeSelfImportSourceTx(CTxDestination &dest, int64_t amount, CMutabl
 }
 
 // make sure vin0 is signed by ASSETCHAINS_OVERRIDE_PUBKEY33
-int32_t CheckVin0PubKey(const CTransaction &sourcetx)
+bool CheckVinPubKey(const CTransaction &sourcetx, int32_t i, uint8_t pubkey33[33])
 {
     CTransaction vintx;
     uint256 blockHash;
     char destaddr[64], pkaddr[64];
 
-    if( !myGetTransaction(sourcetx.vin[0].prevout.hash, vintx, blockHash) ) {
-        LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckVin0PubKey() could not load vintx" << sourcetx.vin[0].prevout.hash.GetHex() << std::endl);
-        return(-1);
+    if (i < 0 || i >= sourcetx.vin.size())
+        return false;
+
+    if( !myGetTransaction(sourcetx.vin[i].prevout.hash, vintx, blockHash) ) {
+        LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckVinPubKey() could not load vintx" << sourcetx.vin[i].prevout.hash.GetHex() << std::endl);
+        return false;
     }
-    if( sourcetx.vin[0].prevout.n < vintx.vout.size() && Getscriptaddress(destaddr, vintx.vout[sourcetx.vin[0].prevout.n].scriptPubKey) != 0 )
+    if( sourcetx.vin[i].prevout.n < vintx.vout.size() && Getscriptaddress(destaddr, vintx.vout[sourcetx.vin[i].prevout.n].scriptPubKey) != 0 )
     {
-        pubkey2addr(pkaddr, ASSETCHAINS_OVERRIDE_PUBKEY33);
+        pubkey2addr(pkaddr, pubkey33);
         if (strcmp(pkaddr, destaddr) == 0) {
-            return(0);
+            return true;
         }
-        LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckVin0PubKey() mismatched vin0[prevout.n=" << sourcetx.vin[0].prevout.n << "] -> destaddr=" << destaddr << " vs pkaddr=" << pkaddr << std::endl);
+        LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckVinPubKey() mismatched vin[" << i << "].prevout.n=" << sourcetx.vin[i].prevout.n << " -> destaddr=" << destaddr << " vs pkaddr=" << pkaddr << std::endl);
     }
-    return -1;
+    return false;
 }
 
 // ac_import=PUBKEY support:
@@ -325,7 +328,7 @@ int32_t GetSelfimportProof(std::string source, CMutableTransaction &mtx, CScript
     }
 
     // check ac_pubkey:
-    if (CheckVin0PubKey(sourcetx) < 0) {
+    if (!CheckVinPubKey(sourcetx, 0, ASSETCHAINS_OVERRIDE_PUBKEY33)) {
         return -1;
     }
     proof = std::make_pair(sourcetxid, newBranch);
@@ -378,7 +381,7 @@ int32_t CheckPUBKEYimport(TxProof proof,std::vector<uint8_t> rawproof,CTransacti
     }
 
     //ac_pubkey check:
-    if (CheckVin0PubKey(sourcetx) < 0) {
+    if (!CheckVinPubKey(sourcetx, 0, ASSETCHAINS_OVERRIDE_PUBKEY33)) {
         return -1;
     }
 
@@ -442,8 +445,13 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params,const CTransaction &impo
         if ( targetCcid != GetAssetchainsCC() || targetSymbol != GetAssetchainsSymbol() )
             return Invalid("importcoin-wrong-chain");
         uint256 target = proof.second.Exec(burnTx.GetHash());
-        if (!CheckMoMoM(proof.first, target))
-            return Invalid("momom-check-fail");
+        if (!CheckMoMoM(proof.first, target)) {
+            LOGSTREAM("importcoin", CCLOG_INFO, stream << "MoMoM check failed for importtx=" << importTx.GetHash().GetHex() << std::endl);
+            if (!CheckNotariesApproval(burnTx.GetHash(), rawproof)) {
+                LOGSTREAM("importcoin", CCLOG_INFO, stream << "Notaries approval check failed for importtx=" << importTx.GetHash().GetHex() << std::endl);
+                return Invalid("momom-and-notaries-approval-check-fail");
+            }
+        }
     }
     else
     {
