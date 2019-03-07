@@ -474,7 +474,11 @@ UniValue migrate_checkburntransactionsource(const UniValue& params, bool fHelp)
         throw std::runtime_error("incorrect CCid in burn tx");
 
     // get tx proof for burn tx
-    return gettxoutproof(params, false);
+    UniValue txids(UniValue::VARR);
+    txids.push_back(burntxid.GetHex());
+    UniValue nextparams;
+    nextparams.push_back(txids);
+    return gettxoutproof(nextparams, false);
 }
 
 // creates a tx for the dest chain with txproof
