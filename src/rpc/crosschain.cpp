@@ -487,7 +487,7 @@ UniValue migrate_checkburntransactionsource(const UniValue& params, bool fHelp)
 UniValue migrate_createnotaryapprovaltransaction(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 3)
-        throw runtime_error("migrate_notaryapproveimporttx srcchain burntxid txoutproof\n\n"
+        throw runtime_error("migrate_createnotaryapprovaltransaction srcchain burntxid txoutproof\n\n"
             "txoutproof should be retrieved by komodo-cli gettxoutproof call on the source chain"
             "Creates a tx for destination chain with burn tx proof");
 
@@ -521,7 +521,7 @@ UniValue migrate_createnotaryapprovaltransaction(const UniValue& params, bool fH
     // creating a tx with proof:
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
     int64_t inputs;
-    if ((inputs = AddNormalinputs(mtx, Mypubkey(), txfee, 4)) == 0) {
+    if ((inputs = AddNormalinputs(mtx, Mypubkey(), txfee*2, 4)) == 0) {
         throw runtime_error("Cannot find normal inputs\n");
     }
 
