@@ -20,6 +20,8 @@
 #include "notarisationdb.h"
 #include "merkleblock.h"
 
+#include "cc/CCinclude.h"
+
 /*
  * The crosschain workflow.
  *
@@ -326,7 +328,7 @@ bool CheckMoMoM(uint256 kmdNotarisationHash, uint256 momom)
 }
 
 /*
-* Check for notaries approvals of burn tx proof on the source chain
+* Check notaries approvals for the txoutproofs of burn tx
 * (alternate check if MoMoM check has failed)
 * Params:
 * burntxid - txid of burn tx on the source chain
@@ -363,7 +365,7 @@ bool CheckNotariesApproval(uint256 burntxid, const std::vector<uint256> & notary
 
                         // extract proved txids:
                         merkleBlock.txn.ExtractMatches(prooftxids);
-                        if (std::find(prooftxids.begin(), prooftxids.end(), burntxid) == prooftxids.end()) {    // check burn txid is in proved txids list
+                        if (std::find(prooftxids.begin(), prooftxids.end(), burntxid) != prooftxids.end()) {    // check burn txid is in proved txids list
                             
                             if (komodo_notaries(notaries_pubkeys, block.GetHeight(), block.GetBlockTime()) >= 0) {
                                 // check it is a notary who signed approved tx:
@@ -371,27 +373,51 @@ bool CheckNotariesApproval(uint256 burntxid, const std::vector<uint256> & notary
                                     std::vector<uint8_t> vnotarypubkey(notaries_pubkeys[i], notaries_pubkeys[i] + 33);
 
                                     if (CheckVinPubKey(notarytx, 0, notaries_pubkeys[i])   // is signed by a notary?
-                                        && std::find(alreadySigned.begin(), alreadySigned.end(), vnotarypubkey) == alreadySigned.end()) // check notary not re-used
+                                        && std::find(alreadySigned.begin(), alreadySigned.end(), vnotarypubkey) == alreadySigned.end()) // check if notary not re-used
                                     {
                                         alreadySigned.push_back(vnotarypubkey);
                                         count++;
-                                        fprintf(stderr, "notary approval checked\n");
+                                        LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "CheckNotariesApproval() notary approval checked, count=" << count << std::endl);
                                         break;
                                     }
-                                    if( i == sizeof(notaries_pubkeys) / sizeof(notaries_pubkeys[0]) )
-                                        fprintf(stderr, "txproof not signed by a notary\n");
+                                    if (i == sizeof(notaries_pubkeys) / sizeof(notaries_pubkeys[0]))
+                                        LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckNotariesApproval() txproof not signed by a notary" << std::endl);
                                 }
                             }
                             else {
-                                fprintf(stderr, "cannot get current notaries pubkeys\n");
+                                LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckNotariesApproval() cannot get current notaries pubkeys" << std::endl);
                             }
                         }
+                        else  {
+                            LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckNotariesApproval() burntxid not found in txoutproof" << std::endl);
+                        }
+                    }
+                    else {
+                        LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckNotariesApproval() could not unmarshal merkleBlock" << std::endl);
                     }
                 }
+                else {
+                    LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckNotariesApproval() could not unmarshal txoutproof" << std::endl);
+                }
+            }
+            else {
+                LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckNotariesApproval() no opret in the notary tx" << std::endl);
             }
         }
+        else {
+            LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckNotariesApproval() could not load notary tx" << std::endl);
+        }
     }
-    return count >= 5;
+
+    bool retcode;
+    if (count < 5) {
+        LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckNotariesApproval() not enough signed notary transactions=" << count << std::endl);
+        retcode = false;
+    }
+    else
+        retcode = true;
+
+    return retcode;
 }
 
  /*
