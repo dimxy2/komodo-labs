@@ -474,9 +474,9 @@ UniValue migrate_checkburntransactionsource(const UniValue& params, bool fHelp)
         throw std::runtime_error("incorrect CCid in burn tx");
 
     // get tx proof for burn tx
+    UniValue nextparams(UniValue::VARR);
     UniValue txids(UniValue::VARR);
     txids.push_back(burntxid.GetHex());
-    UniValue nextparams;
     nextparams.push_back(txids);
     return gettxoutproof(nextparams, false);
 }
