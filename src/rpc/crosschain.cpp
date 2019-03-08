@@ -359,6 +359,31 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
 }
 
 
+// util func to check burn tx and source chain params
+void CheckBurnTxSource(uint256 burntxid) {
+
+    CTransaction burnTx;
+    uint256 blockHash;
+    if (!GetTransaction(burntxid, burnTx, blockHash, true))
+        throw std::runtime_error("cannot find burn transaction");
+
+    if (blockHash.IsNull())
+        throw std::runtime_error("burn tx still in mempool");
+
+    std::string targetSymbol;
+    uint32_t targetCCid;
+    uint256 payoutsHash;
+    std::vector<uint8_t>rawproof;
+
+    if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash, rawproof))
+        throw std::runtime_error("cannot unmarshal burn tx data");
+
+    if (targetCCid != ASSETCHAINS_CC)
+        throw std::runtime_error("incorrect CCid in burn tx");
+
+    if (targetSymbol == ASSETCHAINS_SYMBOL)
+        throw std::runtime_error("Must not be called on the destination chain");
+}
 
 /*
  * The process to migrate funds
@@ -404,6 +429,8 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
         importProof = ImportProof(GetAssetchainProof(burnTx.GetHash(), burnTx));
     }
     else   {
+        CheckBurnTxSource(burnTx.GetHash());
+
         // get notary import proof
         std::vector<uint256> notaryTxids;
         for (int i = 2; i < params.size(); i++) {
@@ -419,7 +446,6 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
 
     return HexStr(E_MARSHAL(ss << importTx));
 }
-
 
 UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
 {
@@ -453,25 +479,7 @@ UniValue migrate_checkburntransactionsource(const UniValue& params, bool fHelp)
         throw runtime_error("Must be called on asset chain");
 
     uint256 burntxid = Parseuint256(params[0].get_str().c_str());
-
-    CTransaction burnTx;
-    uint256 blockHash;
-    if (!GetTransaction(burntxid, burnTx, blockHash, true))
-        throw std::runtime_error("cannot find burn transaction");
-
-    if (blockHash.IsNull())
-        throw std::runtime_error("burn tx still in mempool");
-
-    std::string targetSymbol; 
-    uint32_t targetCCid; 
-    uint256 payoutsHash; 
-    std::vector<uint8_t>rawproof;
-
-    if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash, rawproof))
-        throw std::runtime_error("cannot unmarshal burn tx data");
-
-    if (targetCCid != ASSETCHAINS_CC)
-        throw std::runtime_error("incorrect CCid in burn tx");
+    CheckBurnTxSource(burntxid);
 
     // get tx proof for burn tx
     UniValue nextparams(UniValue::VARR);
@@ -486,10 +494,10 @@ UniValue migrate_checkburntransactionsource(const UniValue& params, bool fHelp)
 // run it on the dest chain
 UniValue migrate_createnotaryapprovaltransaction(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 3)
+    if (fHelp || params.size() != 2)
         throw runtime_error("migrate_createnotaryapprovaltransaction burntxid txoutproof\n\n"
-            "txoutproof should be retrieved by komodo-cli gettxoutproof call on the source chain"
-            "Creates a tx for destination chain with burn tx proof");
+            "Creates a tx for destination chain with burn tx proof\n"
+            "txoutproof should be retrieved by komodo-cli migrate_checkburntransactionsource call on the source chain\n" );
 
     if (ASSETCHAINS_SYMBOL[0] == 0)
         throw runtime_error("Must be called on asset chain");
