@@ -351,8 +351,8 @@ bool CheckNotariesApproval(uint256 burntxid, const std::vector<uint256> & notary
             
             std::vector<uint8_t> vopret;
             if (!notarytx.vout.empty() && GetOpReturnData(notarytx.vout.back().scriptPubKey, vopret)) {
-                std::string srcSymbol;
-                uint256 txid;
+                //std::string srcSymbol;
+                //uint256 txid;
                 std::vector<uint8_t> txoutproof;
 
                 if (E_UNMARSHAL(vopret, ss >> txoutproof)) {

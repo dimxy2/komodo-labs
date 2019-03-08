@@ -525,9 +525,9 @@ UniValue migrate_createnotaryapprovaltransaction(const UniValue& params, bool fH
         throw runtime_error("Cannot find normal inputs\n");
     }
 
-    mtx.vout.push_back(CTxOut(txfee, CScript()));    
+    mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG));
 
-    return FinalizeCCTx(0, cpDummy, mtx, Mypubkey(), txfee, CScript() << OP_RETURN << E_MARSHAL(ss << srcSymbol << revuint256(burntxid) << proofData;));
+    return FinalizeCCTx(0, cpDummy, mtx, Mypubkey(), txfee, CScript() << OP_RETURN << E_MARSHAL(ss /*<< srcSymbol << revuint256(burntxid)*/ << proofData;));
 }
 
 // creates a source 'quasi-burn' tx for AC_PUBKEY
