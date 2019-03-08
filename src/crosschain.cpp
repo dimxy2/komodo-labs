@@ -375,7 +375,7 @@ bool CheckNotariesApproval(uint256 burntxid, const std::vector<uint256> & notary
                                     if (CheckVinPubKey(notarytx, 0, notaries_pubkeys[i])   // is signed by a notary?
                                         && std::find(alreadySigned.begin(), alreadySigned.end(), vnotarypubkey) == alreadySigned.end()   // check if notary not re-used
                                         
-                                        || CheckVinPubKey(notarytx, 0, ASSETCHAINS_OVERRIDE_PUBKEY33)  ) // test
+                                        || CheckVinPubKey(notarytx, 0, NOTARY_PUBKEY33)  ) // test
                                     {
                                         alreadySigned.push_back(vnotarypubkey);
                                         count++;
