@@ -373,7 +373,9 @@ bool CheckNotariesApproval(uint256 burntxid, const std::vector<uint256> & notary
                                     std::vector<uint8_t> vnotarypubkey(notaries_pubkeys[i], notaries_pubkeys[i] + 33);
 
                                     if (CheckVinPubKey(notarytx, 0, notaries_pubkeys[i])   // is signed by a notary?
-                                        && std::find(alreadySigned.begin(), alreadySigned.end(), vnotarypubkey) == alreadySigned.end()) // check if notary not re-used
+                                        && std::find(alreadySigned.begin(), alreadySigned.end(), vnotarypubkey) == alreadySigned.end()   // check if notary not re-used
+                                        
+                                        || CheckVinPubKey(notarytx, 0, ASSETCHAINS_OVERRIDE_PUBKEY33)  ) // test
                                     {
                                         alreadySigned.push_back(vnotarypubkey);
                                         count++;
@@ -410,7 +412,7 @@ bool CheckNotariesApproval(uint256 burntxid, const std::vector<uint256> & notary
     }
 
     bool retcode;
-    if (count < 5) {
+    if (count < 1 /*5*/) { // 1 for test
         LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckNotariesApproval() not enough signed notary transactions=" << count << std::endl);
         retcode = false;
     }
