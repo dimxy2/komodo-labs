@@ -487,24 +487,24 @@ UniValue migrate_checkburntransactionsource(const UniValue& params, bool fHelp)
 UniValue migrate_createnotaryapprovaltransaction(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 3)
-        throw runtime_error("migrate_createnotaryapprovaltransaction srcchain burntxid txoutproof\n\n"
+        throw runtime_error("migrate_createnotaryapprovaltransaction burntxid txoutproof\n\n"
             "txoutproof should be retrieved by komodo-cli gettxoutproof call on the source chain"
             "Creates a tx for destination chain with burn tx proof");
 
     if (ASSETCHAINS_SYMBOL[0] == 0)
         throw runtime_error("Must be called on asset chain");
 
-    string srcSymbol = params[0].get_str();
+    /*string srcSymbol = params[0].get_str();
     if (srcSymbol.size() == 0 || srcSymbol.size() > 32)
         throw runtime_error("srcchain length must be >0 and <=32");
     if (strcmp(ASSETCHAINS_SYMBOL, srcSymbol.c_str()) == 0)
-        throw runtime_error("cant send a coin to the same chain");
+        throw runtime_error("cant send a coin to the same chain");*/
 
-    uint256 burntxid = Parseuint256(params[1].get_str().c_str());
+    uint256 burntxid = Parseuint256(params[0].get_str().c_str());
     if (burntxid.IsNull())
         throw runtime_error("Couldn't parse burntxid or it is null");
 
-    std::vector<uint8_t> proofData = ParseHex(params[2].get_str());
+    std::vector<uint8_t> proofData = ParseHex(params[1].get_str());
     CMerkleBlock merkleBlock;
     std::vector<uint256> prooftxids;
     if (!E_UNMARSHAL(proofData, ss >> merkleBlock))
