@@ -350,6 +350,7 @@ static const CRPCCommand vRPCCommands[] =
     { "crosschain",         "getNotarisationsForBlock", &getNotarisationsForBlock, true },
     { "crosschain",         "scanNotarisationsDB",    &scanNotarisationsDB,    true },
     { "crosschain",         "getimports",             &getimports,             true },
+    { "crosschain",         "getwalletburntransactions",  &getwalletburntransactions,             true },
     { "crosschain",         "migrate_converttoexport", &migrate_converttoexport, true  },
     { "crosschain",         "migrate_createburntransaction", &migrate_createburntransaction, true },
     { "crosschain",         "migrate_createimporttransaction", &migrate_createimporttransaction, true  },
