@@ -111,7 +111,7 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
                     if (nota.second.ccId == targetCCid) 
                     {
                         tmp_moms.insert(nota.second.MoM);
-                        //fprintf(stderr, "added mom: %s from txid.%s\n",nota.second.MoM.GetHex().data(), nota.first.GetHex().data());
+                        fprintf(stderr, "added mom: %s from txid.%s\n",nota.second.MoM.GetHex().data(), nota.first.GetHex().data());
                     }
                 }
             }
@@ -147,6 +147,7 @@ int ScanNotarisationsFromHeight(int nHeight, const IsTarget f, Notarisation &fou
 
         if (!GetBlockNotarisations(*chainActive[h]->phashBlock, notarisations))
             continue;
+        LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "ScanNotarisationsFromHeight() height=" << h /*<< std::endl*/);
 
         BOOST_FOREACH(found, notarisations) {
             if (f(found)) {
@@ -171,6 +172,8 @@ TxProof GetCrossChainProof(const uint256 txid, const char* targetSymbol, uint32_
      */
     EvalRef eval;
     uint256 MoM = assetChainProof.second.Exec(txid);
+
+    LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "GetCrossChainProof() MoM=" << MoM.GetHex() << std::endl);
 
     // Get a kmd height for given notarisation Txid
     int kmdHeight;
@@ -215,8 +218,10 @@ TxProof GetCrossChainProof(const uint256 txid, const char* targetSymbol, uint32_
     // Find index of source MoM in MoMoM
     int nIndex;
     for (nIndex=0; nIndex<moms.size(); nIndex++) {
-        if (moms[nIndex] == MoM)
+        if (moms[nIndex] == MoM) {
+            LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "GetCrossChainProof() found mom[nIndex]=MoM for nIndex=" << nIndex << std::endl);
             goto cont;
+        }
     }
     throw std::runtime_error("Couldn't find MoM within MoMoM set");
 cont:
@@ -242,7 +247,7 @@ cont:
     if (newBranch.Exec(txid) != MoMoM)
         throw std::runtime_error("Proof check failed");
     
-    fprintf(stderr, "kmdHeight.%i MoMoM.%s \n", kmdHeight, MoMoM.GetHex().data());
+    fprintf(stderr, "GetCrossChainProof() kmdHeight=%i MoMoM=%s \n", kmdHeight, MoMoM.GetHex().data());
 
     return std::make_pair(targetChainNotarisationTxid,newBranch);
 }
@@ -313,6 +318,9 @@ bool CheckMoMoM(uint256 kmdNotarisationHash, uint256 momom)
      * This is a sledgehammer approach...
      */
 
+    LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "CheckMoMoM() kmdNotarisationHash=" << kmdNotarisationHash.GetHex() << "  targetMoMoM=" << momom.GetHex() << std::endl);
+
+
     Notarisation bn;
     if (!GetBackNotarisation(kmdNotarisationHash, bn))
         return false;
@@ -328,6 +336,7 @@ bool CheckMoMoM(uint256 kmdNotarisationHash, uint256 momom)
 
     Notarisation nota;
     auto checkMoMoM = [&](Notarisation &nota) {
+        LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "CheckMoMoM() nota.second.MoMoM=" << nota.second.MoMoM.GetHex()  << " target momom=" << momom.GetHex() << std::endl);
         return nota.second.MoMoM == momom;
     };
 
