@@ -61,8 +61,6 @@ int32_t GetSelfimportProof(const CMutableTransaction &sourceMtx, CMutableTransac
 std::string MakeGatewaysImportTx(uint64_t txfee, uint256 bindtxid, int32_t height, std::string refcoin, std::vector<uint8_t> proof, std::string rawburntx, int32_t ivout, uint256 burntxid);
 void CheckBurnTxSource(uint256 burntxid, std::string &targetSymbol, uint32_t &targetCCid);
 int32_t ensure_CCrequirements(uint8_t evalcode);
-void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, UniValue& ret, const isminefilter& filter);
-
 
 UniValue assetchainproof(const UniValue& params, bool fHelp)
 {
@@ -823,10 +821,10 @@ UniValue getimports(const UniValue& params, bool fHelp)
 // outputs burn transactions in the wallet 
 UniValue getwalletburntransactions(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() > 1)
         throw runtime_error(
-            "getwalletburntransactions count\n"
-            "Lists wallet most recent burn transactions up to \'count\' parameter\n"
+            "getwalletburntransactions \"count\"\n\n"
+            "Lists most recent wallet burn transactions up to \'count\' parameter\n"
             "parameter \'count\' is optional. If omitted, last 10 burn transactions in the wallet are returned"
             "\n\n"
             "\nResult:\n"
@@ -881,12 +879,9 @@ UniValue getwalletburntransactions(const UniValue& params, bool fHelp)
                 entry.push_back(Pair("targetCCid", std::to_string(targetCCid)));
                 ret.push_back(entry);
             }
-
-            //ListTransactions(*pwtx, strAccount, 0, true, ret, filter);
-        } //else fprintf(stderr,"null pwtx\n");
-
-
-        if ((int)ret.size() >= (nCount)) break;
+        } //else fprintf(stderr,"null pwtx\n
+        if ((int)ret.size() >= (nCount)) 
+            break;
     }
     // ret is newest to oldest
 
