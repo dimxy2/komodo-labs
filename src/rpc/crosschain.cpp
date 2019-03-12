@@ -825,7 +825,7 @@ UniValue getwalletburntransactions(const UniValue& params, bool fHelp)
         throw runtime_error(
             "getwalletburntransactions \"count\"\n\n"
             "Lists most recent wallet burn transactions up to \'count\' parameter\n"
-            "parameter \'count\' is optional. If omitted, last 10 burn transactions in the wallet are returned"
+            "parameter \'count\' is optional. If omitted, defaults to 10 burn transactions"
             "\n\n"
             "\nResult:\n"
             "[\n"
