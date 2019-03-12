@@ -61,6 +61,8 @@ int32_t GetSelfimportProof(const CMutableTransaction &sourceMtx, CMutableTransac
 std::string MakeGatewaysImportTx(uint64_t txfee, uint256 bindtxid, int32_t height, std::string refcoin, std::vector<uint8_t> proof, std::string rawburntx, int32_t ivout, uint256 burntxid);
 void CheckBurnTxSource(uint256 burntxid, std::string &targetSymbol, uint32_t &targetCCid);
 int32_t ensure_CCrequirements(uint8_t evalcode);
+void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, UniValue& ret, const isminefilter& filter);
+
 
 UniValue assetchainproof(const UniValue& params, bool fHelp)
 {
@@ -815,4 +817,96 @@ UniValue getimports(const UniValue& params, bool fHelp)
     result.push_back(Pair("TotalImported", TotalImported > 0 ? ValueFromAmount(TotalImported) : 0 ));    
     result.push_back(Pair("time", block.GetBlockTime()));
     return result;
+}
+
+
+// outputs burn transactions in the wallet 
+UniValue getwalletburntransactions(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "getwalletburntransactions count\n"
+            "Lists wallet most recent burn transactions up to \'count\' parameter\n"
+            "parameter \'count\' is optional. If omitted, last 10 burn transactions in the wallet are returned"
+            "\n\n"
+            "\nResult:\n"
+            "[\n"
+            "    {\n"
+            "       \"txid\": (string)\n"
+            "       \"burnedAmount\" : (numeric)\n"
+            "       \"targetSymbol\" : (string)\n"
+            "       \"targetCCid\" : (numeric)\n"
+            "    }\n"
+            "]\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getwalletburntransactions", "100")
+            + HelpExampleRpc("getwalletburntransactions", "100")
+            + HelpExampleCli("getwalletburntransactions", "")
+            + HelpExampleRpc("getwalletburntransactions", "")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    string strAccount = "*";
+    isminefilter filter = ISMINE_SPENDABLE;
+    int nCount = 10;
+
+    if (params.size() == 1)
+        nCount = params[0].get_int();
+    if (nCount < 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Negative count");
+
+    UniValue ret(UniValue::VARR);
+
+    std::list<CAccountingEntry> acentries;
+    CWallet::TxItems txOrdered = pwalletMain->OrderedTxItems(acentries, strAccount);
+
+    // iterate backwards until we have nCount items to return:
+    for (CWallet::TxItems::reverse_iterator it = txOrdered.rbegin(); it != txOrdered.rend(); ++it)
+    {
+        CWalletTx *const pwtx = (*it).second.first;
+        if (pwtx != 0)
+        {
+            LOGSTREAM("importcoin", CCLOG_DEBUG2, stream << "pwtx iterpos=" << (int32_t)pwtx->nOrderPos << " txid=" << pwtx->GetHash().GetHex() << std::endl);
+            vscript_t vopret;
+            std::string targetSymbol;
+            uint32_t targetCCid; uint256 payoutsHash;
+            std::vector<uint8_t> rawproof;
+
+            if (pwtx->vout.size() > 0 && GetOpReturnData(pwtx->vout.back().scriptPubKey, vopret) && UnmarshalBurnTx(*pwtx, targetSymbol, &targetCCid, payoutsHash, rawproof)) {
+                UniValue entry(UniValue::VOBJ);
+                entry.push_back(Pair("txid", pwtx->GetHash().GetHex()));
+                entry.push_back(Pair("burnedAmount", ValueFromAmount(pwtx->vout.back().nValue)));
+                entry.push_back(Pair("targetSymbol", targetSymbol));
+                entry.push_back(Pair("targetCCid", std::to_string(targetCCid)));
+                ret.push_back(entry);
+            }
+
+            //ListTransactions(*pwtx, strAccount, 0, true, ret, filter);
+        } //else fprintf(stderr,"null pwtx\n");
+
+
+        if ((int)ret.size() >= (nCount)) break;
+    }
+    // ret is newest to oldest
+
+    if (nCount > (int)ret.size())
+        nCount = ret.size();
+
+    vector<UniValue> arrTmp = ret.getValues();
+
+    vector<UniValue>::iterator first = arrTmp.begin();
+    vector<UniValue>::iterator last = arrTmp.begin();
+    std::advance(last, nCount);
+
+    if (last != arrTmp.end()) arrTmp.erase(last, arrTmp.end());
+    if (first != arrTmp.begin()) arrTmp.erase(arrTmp.begin(), first);
+
+    std::reverse(arrTmp.begin(), arrTmp.end()); // Return oldest to newest
+
+    ret.clear();
+    ret.setArray();
+    ret.push_backV(arrTmp);
+
+    return ret;
 }
