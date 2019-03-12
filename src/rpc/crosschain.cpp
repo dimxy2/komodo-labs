@@ -37,7 +37,6 @@
 #include "key_io.h"
 
 #include "merkleblock.h"
-
 #include "cc/CCinclude.h"
 
 #include <stdint.h>
@@ -61,6 +60,7 @@ int32_t GetSelfimportProof(const CMutableTransaction &sourceMtx, CMutableTransac
 std::string MakeGatewaysImportTx(uint64_t txfee, uint256 bindtxid, int32_t height, std::string refcoin, std::vector<uint8_t> proof, std::string rawburntx, int32_t ivout, uint256 burntxid);
 void CheckBurnTxSource(uint256 burntxid, std::string &targetSymbol, uint32_t &targetCCid);
 int32_t ensure_CCrequirements(uint8_t evalcode);
+bool EnsureWalletIsAvailable(bool avoidException);
 
 UniValue assetchainproof(const UniValue& params, bool fHelp)
 {
@@ -843,6 +843,9 @@ UniValue getwalletburntransactions(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getwalletburntransactions", "")
         );
 
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     string strAccount = "*";
@@ -850,7 +853,7 @@ UniValue getwalletburntransactions(const UniValue& params, bool fHelp)
     int nCount = 10;
 
     if (params.size() == 1)
-        nCount = params[0].get_int();
+        nCount = atoi(params[0].get_str());
     if (nCount < 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Negative count");
 
