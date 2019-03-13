@@ -156,6 +156,19 @@ bool UnmarshalImportTxOld(const CTransaction &importTx, ImportProof &proof, CTra
     return retcode;
 }
 
+// old format support, for old tx validation, for coins only
+bool UnmarshalImportTxImportProofAndVout0(const CTransaction &importTx, ImportProof &proof, CTransaction &burnTx, std::vector<CTxOut> &payouts)
+{
+    std::vector<uint8_t> vData;
+
+    GetOpReturnData(importTx.vout[0].scriptPubKey, vData);
+    if (importTx.vout.size() < 1) return false;
+    payouts = std::vector<CTxOut>(importTx.vout.begin() + 1, importTx.vout.end());
+    return importTx.vin.size() == 1 &&
+        importTx.vin[0].scriptSig == (CScript() << E_MARSHAL(ss << EVAL_IMPORTCOIN)) &&
+        E_UNMARSHAL(vData, ss >> proof; ss >> burnTx);
+}
+
 
 bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint32_t *targetCCid, uint256 &payoutsHash,std::vector<uint8_t>&rawproof)
 {
