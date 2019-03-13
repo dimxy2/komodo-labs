@@ -265,7 +265,7 @@ void CompleteImportTransaction(CTransaction &importTx, int32_t offset)
         throw std::runtime_error("Couldn't parse burnTx");
 
     TxProof merkleBranch;
-    if( !proof.IsMerkleBranch(merkleBranch))
+    if( !proof.IsMerkleBranch(merkleBranch) )
         throw std::runtime_error("Incorrect import tx proof");
     TxProof newMerkleBranch = GetCrossChainProof(burnTx.GetHash(), targetSymbol.data(), targetCCid, merkleBranch, offset);
     ImportProof newProof(newMerkleBranch);

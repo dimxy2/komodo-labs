@@ -573,12 +573,6 @@ UniValue migrate_createnotaryapprovaltransaction(const UniValue& params, bool fH
     if (ASSETCHAINS_SYMBOL[0] == 0)
         throw runtime_error("Must be called on asset chain");
 
-    /*string srcSymbol = params[0].get_str();
-    if (srcSymbol.size() == 0 || srcSymbol.size() > 32)
-        throw runtime_error("srcchain length must be >0 and <=32");
-    if (strcmp(ASSETCHAINS_SYMBOL, srcSymbol.c_str()) == 0)
-        throw runtime_error("cant send a coin to the same chain");*/
-
     uint256 burntxid = Parseuint256(params[0].get_str().c_str());
     if (burntxid.IsNull())
         throw runtime_error("Couldn't parse burntxid or it is null");
@@ -599,14 +593,15 @@ UniValue migrate_createnotaryapprovaltransaction(const UniValue& params, bool fH
 
     // creating a tx with proof:
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
-    int64_t inputs;
-    if ((inputs = AddNormalinputs(mtx, Mypubkey(), txfee*2, 4)) == 0) {
+    if (AddNormalinputs(mtx, Mypubkey(), txfee*2, 4) == 0) 
         throw runtime_error("Cannot find normal inputs\n");
-    }
-
+    
     mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(Mypubkey())) << OP_CHECKSIG));
+    std::string notaryTxHex = FinalizeCCTx(0, cpDummy, mtx, Mypubkey(), txfee, CScript() << OP_RETURN << E_MARSHAL(ss << proofData;));
 
-    return FinalizeCCTx(0, cpDummy, mtx, Mypubkey(), txfee, CScript() << OP_RETURN << E_MARSHAL(ss /*<< srcSymbol << revuint256(burntxid)*/ << proofData;));
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("NotaryTxHex", notaryTxHex));
+    return result;
 }
 
 // creates a source 'quasi-burn' tx for AC_PUBKEY

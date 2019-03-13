@@ -422,7 +422,8 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     if ( importTx.vout.size() < 2 )
         return Invalid("too-few-vouts");
     // params
-    if (!UnmarshalImportTx(importTx, proof, burnTx, payouts) && !UnmarshalImportTxVout0(importTx, proof, burnTx, payouts))
+    bool isNewImportTx = false;
+    if (!(isNewImportTx = UnmarshalImportTx(importTx, proof, burnTx, payouts)) && !UnmarshalImportTxVout0(importTx, proof, burnTx, payouts))
         return Invalid("invalid-import-tx-params");
 
     // Control all aspects of this transaction
@@ -430,25 +431,19 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     if (MakeImportCoinTransaction(proof, burnTx, payouts, importTx.nExpiryHeight).GetHash() != importTx.GetHash() &&    // ExistsImportTombstone prevents from burn tx duplication
         MakeImportCoinTransactionVout0(proof, burnTx, payouts, importTx.nExpiryHeight).GetHash() != importTx.GetHash() )  // compatibility
         return Invalid("non-canonical-import-tx");
-    // burn params
-    if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof))
+    // get burn params
+    if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof) && UnmarshalBurnTxOld(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof)) //with support for old burn tx
         return Invalid("invalid-burn-tx");
     
     if( burnTx.vout.size() == 0 )
         return Invalid("invalid-burn-tx-no-vouts");
 
     vscript_t vimportOpret;
-    bool isNewImportTx = false;
-    if( GetOpReturnData(importTx.vout.back().scriptPubKey, vimportOpret) )
-        isNewImportTx = true;
-    else if(!GetOpReturnData(importTx.vout[0].scriptPubKey, vimportOpret))
-        return Invalid("invalid-burn-tx-no-opret");
-
-    if (vimportOpret.empty())
+    if (isNewImportTx && !GetOpReturnData(importTx.vout.back().scriptPubKey, vimportOpret) || !GetOpReturnData(importTx.vout[0].scriptPubKey, vimportOpret) || vimportOpret.empty())
         return Invalid("invalid-burn-tx-no-opret");
 
     // check burn amount
-    if( vimportOpret.begin()[0] == EVAL_IMPORTCOIN || !isNewImportTx )  // for coins (new or old opret)
+    if( vimportOpret.begin()[0] == EVAL_IMPORTCOIN || !isNewImportTx )  // for coins (both for new or old opret)
     {
         uint64_t burnAmount = burnTx.vout.back().nValue;
         if (burnAmount == 0)

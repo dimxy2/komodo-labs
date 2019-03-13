@@ -28,6 +28,7 @@
 
 int32_t komodo_nextheight();
 
+// makes import tx for either coins or tokens
 CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransaction &burnTx, const std::vector<CTxOut> &payouts, uint32_t nExpiryHeightOverride)
 {
     //std::vector<uint8_t> payload = E_MARSHAL(ss << EVAL_IMPORTCOIN);
@@ -76,7 +77,7 @@ CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransact
     return CTransaction(mtx);
 }
 
-// prev import tx (for compatibility)
+// prev import tx (for compatibility), only coins
 CTransaction MakeImportCoinTransactionVout0(const ImportProof &proof, const CTransaction &burnTx, const std::vector<CTxOut> &payouts, uint32_t nExpiryHeightOverride)
 {
     std::vector<uint8_t> payload = E_MARSHAL(ss << EVAL_IMPORTCOIN);
@@ -97,7 +98,8 @@ CTransaction MakeImportCoinTransactionVout0(const ImportProof &proof, const CTra
 CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, const std::string &targetSymbol, const std::vector<CTxOut> &payouts, const std::vector<uint8_t> &rawproof)
 {
     std::vector<uint8_t> opret;
-    opret = E_MARSHAL(ss << VARINT(targetCCid);
+    opret = E_MARSHAL(ss << (uint8_t)EVAL_IMPORTCOIN;  // should mark burn opret to differentiate it from token opret
+                      ss << VARINT(targetCCid);
                       ss << targetSymbol;
                       ss << SerializeHash(payouts);
                       ss << rawproof);
@@ -210,7 +212,27 @@ bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint
 
         GetOpretBlob(oprets, OPRETID_BURNDATA, vburnOpret);  // fetch burnOpret after token opret
     }
-    return E_UNMARSHAL(vburnOpret,  ss >> VARINT(*targetCCid);
+    if (vburnOpret.begin()[0] == EVAL_IMPORTCOIN) {
+        uint8_t evalCode;
+        return E_UNMARSHAL(vburnOpret,  ss >> evalCode;
+                                        ss >> VARINT(*targetCCid);
+                                        ss >> targetSymbol;
+                                        ss >> payoutsHash;
+                                        ss >> rawproof);
+    }
+    else {
+        LOGSTREAM("importcoin", CCLOG_INFO, stream << "UnmarshalBurnTx() invalid eval code in opret" << std::endl);
+        return false;
+    }
+}
+
+// old format support for compatibility (no eval code in opret)
+bool UnmarshalBurnTxOld(const CTransaction &burnTx, std::string &targetSymbol, uint32_t *targetCCid, uint256 &payoutsHash, std::vector<uint8_t>&rawproof)
+{
+    std::vector<uint8_t> burnOpret; uint32_t ccid = 0;
+    if (burnTx.vout.size() == 0) return false;
+    GetOpReturnData(burnTx.vout.back().scriptPubKey, burnOpret);
+    return E_UNMARSHAL(burnOpret,   ss >> VARINT(*targetCCid);
                                     ss >> targetSymbol;
                                     ss >> payoutsHash;
                                     ss >> rawproof);
