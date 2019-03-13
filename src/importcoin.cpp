@@ -226,7 +226,8 @@ CAmount GetCoinImportValue(const CTransaction &tx)
     CTransaction burnTx;
     std::vector<CTxOut> payouts;
 
-    if (UnmarshalImportTx(tx, proof, burnTx, payouts)) {
+    bool isNewImportTx = false;
+    if ((isNewImportTx = UnmarshalImportTx(tx, proof, burnTx, payouts)) || UnmarshalImportTxVout0(tx, proof, burnTx, payouts)) {
         if (burnTx.vout.size() > 0)  {
             vscript_t vburnOpret;
 
@@ -236,7 +237,7 @@ CAmount GetCoinImportValue(const CTransaction &tx)
                 return 0;
             }
 
-            if (vburnOpret.begin()[0] == EVAL_TOKENS) {      //if it is tokens
+            if (isNewImportTx && vburnOpret.begin()[0] == EVAL_TOKENS) {      //if it is tokens
                
                 CAmount ccOutput = 0;
                 for (auto v : payouts)
