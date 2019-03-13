@@ -62,14 +62,14 @@ CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransact
         scriptSig << E_MARSHAL(ss << EVAL_IMPORTCOIN);      // make payload for tokens
     }
     else {
-        //mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));     // import tx's opret was in vout[0] 
-        mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));     // import tx's opret now is in the vout's tail
+        //mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));                // import tx's opret was in vout[0] 
+        mtx.vout.push_back(CTxOut(0, CScript() << OP_RETURN << (uint8_t)EVAL_IMPORTCOIN << importData));     // import tx's opret now is in the vout's tail
                                                                                                 
         scriptSig << E_MARSHAL(ss << EVAL_IMPORTCOIN);      // simple payload for coins
     }
 
+    // add special import tx vin:
     mtx.vin.push_back(CTxIn(COutPoint(burnTx.GetHash(), 10e8), scriptSig));
-
 
 	if (nExpiryHeightOverride != 0)
 		mtx.nExpiryHeight = nExpiryHeightOverride;  //this is for validation code, to make a tx used for validating the import tx
@@ -80,8 +80,7 @@ CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransact
 CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, const std::string &targetSymbol, const std::vector<CTxOut> &payouts, const std::vector<uint8_t> &rawproof)
 {
     std::vector<uint8_t> opret;
-    opret = E_MARSHAL(// ss << (uint8_t)EVAL_IMPORTCOIN;   // add opret id
-                      ss << VARINT(targetCCid);
+    opret = E_MARSHAL(ss << VARINT(targetCCid);
                       ss << targetSymbol;
                       ss << SerializeHash(payouts);
                       ss << rawproof);
@@ -91,10 +90,15 @@ CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, const std::string &tar
 
 bool UnmarshalImportTx(const CTransaction &importTx, ImportProof &proof, CTransaction &burnTx, std::vector<CTxOut> &payouts)
 {
-    if (importTx.vout.size() < 1) return false;
+    if (importTx.vout.size() < 1) 
+        return false;
     
+    if (importTx.vin.size() == 1 || importTx.vin[0].scriptSig != (CScript() << E_MARSHAL(ss << EVAL_IMPORTCOIN))) {
+        LOGSTREAM("importcoin", CCLOG_INFO, stream << "UnmarshalImportTx() incorrect import tx vin" << std::endl);
+        return false;
+    }
+
     std::vector<uint8_t> vData;
-    //GetOpReturnData(importTx.vout[0].scriptPubKey, vData);  // now it is in the back;
     GetOpReturnData(importTx.vout.back().scriptPubKey, vData);
     if (vData.empty())
         return false;
@@ -106,13 +110,11 @@ bool UnmarshalImportTx(const CTransaction &importTx, ImportProof &proof, CTransa
         std::string name, desc;
         uint256 srctokenid;
 
-        //if (DecodeTokenOpRet(importTx.vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) == 0)
         if (DecodeTokenImportOpRet(importTx.vout.back().scriptPubKey, vorigpubkey, name, desc, srctokenid, oprets) == 0)
             return false;
 
         GetOpretBlob(oprets, OPRETID_IMPORTDATA, vData);  // fetch import data after token opret
-
-        // remove import data from token opret (it has not been in payouts)
+        // remove import data from token opret to restore original payouts:
         for (std::vector<std::pair<uint8_t, vscript_t>>::const_iterator i = oprets.begin(); i != oprets.end(); i++)
             if ((*i).first == OPRETID_IMPORTDATA) {
                 oprets.erase(i);
@@ -121,20 +123,15 @@ bool UnmarshalImportTx(const CTransaction &importTx, ImportProof &proof, CTransa
 
         payouts = std::vector<CTxOut>(importTx.vout.begin(), importTx.vout.end()-1);    
         payouts.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srctokenid, oprets)));   // make payouts token opret 
-        
-        CScript testScriptSig = (CScript() << E_MARSHAL(ss << EVAL_IMPORTCOIN));
-        if (importTx.vin[0].scriptSig != testScriptSig)
-            return false;
     }
     else {
         //payouts = std::vector<CTxOut>(importTx.vout.begin()+1, importTx.vout.end());   // see next
-        payouts = std::vector<CTxOut>(importTx.vout.begin(), importTx.vout.end() - 1);   // remove opret, it is now in the tail
-        if (importTx.vin[0].scriptSig != (CScript() << E_MARSHAL(ss << EVAL_IMPORTCOIN)))
-            return false;
+        payouts = std::vector<CTxOut>(importTx.vout.begin(), importTx.vout.end() - 1);   // remove opret; and it is now in the back
+        
     }
 
-    return importTx.vin.size() == 1 &&
-           E_UNMARSHAL(vData, ss >> proof; ss >> burnTx);
+    uint8_t evalCode;
+    return E_UNMARSHAL(vData, ss >> evalCode; ss >> proof; ss >> burnTx);
 }
 
 // old format support, for old tx validation, for coins only
@@ -196,16 +193,10 @@ bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint
 
         GetOpretBlob(oprets, OPRETID_BURNDATA, vburnOpret);  // fetch burnOpret after token opret
     }
-    //if (vburnOpret.begin()[0] == EVAL_IMPORTCOIN) {
-    return E_UNMARSHAL(vburnOpret, // ss >> evalCode;  // TODO: remove this
-                                    ss >> VARINT(*targetCCid);
+    return E_UNMARSHAL(vburnOpret,  ss >> VARINT(*targetCCid);
                                     ss >> targetSymbol;
                                     ss >> payoutsHash;
                                     ss >> rawproof);
-    //}
-
-    //LOGSTREAM("importcoin", CCLOG_INFO, stream << "UnmarshalBurnTx() cannot unmarshal burn tx: incorrect evalcode" << std::endl);
-    return false;
 }
 
 

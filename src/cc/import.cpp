@@ -435,13 +435,18 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     if( burnTx.vout.size() == 0 )
         return Invalid("invalid-burn-tx-no-vouts");
 
-    vscript_t vburnOpret;
-    GetOpReturnData(importTx.vout.back().scriptPubKey, vburnOpret);
-    if (vburnOpret.empty())
+    vscript_t vimportOpret;
+    bool isNewImportTx = false;
+    if( GetOpReturnData(importTx.vout.back().scriptPubKey, vimportOpret) )
+        isNewImportTx = true;
+    else if(!GetOpReturnData(importTx.vout[0].scriptPubKey, vimportOpret))
+        return Invalid("invalid-burn-tx-no-opret");
+
+    if (vimportOpret.empty())
         return Invalid("invalid-burn-tx-no-opret");
 
     // check burn amount
-    if( vburnOpret.begin()[0] == EVAL_IMPORTCOIN )  // for coins
+    if( vimportOpret.begin()[0] == EVAL_IMPORTCOIN || !isNewImportTx )  // for coins (new or old opret)
     {
         uint64_t burnAmount = burnTx.vout.back().nValue;
         if (burnAmount == 0)
@@ -452,7 +457,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         if (totalOut > burnAmount || totalOut < burnAmount-txfee )
             return Invalid("payout-too-high-or-too-low");
     }
-    else if (vburnOpret.begin()[0] == EVAL_TOKENS) { // for tokens
+    else if (vimportOpret.begin()[0] == EVAL_TOKENS) { // for tokens (new opret with tokens)
         struct CCcontract_info *cpTokens, CCtokens_info;
         std::vector<std::pair<uint8_t, vscript_t>>  oprets;
         uint256 tokenid;
