@@ -422,7 +422,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     if ( importTx.vout.size() < 2 )
         return Invalid("too-few-vouts");
     // params
-    if (!UnmarshalImportTx(importTx, proof, burnTx, payouts) || !UnmarshalImportTxOld(importTx, proof, burnTx, payouts))
+    if (!UnmarshalImportTx(importTx, proof, burnTx, payouts) && !UnmarshalImportTxOld(importTx, proof, burnTx, payouts))
         return Invalid("invalid-import-tx-params");
     // Control all aspects of this transaction
     // It should not be at all malleable
