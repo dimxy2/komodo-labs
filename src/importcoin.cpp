@@ -76,6 +76,23 @@ CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransact
     return CTransaction(mtx);
 }
 
+// prev import tx (for compatibility)
+CTransaction MakeImportCoinTransactionVout0(const ImportProof &proof, const CTransaction &burnTx, const std::vector<CTxOut> &payouts, uint32_t nExpiryHeightOverride)
+{
+    std::vector<uint8_t> payload = E_MARSHAL(ss << EVAL_IMPORTCOIN);
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+    if (mtx.fOverwintered)
+        mtx.nExpiryHeight = 0;
+    mtx.vin.push_back(CTxIn(COutPoint(burnTx.GetHash(), 10e8), CScript() << payload));
+    mtx.vout = payouts;
+    auto importData = E_MARSHAL(ss << proof; ss << burnTx);
+    mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));
+
+    if (nExpiryHeightOverride != 0)
+        mtx.nExpiryHeight = nExpiryHeightOverride;  //this is for construction of the tx used for validating importtx
+    return CTransaction(mtx);
+}
+
 
 CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, const std::string &targetSymbol, const std::vector<CTxOut> &payouts, const std::vector<uint8_t> &rawproof)
 {
@@ -154,7 +171,7 @@ bool UnmarshalImportTxOld(const CTransaction &importTx, ImportProof &proof, CTra
 }
 
 // old format support, for old tx validation, for coins only
-bool UnmarshalImportTxImportProofAndVout0(const CTransaction &importTx, ImportProof &proof, CTransaction &burnTx, std::vector<CTxOut> &payouts)
+bool UnmarshalImportTxVout0(const CTransaction &importTx, ImportProof &proof, CTransaction &burnTx, std::vector<CTxOut> &payouts)
 {
     std::vector<uint8_t> vData;
 

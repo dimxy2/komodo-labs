@@ -422,11 +422,13 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     if ( importTx.vout.size() < 2 )
         return Invalid("too-few-vouts");
     // params
-    if (!UnmarshalImportTx(importTx, proof, burnTx, payouts) && !UnmarshalImportTxOld(importTx, proof, burnTx, payouts) && !UnmarshalImportTxImportProofAndVout0(importTx, proof, burnTx, payouts))
+    if (!UnmarshalImportTx(importTx, proof, burnTx, payouts) && !UnmarshalImportTxVout0(importTx, proof, burnTx, payouts))
         return Invalid("invalid-import-tx-params");
+
     // Control all aspects of this transaction
     // It should not be at all malleable
-    if (MakeImportCoinTransaction(proof, burnTx, payouts, importTx.nExpiryHeight).GetHash() != importTx.GetHash())  // ExistsImportTombstone prevents from duplication
+    if (MakeImportCoinTransaction(proof, burnTx, payouts, importTx.nExpiryHeight).GetHash() != importTx.GetHash() &&    // ExistsImportTombstone prevents from burn tx duplication
+        MakeImportCoinTransactionVout0(proof, burnTx, payouts, importTx.nExpiryHeight).GetHash() != importTx.GetHash() )  // compatibility
         return Invalid("non-canonical-import-tx");
     // burn params
     if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof))
