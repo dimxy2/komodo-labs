@@ -380,8 +380,9 @@ bool CheckNotariesApproval(uint256 burntxid, const std::vector<uint256> & notary
                                     std::vector<uint8_t> vnotarypubkey(notaries_pubkeys[i], notaries_pubkeys[i] + 33);
 
 #ifdef TESTMODE
+                                    char test_notary_pubkey_hex[] = "029fa302968bbae81f41983d2ec20445557b889d31227caec5d910d19b7510ef86";
                                     uint8_t test_notary_pubkey33[33];
-                                    decode_hex(test_notary_pubkey33, 33, "029fa302968bbae81f41983d2ec20445557b889d31227caec5d910d19b7510ef86");
+                                    decode_hex(test_notary_pubkey33, 33, test_notary_pubkey_hex);
 #endif
                                     if (CheckVinPubKey(notarytx, 0, notaries_pubkeys[i])   // is signed by a notary?
                                         && std::find(alreadySigned.begin(), alreadySigned.end(), vnotarypubkey) == alreadySigned.end()   // check if notary not re-used
