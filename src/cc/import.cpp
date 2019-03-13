@@ -432,7 +432,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         MakeImportCoinTransactionVout0(proof, burnTx, payouts, importTx.nExpiryHeight).GetHash() != importTx.GetHash() )  // compatibility
         return Invalid("non-canonical-import-tx");
     // get burn params
-    if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof) && UnmarshalBurnTxOld(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof)) //with support for old burn tx
+    if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof) && !UnmarshalBurnTxOld(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof)) //with support for old burn tx
         return Invalid("invalid-burn-tx");
     
     if( burnTx.vout.size() == 0 )
