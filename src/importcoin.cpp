@@ -93,7 +93,7 @@ bool UnmarshalImportTx(const CTransaction &importTx, ImportProof &proof, CTransa
     if (importTx.vout.size() < 1) 
         return false;
     
-    if (importTx.vin.size() == 1 || importTx.vin[0].scriptSig != (CScript() << E_MARSHAL(ss << EVAL_IMPORTCOIN))) {
+    if (importTx.vin.size() != 1 || importTx.vin[0].scriptSig != (CScript() << E_MARSHAL(ss << EVAL_IMPORTCOIN))) {
         LOGSTREAM("importcoin", CCLOG_INFO, stream << "UnmarshalImportTx() incorrect import tx vin" << std::endl);
         return false;
     }
