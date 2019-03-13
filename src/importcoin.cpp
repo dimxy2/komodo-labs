@@ -274,7 +274,6 @@ CAmount GetCoinImportValue(const CTransaction &tx)
     return 0;
 }
 
-
 /*
  * CoinImport is different enough from normal script execution that it's not worth
  * making all the mods neccesary in the interpreter to do the dispatch correctly.

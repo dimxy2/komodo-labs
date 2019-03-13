@@ -372,7 +372,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
             throw runtime_error("No non-fungible token input found for your pubkey\n");
 
         // destination vouts (payouts) which would create the import tx with non-fungible token:
-        mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens, NULL)));  // new marker to token cc addr, burnable and validated, vout pos now changed to 0 (from 1)
+        mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens, NULL)));  // new marker to token cc addr, burnable and validated, vout position now changed to 0 (from 1)
         mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, destPubKey));
         mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenImportOpRet(vorigpubkey, name, description, tokenid, 
             std::vector<std::pair<uint8_t, vscript_t>> {std::make_pair(OPRETID_NONFUNGIBLEDATA, vopretNonfungible)})));  // make token import opret
@@ -926,11 +926,50 @@ UniValue getwalletburntransactions(const UniValue& params, bool fHelp)
             std::string targetSymbol;
             uint32_t targetCCid; uint256 payoutsHash;
             std::vector<uint8_t> rawproof;
+            bool isNewBurnTx = false;
 
-            if (pwtx->vout.size() > 0 && GetOpReturnData(pwtx->vout.back().scriptPubKey, vopret) && UnmarshalBurnTx(*pwtx, targetSymbol, &targetCCid, payoutsHash, rawproof)) {
+            if (pwtx->vout.size() > 0 && GetOpReturnData(pwtx->vout.back().scriptPubKey, vopret) && !vopret.empty() &&
+                (isNewBurnTx = UnmarshalBurnTx(*pwtx, targetSymbol, &targetCCid, payoutsHash, rawproof)) || UnmarshalBurnTxOld(*pwtx, targetSymbol, &targetCCid, payoutsHash, rawproof)) {
                 UniValue entry(UniValue::VOBJ);
                 entry.push_back(Pair("txid", pwtx->GetHash().GetHex()));
-                entry.push_back(Pair("burnedAmount", ValueFromAmount(pwtx->vout.back().nValue)));
+                if (isNewBurnTx && vopret.begin()[0] == EVAL_TOKENS) {
+                    // get burned token value
+                    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+                    uint256 tokenid;
+                    uint8_t evalCodeInOpret;
+                    std::vector<CPubKey> voutTokenPubkeys;
+
+                    //skip token opret:
+                    if (DecodeTokenOpRet(pwtx->vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) != 0) {
+                        CTransaction tokenbasetx;
+                        uint256 hashBlock;
+
+                        if (myGetTransaction(tokenid, tokenbasetx, hashBlock)) {
+                            std::vector<uint8_t> vorigpubkey;
+                            std::string name, description;
+                            std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+                            vscript_t vopretNonfungible;
+
+                            if (tokenbasetx.vout.size() > 0 &&
+                                DecodeTokenCreateOpRet(tokenbasetx.vout.back().scriptPubKey, vorigpubkey, name, description, oprets) == 'c' &&
+                                GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vopretNonfungible))
+                            {
+                                uint8_t destEvalCode = vopretNonfungible.begin()[0];
+                                int64_t burnAmount = 0;
+
+                                for (auto v : pwtx->vout)
+                                    if (v.scriptPubKey.IsPayToCryptoCondition() &&
+                                        CTxOut(v.nValue, v.scriptPubKey) == MakeTokensCC1vout(destEvalCode ? destEvalCode : EVAL_TOKENS, v.nValue, pubkey2pk(ParseHex(CC_BURNPUBKEY))))  // burned to dead pubkey
+                                        burnAmount += v.nValue;
+
+                                entry.push_back(Pair("burnedAmount", ValueFromAmount(burnAmount)));
+                                entry.push_back(Pair("tokenid", tokenid.GetHex()));
+                            }
+                        }
+                    }
+                }
+                else 
+                    entry.push_back(Pair("burnedAmount", ValueFromAmount(pwtx->vout.back().nValue)));   // coins
                 entry.push_back(Pair("targetSymbol", targetSymbol));
                 entry.push_back(Pair("targetCCid", std::to_string(targetCCid)));
                 ret.push_back(entry);
