@@ -422,12 +422,12 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     if ( importTx.vout.size() < 2 )
         return Invalid("too-few-vouts");
     // params
-    if (!UnmarshalImportTx(importTx, proof, burnTx, payouts))
-        return Invalid("invalid-params");
+    if (!UnmarshalImportTx(importTx, proof, burnTx, payouts) || !UnmarshalImportTxOld(importTx, proof, burnTx, payouts))
+        return Invalid("invalid-import-tx-params");
     // Control all aspects of this transaction
     // It should not be at all malleable
     if (MakeImportCoinTransaction(proof, burnTx, payouts, importTx.nExpiryHeight).GetHash() != importTx.GetHash())  // ExistsImportTombstone prevents from duplication
-        return Invalid("non-canonical");
+        return Invalid("non-canonical-import-tx");
     // burn params
     if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof))
         return Invalid("invalid-burn-tx");
@@ -554,7 +554,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     }
 
     // return Invalid("test-invalid");
-    LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "Valid import tx! txid=" << importTx.GetHash().GetHex() << std::endl);
+    LOGSTREAM("importcoin", CCLOG_DEBUG2, stream << "Valid import tx! txid=" << importTx.GetHash().GetHex() << std::endl);
 
     return Valid();
 }
