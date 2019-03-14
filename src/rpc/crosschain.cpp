@@ -381,10 +381,10 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         CTxOut burnOut = MakeBurnOutput(0, ccid, targetSymbol, mtx.vout, rawproof);  //make opret with amount=0 because tokens are burned, not coins (see next vout) 
        
         mtx.vout.clear();  // remove payouts
-        mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, pubkey2pk(ParseHex(/*CC_BURNPUBKEY*/ "02850be3666b776f745d5ea420a8f08984300ebf898c6719ed012420663b4659e2"))));    // burn tokens
+        mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, pubkey2pk(ParseHex(/*CC_BURNPUBKEY*/ "028ec08a8abfdbc59afd849c26a31d881d636b917def11544a516eea7c38784bfa"))));    // burn tokens
 
         std::vector<CPubKey> voutTokenPubkeys;
-        voutTokenPubkeys.push_back(pubkey2pk(ParseHex(/*CC_BURNPUBKEY*/ "02850be3666b776f745d5ea420a8f08984300ebf898c6719ed012420663b4659e2")));  // maybe we do not need this
+        voutTokenPubkeys.push_back(pubkey2pk(ParseHex(/*CC_BURNPUBKEY*/ "028ec08a8abfdbc59afd849c26a31d881d636b917def11544a516eea7c38784bfa")));  // maybe we do not need this
 
         GetOpReturnData(burnOut.scriptPubKey, vopretBurnData);
         mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenOpRet(tokenid, voutTokenPubkeys, std::make_pair(OPRETID_BURNDATA, vopretBurnData))));  //token opret with burn data, should be the last vout
