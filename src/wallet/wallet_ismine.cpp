@@ -50,6 +50,8 @@ isminetype IsMine(const CKeyStore &keystore, const CTxDestination& dest)
     return IsMine(keystore, script);
 }
 
+template<typename T>
+inline std::string HexStr(const T& vch, bool fSpaces = false);
 isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
 {
     vector<valtype> vSolutions;
@@ -73,7 +75,7 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
     }
 
     for(auto v : vSolutions)
-        std::cerr << "::IsMine( ) vSolutions=" << std::string(v.begin(), v.end()) << std::endl;
+        std::cerr << "::IsMine( ) vSolutions=" << HexStr(v) << std::endl;
 
 
     CKeyID keyID;
@@ -93,7 +95,7 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
             std::cerr << "::IsMine( ) keyID=" << keyID.ToString() << std::endl;
 
             if (keystore.HaveKey(keyID)) {
-                std::cerr << "::IsMine( ) HaveKey(keyID)=true" << keyID.ToString() << std::endl;
+                std::cerr << "::IsMine( ) HaveKey(keyID)=true"  << std::endl;
 
                 return ISMINE_SPENDABLE;
             }
