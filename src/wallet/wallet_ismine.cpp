@@ -96,21 +96,24 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
             std::cerr << "::IsMine( ) keyID=" << keyID.ToString() << std::endl;
 
             if (keystore.HaveKey(keyID)) {
-                std::cerr << "::IsMine( ) HaveKey(keyID)=true"  << std::endl;
-
+                std::cerr << "::IsMine( ) HaveKey(keyID)=true returning ISMINE_SPENDABLE"  << std::endl;
                 return ISMINE_SPENDABLE;
             }
         }
         break;
     case TX_PUBKEY:
         keyID = CPubKey(vSolutions[0]).GetID();
-        if (keystore.HaveKey(keyID))
+        if (keystore.HaveKey(keyID)) {
+            std::cerr << "::IsMine( ) TX_PUBKEY returning ISMINE_SPENDABLE" << std::endl;
             return ISMINE_SPENDABLE;
+        }
         break;
     case TX_PUBKEYHASH:
         keyID = CKeyID(uint160(vSolutions[0]));
-        if (keystore.HaveKey(keyID))
+        if (keystore.HaveKey(keyID)) {
+            std::cerr << "::IsMine( ) TX_PUBKEYHASH returning ISMINE_SPENDABLE" << std::endl;
             return ISMINE_SPENDABLE;
+        }
         break;
     case TX_SCRIPTHASH:
     {
@@ -118,8 +121,10 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
         CScript subscript;
         if (keystore.GetCScript(scriptID, subscript)) {
             isminetype ret = IsMine(keystore, subscript);
-            if (ret == ISMINE_SPENDABLE)
+            if (ret == ISMINE_SPENDABLE) {
+                std::cerr << "::IsMine( ) TX_SCRIPTHASH returning ISMINE_SPENDABLE" << std::endl;
                 return ret;
+            }
         }
         break;
     }
@@ -137,7 +142,11 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
     }
     }
 
-    if (keystore.HaveWatchOnly(scriptPubKey))
+    if (keystore.HaveWatchOnly(scriptPubKey)) {
+        std::cerr << "::IsMine( ) returning ISMINE_WATCH_ONLY" << std::endl;
         return ISMINE_WATCH_ONLY;
+    }
+
+    std::cerr << "::IsMine( ) returning ISMINE_NO" << std::endl;
     return ISMINE_NO;
 }

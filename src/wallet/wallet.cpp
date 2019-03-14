@@ -2147,8 +2147,10 @@ CAmount CWallet::GetDebit(const CTxIn &txin, const isminefilter& filter) const
         {
             const CWalletTx& prev = (*mi).second;
             if (txin.prevout.n < prev.vout.size())
-                if (::IsMine(*this, prev.vout[txin.prevout.n].scriptPubKey) & filter)
+                if (::IsMine(*this, prev.vout[txin.prevout.n].scriptPubKey) & filter) {
+                    std::cerr << "CWallet::GetDebit() ::IsMine=true, value=" << prev.vout[txin.prevout.n].nValue << std::endl;
                     return prev.vout[txin.prevout.n].nValue; // komodo_interest?
+                }
         }
     }
     return 0;
