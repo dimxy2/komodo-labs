@@ -8025,7 +8025,7 @@ UniValue test_badnormals(const UniValue& params, bool fHelp)
 
    
     std::string dest = params[0].get_str().c_str();
-    int64_t amount = atoll(params[1].get_str().c_str()) * COIN;
+    int64_t amount = atof(params[1].get_str().c_str()) * COIN;
     int64_t txfee = atoll(params[2].get_str().c_str());
    
     CPubKey myPubkey = pubkey2pk(Mypubkey());
