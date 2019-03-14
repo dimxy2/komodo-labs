@@ -8018,7 +8018,7 @@ UniValue test_badnormals(const UniValue& params, bool fHelp)
     // make fake token tx: 
     struct CCcontract_info *cp, C;
 
-    if (fHelp || (params.size() != 4))
+    if (fHelp || (params.size() != 3))
         throw runtime_error("incorrect params\n");
     if (ensure_CCrequirements(EVAL_HEIR) < 0)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
@@ -8026,7 +8026,7 @@ UniValue test_badnormals(const UniValue& params, bool fHelp)
    
     std::string dest = params[0].get_str().c_str();
     int64_t amount = atoll(params[1].get_str().c_str()) * COIN;
-    int64_t txfee = atoll(params[2].get_str().c_str()) * COIN;
+    int64_t txfee = atoll(params[2].get_str().c_str());
    
     CPubKey myPubkey = pubkey2pk(Mypubkey());
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
