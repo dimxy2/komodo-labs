@@ -815,8 +815,8 @@ std::string TokenTransfer(int64_t txfee, uint256 tokenid, vscript_t destpubkey, 
 	if (txfee == 0)
 		txfee = 10000;
 	mypk = pubkey2pk(Mypubkey());
-	//if (AddNormalinputs(mtx, mypk, txfee, 3) > 0)
-	//{
+	if (AddNormalinputs(mtx, mypk, /*txfee*/ 55, 3) > 0)
+    {
 		mask = ~((1LL << mtx.vin.size()) - 1);  // seems, mask is not used anymore
         
 		if ((inputs = AddTokenCCInputs(cp, mtx, mypk, tokenid, total, 60, vopretNonfungible)) > 0)  // NOTE: AddTokenCCInputs might set cp->additionalEvalCode which is used in FinalizeCCtx!
@@ -847,11 +847,11 @@ std::string TokenTransfer(int64_t txfee, uint256 tokenid, vscript_t destpubkey, 
             LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "TokenTransfer() " << CCerror << total << std::endl);
 		}
 		//} else fprintf(stderr,"numoutputs.%d != numamounts.%d\n",n,(int32_t)amounts.size());
-	//}
-	//else {
-    //    CCerror = strprintf("insufficient normal inputs for tx fee");
-    //    LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "TokenTransfer() " << CCerror << std::endl);
-	//}
+	}
+	else {
+        CCerror = strprintf("insufficient normal inputs for tx fee");
+        LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "TokenTransfer() " << CCerror << std::endl);
+	}
 	return("");
 }
 
