@@ -172,17 +172,22 @@ bool UnmarshalImportTxOld(const CTransaction &importTx, ImportProof &proof, CTra
     return retcode;
 }
 
-// old format support, for old tx validation, for coins only
+// old import tx format support with opret in vout[0], for old tx validation, for coins only
 bool UnmarshalImportTxVout0(const CTransaction &importTx, ImportProof &proof, CTransaction &burnTx, std::vector<CTxOut> &payouts)
 {
     std::vector<uint8_t> vData;
 
     GetOpReturnData(importTx.vout[0].scriptPubKey, vData);
-    if (importTx.vout.size() < 1) return false;
+    if (importTx.vout.size() < 1) 
+        return false;
     payouts = std::vector<CTxOut>(importTx.vout.begin() + 1, importTx.vout.end());
-    return importTx.vin.size() == 1 &&
-        importTx.vin[0].scriptSig == (CScript() << E_MARSHAL(ss << EVAL_IMPORTCOIN)) &&
-        E_UNMARSHAL(vData, ss >> proof; ss >> burnTx);
+    bool retcode = importTx.vin.size() == 1 &&
+                   importTx.vin[0].scriptSig == (CScript() << E_MARSHAL(ss << EVAL_IMPORTCOIN)) &&
+                   E_UNMARSHAL(vData, ss >> proof; ss >> burnTx);
+
+    if( retcode )
+        LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "UnmarshalImportTxVout0() parsed old import tx opret" << std::endl);
+    return retcode;
 }
 
 
@@ -232,10 +237,13 @@ bool UnmarshalBurnTxOld(const CTransaction &burnTx, std::string &targetSymbol, u
     std::vector<uint8_t> burnOpret; uint32_t ccid = 0;
     if (burnTx.vout.size() == 0) return false;
     GetOpReturnData(burnTx.vout.back().scriptPubKey, burnOpret);
-    return E_UNMARSHAL(burnOpret,   ss >> VARINT(*targetCCid);
-                                    ss >> targetSymbol;
-                                    ss >> payoutsHash;
-                                    ss >> rawproof);
+    bool retcode = E_UNMARSHAL(burnOpret,   ss >> VARINT(*targetCCid);
+                                            ss >> targetSymbol;
+                                            ss >> payoutsHash;
+                                            ss >> rawproof);
+    if( retcode )
+        LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "UnmarshalBurnTxOld() parsed old burn tx opret" << std::endl);
+    return retcode;
 }
 
 
