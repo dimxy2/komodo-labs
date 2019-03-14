@@ -8043,8 +8043,8 @@ UniValue test_badnormals(const UniValue& params, bool fHelp)
     }
     mtx.vout.push_back(CTxOut(amount, scriptPubKey));
 
-    if( normalInputs > (txfee+amount) )
-        mtx.vout.push_back(CTxOut(normalInputs - (txfee+amount), CScript() << ParseHex(HexStr(myPubkey)) << OP_CHECKSIG));
+    //if( normalInputs > (txfee+amount) )
+    //    mtx.vout.push_back(CTxOut(normalInputs - (txfee+amount), CScript() << ParseHex(HexStr(myPubkey)) << OP_CHECKSIG));
 
 
     cp = CCinit(&C, EVAL_HEIR);
