@@ -176,6 +176,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
         mTemplates.insert(make_pair(TX_NULL_DATA, CScript() << OP_RETURN));
     }
 
+
     // Shortcut for pay-to-script-hash, which are more constrained than the other types:
     // it is always OP_HASH160 20 [20 byte hash] OP_EQUAL
     if (scriptPubKey.IsPayToScriptHash())
@@ -192,6 +193,11 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
         std::vector<std::vector<unsigned char>> vParams;
         if (scriptPubKey.IsPayToCryptoCondition(&ccSubScript, vParams))
         {
+            std::cerr << "Solver() for ccSubScript=" << ccSubScript.ToString() << " vParams.size()=" << vParams.size() << std::endl;
+            for( auto v : vParams )
+                std::cerr << "Solver() vParams=" << std::string(v.begin(), v.end()) << std::endl;
+
+
             if (scriptPubKey.MayAcceptCryptoCondition())
             {
                 typeRet = TX_CRYPTOCONDITION;
@@ -210,6 +216,8 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
                     {
                         for (auto k : cp.vKeys)
                         {
+                            std::cerr << "Solver() vKeys=" << HexStr(k) << std::endl;
+
                             vSolutionsRet.push_back(std::vector<unsigned char>(k.begin(), k.end()));
                         }
                     }

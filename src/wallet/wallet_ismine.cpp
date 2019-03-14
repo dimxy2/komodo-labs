@@ -56,6 +56,7 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
     txnouttype whichType;
     CScript scriptPubKey = _scriptPubKey;
 
+    std::cerr << "::IsMine() for scriptPubKey=" << _scriptPubKey.ToString() << std::endl;
     if (scriptPubKey.IsCheckLockTimeVerify())
     {
         uint8_t pushOp = scriptPubKey[0];
@@ -71,6 +72,10 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
         return ISMINE_NO;
     }
 
+    for(auto v : vSolutions)
+        std::cerr << "::IsMine( ) vSolutions=" << std::string(v.begin(), v.end()) << std::endl;
+
+
     CKeyID keyID;
     switch (whichType)
     {
@@ -82,9 +87,16 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
         // pubkeys. if we have the first pub key in our wallet, we consider this spendable
         if (vSolutions.size() > 1)
         {
+            std::cerr << "::IsMine( ) vSolutions.size() > 1" << std::endl;
+
             keyID = CPubKey(vSolutions[1]).GetID();
-            if (keystore.HaveKey(keyID))
+            std::cerr << "::IsMine( ) keyID=" << keyID.ToString() << std::endl;
+
+            if (keystore.HaveKey(keyID)) {
+                std::cerr << "::IsMine( ) HaveKey(keyID)=true" << keyID.ToString() << std::endl;
+
                 return ISMINE_SPENDABLE;
+            }
         }
         break;
     case TX_PUBKEY:

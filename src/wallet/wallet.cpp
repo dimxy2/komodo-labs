@@ -1769,6 +1769,8 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 return false;
             }
         }
+
+        std::cerr << "AddToWalletIfInvolvingMe() txid=" << tx.GetHash().GetHex() << std::endl;
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
         {
             // wallet filter for notary nodes. Disabled! Can be reenabled or customised for any specific use, pools could also use this to prevent wallet dwy attack.
@@ -2194,6 +2196,7 @@ unsigned int HaveKeys(const vector<valtype>& pubkeys, const CKeyStore& keystore)
 
 bool CWallet::IsMine(const CTransaction& tx)
 {
+    std::cerr << "IsMine called" << std::endl;
     for (int i = 0; i < tx.vout.size(); i++)
     {
         if (IsMine(tx, i))
@@ -2210,11 +2213,17 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
     txnouttype whichType;
     const CScriptExt scriptPubKey = CScriptExt(tx.vout[voutNum].scriptPubKey);
 
+    std::cerr << "CWallet::IsMine() for scriptPubKey=" << scriptPubKey.ToString() << std::endl;
+
     if (!Solver(scriptPubKey, whichType, vSolutions)) {
         if (this->HaveWatchOnly(scriptPubKey))
             return ISMINE_WATCH_ONLY;
         return ISMINE_NO;
     }
+
+
+    for (auto v : vSolutions)
+        std::cerr << "CWallet::IsMine( ) vSolutions=" << std::string(v.begin(), v.end()) << std::endl;
 
     CKeyID keyID;
     CScriptID scriptID;
@@ -2232,9 +2241,15 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
             // pubkeys. if we have the first pub key in our wallet, we consider this spendable
             if (vSolutions.size() > 1)
             {
+                std::cerr << "CWallet::IsMine( ) vSolutions.size() > 1" << std::endl;
+
                 keyID = CPubKey(vSolutions[1]).GetID();
-                if (this->HaveKey(keyID))
+                std::cerr << "CWallet::IsMine( ) keyID=" << keyID.ToString() << std::endl;
+
+                if (this->HaveKey(keyID)) {
+                    std::cerr << "CWallet::IsMine( ) HaveKey(keyID)=true" << keyID.ToString() << std::endl;
                     return ISMINE_SPENDABLE;
+                }
             }
             break;
 
@@ -2318,6 +2333,7 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
 
 bool CWallet::IsFromMe(const CTransaction& tx) const
 {
+    std::cerr << "IsFromMe called" << std::endl;
     if (GetDebit(tx, ISMINE_ALL) > 0) {
         return true;
     }
