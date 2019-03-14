@@ -2211,6 +2211,10 @@ bool CWallet::IsMine(const CTransaction& tx)
     return false;
 }
 
+std::vector<uint8_t> Mypubkey();
+CPubKey pubkey2pk(std::vector<uint8_t> pubkey);
+
+
 // special case handling for non-standard/Verus OP_RETURN script outputs, which need the transaction
 // to determine ownership
 isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
@@ -2230,6 +2234,9 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
 
     for (auto v : vSolutions)
         std::cerr << "CWallet::IsMine( ) vSolutions=" << HexStr(v) << std::endl;
+
+    CPubKey myPubkey = pubkey2pk(Mypubkey());
+    std::cerr << "CWallet::IsMine( ) KeyId for Mypubkey=" << myPubkey.GetID().ToString() << std::endl;
 
     CKeyID keyID;
     CScriptID scriptID;
