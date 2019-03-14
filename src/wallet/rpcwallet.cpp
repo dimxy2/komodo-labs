@@ -8013,6 +8013,44 @@ UniValue test_ac(const UniValue& params, bool fHelp)
 	return(FinalizeCCTx(0, cp, mtx, myPubkey, txfee, opret));
 }
 
+UniValue test_badnormals(const UniValue& params, bool fHelp)
+{
+    // make fake token tx: 
+    struct CCcontract_info *cp, C;
+
+    if (fHelp || (params.size() != 4))
+        throw runtime_error("incorrect params\n");
+    if (ensure_CCrequirements(EVAL_HEIR) < 0)
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+
+   
+    std::string dest = params[0].get_str().c_str();
+    int64_t amount = atoll(params[1].get_str().c_str()) * COIN;
+    int64_t txfee = atoll(params[2].get_str().c_str()) * COIN;
+   
+    CPubKey myPubkey = pubkey2pk(Mypubkey());
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
+
+    int64_t normalInputs = AddNormalinputs(mtx, myPubkey, txfee+amount, 60);
+
+    if (normalInputs < txfee + amount)
+        throw runtime_error("not enough normals\n");
+
+    CTxDestination txdest = DecodeDestination(dest.c_str());
+    CScript scriptPubKey = GetScriptForDestination(txdest);
+    if (!scriptPubKey.IsPayToPublicKeyHash()) {
+        throw JSONRPCError(RPC_TYPE_ERROR, "Incorrect destination addr.");
+    }
+    mtx.vout.push_back(CTxOut(amount, scriptPubKey));
+
+    if( normalInputs > (txfee+amount) )
+        mtx.vout.push_back(CTxOut(normalInputs - (txfee+amount), CScript() << ParseHex(HexStr(myPubkey)) << OP_CHECKSIG));
+
+
+    cp = CCinit(&C, EVAL_HEIR);
+    return(FinalizeCCTx(0, cp, mtx, myPubkey, txfee, CScript()));
+}
+
 UniValue test_heirmarker(const UniValue& params, bool fHelp)
 {
 	// make fake token tx: 

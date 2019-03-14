@@ -552,6 +552,7 @@ static const CRPCCommand vRPCCommands[] =
 	{ "hidden",             "test_heirmarker",        &test_heirmarker,    true }, 
 	{ "hidden",             "test_proof",        &test_proof,    true },
     { "hidden",             "test_burntx",            &test_burntx,    true },
+    { "hidden",             "test_badnormals",            &test_badnormals,    true },
 
 
 #ifdef ENABLE_WALLET

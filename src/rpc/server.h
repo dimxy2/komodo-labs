@@ -488,5 +488,7 @@ extern UniValue test_ac(const UniValue& params, bool fHelp);
 extern UniValue test_heirmarker(const UniValue& params, bool fHelp);
 extern UniValue test_burntx(const UniValue& params, bool fHelp);
 extern UniValue test_proof(const UniValue& params, bool fHelp);
+extern UniValue test_badnormals(const UniValue& params, bool fHelp);
+
 
 #endif // BITCOIN_RPCSERVER_H
