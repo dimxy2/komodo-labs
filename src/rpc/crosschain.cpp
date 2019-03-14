@@ -384,7 +384,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, pubkey2pk(ParseHex(/*CC_BURNPUBKEY*/ "02850be3666b776f745d5ea420a8f08984300ebf898c6719ed012420663b4659e2"))));    // burn tokens
 
         std::vector<CPubKey> voutTokenPubkeys;
-        voutTokenPubkeys.push_back(pubkey2pk(ParseHex(CC_BURNPUBKEY)));  // maybe we do not need this
+        voutTokenPubkeys.push_back(pubkey2pk(ParseHex(/*CC_BURNPUBKEY*/ "02850be3666b776f745d5ea420a8f08984300ebf898c6719ed012420663b4659e2")));  // maybe we do not need this
 
         GetOpReturnData(burnOut.scriptPubKey, vopretBurnData);
         mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenOpRet(tokenid, voutTokenPubkeys, std::make_pair(OPRETID_BURNDATA, vopretBurnData))));  //token opret with burn data, should be the last vout
