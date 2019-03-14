@@ -195,7 +195,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
         {
             std::cerr << "Solver() for ccSubScript=" << ccSubScript.ToString() << " vParams.size()=" << vParams.size() << std::endl;
             for( auto v : vParams )
-                std::cerr << "Solver() vParams=" << std::string(v.begin(), v.end()) << std::endl;
+                std::cerr << "Solver() vParams=" << HexStr(v) << std::endl;
 
 
             if (scriptPubKey.MayAcceptCryptoCondition())

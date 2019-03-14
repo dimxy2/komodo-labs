@@ -1771,8 +1771,12 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         }
 
         std::cerr << "AddToWalletIfInvolvingMe() txid=" << tx.GetHash().GetHex() << std::endl;
-        if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
+        bool ismine, isfromme;
+        if (fExisted || (ismine = IsMine(tx)) || (isfromme = IsFromMe(tx)) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
         {
+            std::cerr << std::boolalpha << "fExisted=" << fExisted << " IsMine=" << ismine << " IsFromMe=" << isfromme << " sproutNoteData.size() > 0=" << (sproutNoteData.size() > 0)
+                << " saplingNoteData.size() > 0=" << (saplingNoteData.size() > 0) << std::endl;
+
             // wallet filter for notary nodes. Disabled! Can be reenabled or customised for any specific use, pools could also use this to prevent wallet dwy attack.
             if ( !tx.IsCoinBase() && !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
             {
@@ -2223,7 +2227,7 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
 
 
     for (auto v : vSolutions)
-        std::cerr << "CWallet::IsMine( ) vSolutions=" << std::string(v.begin(), v.end()) << std::endl;
+        std::cerr << "CWallet::IsMine( ) vSolutions=" << HexStr(v) << std::endl;
 
     CKeyID keyID;
     CScriptID scriptID;
@@ -2247,7 +2251,7 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
                 std::cerr << "CWallet::IsMine( ) keyID=" << keyID.ToString() << std::endl;
 
                 if (this->HaveKey(keyID)) {
-                    std::cerr << "CWallet::IsMine( ) HaveKey(keyID)=true" << keyID.ToString() << std::endl;
+                    std::cerr << "CWallet::IsMine( ) HaveKey(keyID)=true" << std::endl;
                     return ISMINE_SPENDABLE;
                 }
             }
