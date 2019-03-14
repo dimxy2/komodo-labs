@@ -334,11 +334,14 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
 
         mtx.vout.clear();               // remove 'model' vout
 
+        // make change here to prevent it from making in FinalizeCCtx
         int64_t change = inputs - burnAmount;
         if (change != 0)
             mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));
 
         mtx.vout.push_back(burnOut);    // mtx now has only burned vout (that is, amount sent to OP_RETURN making it unspendable)
+        std::string exportTxHex = FinalizeCCTx(0, cpTokens, mtx, myPubKey, txfee, CScript());  // no change no opret
+
     }
     else    {   // tokens
         CTransaction tokenbasetx;
@@ -368,7 +371,8 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         if( !destPubKey.IsValid() )
             throw runtime_error("Invalid destination pubkey\n");
 
-        if (AddNormalinputs(mtx, myPubKey, txfee, 1) == 0)
+        int64_t inputs;
+        if ((inputs = AddNormalinputs(mtx, myPubKey, txfee, 1)) == 0)
             throw runtime_error("No normal input found for txfee\n");
 
         if( AddTokenCCInputs(cpTokens, mtx, myPubKey, tokenid, burnAmount, 1) != burnAmount )
@@ -386,16 +390,20 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         mtx.vout.clear();  // remove payouts
         mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, pubkey2pk(ParseHex(CC_BURNPUBKEY))));    // burn tokens
 
+        // make change here to prevent it from making in FinalizeCCtx
+        int64_t change = inputs - txfee;
+        if (change != 0)
+            mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));
+
         std::vector<CPubKey> voutTokenPubkeys;
-        voutTokenPubkeys.push_back(pubkey2pk(ParseHex(CC_BURNPUBKEY)));  // maybe we do not need this
+        voutTokenPubkeys.push_back(pubkey2pk(ParseHex(CC_BURNPUBKEY)));  // maybe we do not need this because ccTokens has the const for burn pubkey
 
         GetOpReturnData(burnOut.scriptPubKey, vopretBurnData);
-        mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenOpRet(tokenid, voutTokenPubkeys, std::make_pair(OPRETID_BURNDATA, vopretBurnData))));  //token opret with burn data, should be the last vout
+        mtx.vout.push_back(CTxOut(0, EncodeTokenOpRet(tokenid, voutTokenPubkeys, std::make_pair(OPRETID_BURNDATA, vopretBurnData))));  //opret
     }
 
-    std::string exportTxHex = FinalizeCCTx(0, cpTokens, mtx, myPubKey, txfee, CScript()/*no opret*/);
+    std::string exportTxHex = FinalizeCCTx(0, cpTokens, mtx, myPubKey, txfee, CScript()); //no change, no opret
     ret.push_back(Pair("hex", HexStr(E_MARSHAL(ss << mtx))));
-
     return ret;
 }
 
