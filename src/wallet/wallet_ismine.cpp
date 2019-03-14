@@ -28,6 +28,8 @@
 
 #include <boost/foreach.hpp>
 
+#include "utilstrencodings.h"
+
 using namespace std;
 
 typedef vector<unsigned char> valtype;
@@ -50,8 +52,7 @@ isminetype IsMine(const CKeyStore &keystore, const CTxDestination& dest)
     return IsMine(keystore, script);
 }
 
-template<typename T>
-inline std::string HexStr(const T& vch, bool fSpaces = false);
+
 isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
 {
     vector<valtype> vSolutions;
