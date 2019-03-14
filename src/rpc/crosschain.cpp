@@ -244,7 +244,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
     //uint8_t *ptr; 
     //uint8_t i; 
     uint32_t ccid = ASSETCHAINS_CC; 
-    int64_t txfee = 10000;
+    const int64_t txfee = 10000;
 
     if (fHelp || params.size() != 3 && params.size() != 4)
         throw runtime_error(
@@ -368,6 +368,9 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         if( !destPubKey.IsValid() )
             throw runtime_error("Invalid destination pubkey\n");
 
+        if (AddNormalinputs(mtx, myPubKey, txfee, 1) == 0)
+            throw runtime_error("No normal input found for txfee\n");
+
         if( AddTokenCCInputs(cpTokens, mtx, myPubKey, tokenid, burnAmount, 1) != burnAmount )
             throw runtime_error("No non-fungible token input found for your pubkey\n");
 
@@ -381,10 +384,10 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         CTxOut burnOut = MakeBurnOutput(0, ccid, targetSymbol, mtx.vout, rawproof);  //make opret with amount=0 because tokens are burned, not coins (see next vout) 
        
         mtx.vout.clear();  // remove payouts
-        mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, pubkey2pk(ParseHex(/*CC_BURNPUBKEY*/ "028ec08a8abfdbc59afd849c26a31d881d636b917def11544a516eea7c38784bfa"))));    // burn tokens
+        mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, pubkey2pk(ParseHex(CC_BURNPUBKEY))));    // burn tokens
 
         std::vector<CPubKey> voutTokenPubkeys;
-        voutTokenPubkeys.push_back(pubkey2pk(ParseHex(/*CC_BURNPUBKEY*/ "028ec08a8abfdbc59afd849c26a31d881d636b917def11544a516eea7c38784bfa")));  // maybe we do not need this
+        voutTokenPubkeys.push_back(pubkey2pk(ParseHex(CC_BURNPUBKEY)));  // maybe we do not need this
 
         GetOpReturnData(burnOut.scriptPubKey, vopretBurnData);
         mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenOpRet(tokenid, voutTokenPubkeys, std::make_pair(OPRETID_BURNDATA, vopretBurnData))));  //token opret with burn data, should be the last vout
