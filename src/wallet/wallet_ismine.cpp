@@ -52,6 +52,8 @@ isminetype IsMine(const CKeyStore &keystore, const CTxDestination& dest)
     return IsMine(keystore, script);
 }
 
+std::vector<uint8_t> Mypubkey();
+CPubKey pubkey2pk(std::vector<uint8_t> pubkey);
 
 isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
 {
@@ -78,6 +80,8 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
     for(auto v : vSolutions)
         std::cerr << "::IsMine( ) vSolutions=" << HexStr(v) << std::endl;
 
+    CPubKey myPubkey = pubkey2pk(Mypubkey());
+    std::cerr << "CWallet::IsMine( ) KeyId for Mypubkey=" << myPubkey.GetID().ToString() << std::endl;
 
     CKeyID keyID;
     switch (whichType)
