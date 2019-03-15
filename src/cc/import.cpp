@@ -510,6 +510,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
 
         if (proof.IsMerkleBranch(merkleBranchProof)) {
             uint256 target = merkleBranchProof.second.Exec(burnTx.GetHash());
+            LOGSTREAM("importcoin", CCLOG_DEBUG2, stream << "Eval::ImportCoin() momom target=" << target.GetHex() << " merkleBranchProof.first=" << merkleBranchProof.first.GetHex() << std::endl);
             if (!CheckMoMoM(merkleBranchProof.first, target)) {
                 LOGSTREAM("importcoin", CCLOG_INFO, stream << "MoMoM check failed for importtx=" << importTx.GetHash().GetHex() << std::endl);
                 return Invalid("momom-check-fail");
