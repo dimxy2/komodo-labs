@@ -402,8 +402,8 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         mtx.vout.push_back(CTxOut(0, EncodeTokenOpRet(tokenid, voutTokenPubkeys, std::make_pair(OPRETID_BURNDATA, vopretBurnData))));  //opret
     }
 
-    std::string exportTxHex = FinalizeCCTx(0, cpTokens, mtx, myPubKey, txfee, CScript()); //no change, no opret
-    ret.push_back(Pair("hex", HexStr(E_MARSHAL(ss << mtx))));
+    std::string burnTxHex = FinalizeCCTx(0, cpTokens, mtx, myPubKey, txfee, CScript()); //no change, no opret
+    ret.push_back(Pair("BurnTxHex", burnTxHex));
     return ret;
 }
 
@@ -502,13 +502,16 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
 
     CTransaction importTx = MakeImportCoinTransaction(importProof, burnTx, payouts);
 
-    return HexStr(E_MARSHAL(ss << importTx));
+    std::string importTxHex = HexStr(E_MARSHAL(ss << importTx));
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("ImportTxHex", importTxHex));
+    return ret;
 }
 
 UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
-        throw runtime_error("migrate_completeimporttransaction importTx offset\n\n"
+        throw runtime_error("migrate_completeimporttransaction importTx [offset]\n\n"
                 "Takes a cross chain import tx with proof generated on assetchain "
                 "and extends proof to target chain proof root\n"
                 "offset is optional, use it to increase the used KMD height, use when import fails.");
@@ -526,7 +529,9 @@ UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
 
     CompleteImportTransaction(importTx, offset);
 
-    return HexStr(E_MARSHAL(ss << importTx));
+    std::string importTxHex = HexStr(E_MARSHAL(ss << importTx));
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("ImportTxHex", importTxHex));
 }
 
 /*
@@ -983,6 +988,8 @@ UniValue getwalletburntransactions(const UniValue& params, bool fHelp)
                     entry.push_back(Pair("burnedAmount", ValueFromAmount(pwtx->vout.back().nValue)));   // coins
                 entry.push_back(Pair("targetSymbol", targetSymbol));
                 entry.push_back(Pair("targetCCid", std::to_string(targetCCid)));
+                if (mytxid_inmempool(pwtx->GetHash()))
+                    entry.push_back(Pair("inMempool", "yes"));
                 ret.push_back(entry);
             }
         } //else fprintf(stderr,"null pwtx\n

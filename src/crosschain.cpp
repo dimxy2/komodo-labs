@@ -256,13 +256,13 @@ void CompleteImportTransaction(CTransaction &importTx, int32_t offset)
 {
     ImportProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; std::vector<uint8_t> rawproof;
     if (!UnmarshalImportTx(importTx, proof, burnTx, payouts))
-        throw std::runtime_error("Couldn't parse importTx");
+        throw std::runtime_error("Couldn't unmarshal importTx");
 
     std::string targetSymbol;
     uint32_t targetCCid;
     uint256 payoutsHash;
     if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash, rawproof))
-        throw std::runtime_error("Couldn't parse burnTx");
+        throw std::runtime_error("Couldn't unmarshal burnTx");
 
     TxProof merkleBranch;
     if( !proof.IsMerkleBranch(merkleBranch) )

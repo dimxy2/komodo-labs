@@ -113,22 +113,26 @@ bool UnmarshalImportTx(const CTransaction &importTx, ImportProof &proof, CTransa
         return false;
     }
 
-    std::vector<uint8_t> vData;
-    GetOpReturnData(importTx.vout.back().scriptPubKey, vData);
-    if (vData.empty())
+    std::vector<uint8_t> vImportData;
+    GetOpReturnData(importTx.vout.back().scriptPubKey, vImportData);
+    if (vImportData.empty()) {
+        LOGSTREAM("importcoin", CCLOG_INFO, stream << "UnmarshalImportTx() no opret" << std::endl);
         return false;
+    }
 
-    if (vData.begin()[0] == EVAL_TOKENS) {          // if it is tokens
+    if (vImportData.begin()[0] == EVAL_TOKENS) {          // if it is tokens
         // get import data after token opret:
         std::vector<std::pair<uint8_t, vscript_t>>  oprets;
         vscript_t vorigpubkey;
         std::string name, desc;
         uint256 srcTokenId;
 
-        if (DecodeTokenImportOpRet(importTx.vout.back().scriptPubKey, vorigpubkey, name, desc, srcTokenId, oprets) == 0)
+        if (DecodeTokenImportOpRet(importTx.vout.back().scriptPubKey, vorigpubkey, name, desc, srcTokenId, oprets) == 0) {
+            LOGSTREAM("importcoin", CCLOG_INFO, stream << "UnmarshalImportTx() could not decode token opret" << std::endl);
             return false;
+        }
 
-        GetOpretBlob(oprets, OPRETID_IMPORTDATA, vData);  // fetch import data after token opret
+        GetOpretBlob(oprets, OPRETID_IMPORTDATA, vImportData);  // fetch import data after token opret
         // remove import data from token opret to restore original payouts:
         for (std::vector<std::pair<uint8_t, vscript_t>>::const_iterator i = oprets.begin(); i != oprets.end(); i++)
             if ((*i).first == OPRETID_IMPORTDATA) {
@@ -142,11 +146,12 @@ bool UnmarshalImportTx(const CTransaction &importTx, ImportProof &proof, CTransa
     else {
         //payouts = std::vector<CTxOut>(importTx.vout.begin()+1, importTx.vout.end());   // see next
         payouts = std::vector<CTxOut>(importTx.vout.begin(), importTx.vout.end() - 1);   // skip opret; and it is now in the back
-        
     }
 
-    uint8_t evalCode;
-    return E_UNMARSHAL(vData, ss >> evalCode; ss >> proof; ss >> burnTx);
+    bool retcode = E_UNMARSHAL(vImportData, ss >> proof; ss >> burnTx);
+    if (!retcode)
+        LOGSTREAM("importcoin", CCLOG_INFO, stream << "UnmarshalImportTx() could not unmarshal import data" << std::endl);
+    return retcode;
 }
 
 // old format support, for old tx validation, for coins only
