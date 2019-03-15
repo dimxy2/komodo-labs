@@ -61,7 +61,7 @@ CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransact
     }
     else {
         //mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));     // import tx's opret was in vout[0] 
-        mtx.vout.push_back(CTxOut(0, CScript() << OP_RETURN << E_MARSHAL(ss << importData)));     // import tx's opret now is in the vout's tail
+        mtx.vout.push_back(CTxOut(0, CScript() << OP_RETURN << importData));     // import tx's opret now is in the vout's tail
     }
 
     // add special import tx vin:
