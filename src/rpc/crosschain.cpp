@@ -532,6 +532,7 @@ UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
     std::string importTxHex = HexStr(E_MARSHAL(ss << importTx));
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("ImportTxHex", importTxHex));
+    return ret;
 }
 
 /*
