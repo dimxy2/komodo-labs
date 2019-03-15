@@ -481,10 +481,10 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
 
         // calc outputs for import tx
         int64_t importAmount = 0;
-        for (auto v = importTx.vout.begin() + 1; v != importTx.vout.end() - 1; v ++)  // skip marker, exclude opret
-            if ((*v).scriptPubKey.IsPayToCryptoCondition() && 
-                CTxOut((*v).nValue, (*v).scriptPubKey) != MakeCC1vout(EVAL_TOKENS, (*v).nValue, GetUnspendable(cpTokens, NULL)))  // should not be marker here
-                importAmount += (*v).nValue;
+        for (auto v : std::vector<CTxOut>(importTx.vout.begin() + 1, importTx.vout.end() - 1))  // skip marker, exclude opret
+            if (v.scriptPubKey.IsPayToCryptoCondition() && 
+                CTxOut(v.nValue, v.scriptPubKey) != MakeCC1vout(EVAL_TOKENS, v.nValue, GetUnspendable(cpTokens, NULL)))  // should not be marker here
+                importAmount += v.nValue;
 
         if( burnAmount != importAmount )
             return Invalid("token-payout-too-high-or-too-low");
