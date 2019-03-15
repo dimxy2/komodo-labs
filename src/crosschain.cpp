@@ -376,9 +376,9 @@ bool CheckNotariesApproval(uint256 burntxid, const std::vector<uint256> & notary
                             
                             if (komodo_notaries(notaries_pubkeys, block.GetHeight(), block.GetBlockTime()) >= 0) {
                                 // check it is a notary who signed approved tx:
-                                for (int i = 0; i < sizeof(notaries_pubkeys) / sizeof(notaries_pubkeys[0]); i++) {
+                                int i;
+                                for (i = 0; i < sizeof(notaries_pubkeys) / sizeof(notaries_pubkeys[0]); i++) {
                                     std::vector<uint8_t> vnotarypubkey(notaries_pubkeys[i], notaries_pubkeys[i] + 33);
-
 #ifdef TESTMODE
                                     char test_notary_pubkey_hex[] = "029fa302968bbae81f41983d2ec20445557b889d31227caec5d910d19b7510ef86";
                                     uint8_t test_notary_pubkey33[33];
@@ -389,15 +389,16 @@ bool CheckNotariesApproval(uint256 burntxid, const std::vector<uint256> & notary
 #ifdef TESTMODE                                        
                                         || CheckVinPubKey(notarytx, 0, test_notary_pubkey33)  // test
 #endif
-                                    )   {
+                                    )   
+                                    {
                                         alreadySigned.push_back(vnotarypubkey);
                                         count++;
                                         LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "CheckNotariesApproval() notary approval checked, count=" << count << std::endl);
                                         break;
                                     }
-                                    if (i == sizeof(notaries_pubkeys) / sizeof(notaries_pubkeys[0]))
-                                        LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckNotariesApproval() txproof not signed by a notary" << std::endl);
                                 }
+                                if (i == sizeof(notaries_pubkeys) / sizeof(notaries_pubkeys[0]))
+                                    LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "CheckNotariesApproval() txproof not signed by a notary or reused" << std::endl);
                             }
                             else {
                                 LOGSTREAM("importcoin", CCLOG_INFO, stream << "CheckNotariesApproval() cannot get current notaries pubkeys" << std::endl);
