@@ -52,23 +52,24 @@ CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransact
     // if it is tokens:
     vscript_t vopret;
     GetOpReturnData(mtx.vout.back().scriptPubKey, vopret);
-    if (vopret.empty())
-        return CTransaction(mtx);
 
-    if (vopret.begin()[0] == EVAL_TOKENS) {
+    if (!vopret.empty()) {
         vscript_t vorigpubkey;
         uint8_t funcId;
         std::vector <std::pair<uint8_t, vscript_t>> oprets;
         std::string name, desc;
         uint256 srcTokenId;
 
-        DecodeTokenImportOpRet(mtx.vout.back().scriptPubKey, vorigpubkey, name, desc, srcTokenId, oprets);    // parse token 'i' opret
-        mtx.vout.pop_back(); //remove old token opret
-
-        oprets.push_back(std::make_pair(OPRETID_IMPORTDATA, importData)); 
-        mtx.vout.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srcTokenId, oprets)));   // make new token 'i' opret with importData                                                                                    
+        if (DecodeTokenImportOpRet(mtx.vout.back().scriptPubKey, vorigpubkey, name, desc, srcTokenId, oprets) == 'i') {    // parse token 'i' opret
+            mtx.vout.pop_back(); //remove old token opret
+            oprets.push_back(std::make_pair(OPRETID_IMPORTDATA, importData));
+            mtx.vout.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srcTokenId, oprets)));   // make new token 'i' opret with importData                                                                                    
+        }
+        else {
+            LOGSTREAM("importcoin", CCLOG_INFO, stream << "MakeImportCoinTransaction() incorrect token import opret" << std::endl);
+        }
     }
-    else if( vopret.begin()[0] == EVAL_IMPORTCOIN ){
+    else { //no opret in coin payouts
         //mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));     // import tx's opret was in vout[0] 
         mtx.vout.push_back(CTxOut(0, CScript() << OP_RETURN << importData));     // import tx's opret now is in the vout's tail
     }
