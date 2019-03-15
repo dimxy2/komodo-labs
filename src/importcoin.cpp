@@ -265,31 +265,23 @@ CAmount GetCoinImportValue(const CTransaction &tx)
             }
 
             if (isNewImportTx && vburnOpret.begin()[0] == EVAL_TOKENS) {      //if it is tokens
+             
+             /* This code would not link because we are in a shared library with no most of cc modules
+                Assume we do not need this extended check for payouts because we could not have markers in them
+                and we do validate payouts outputs in eval::ImportCoin()
                 struct CCcontract_info *cpTokens, CCtokens_info;
-                std::vector<std::pair<uint8_t, vscript_t>>  oprets;
-                uint256 tokenid;
-                uint8_t evalCodeInOpret;
-                std::vector<CPubKey> voutTokenPubkeys;
-                vscript_t vnonfungibleOpret;
-                uint8_t nonfungibleEvalCode = 0;
-
                 cpTokens = CCinit(&CCtokens_info, EVAL_TOKENS);
 
-                if (DecodeTokenOpRet(tx.vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) == 0) {// no nonfungible data in burn tx
-                    LOGSTREAM("importcoin", CCLOG_INFO, stream << "GetCoinImportValue() could not decode token opret" << std::endl);
-                    return 0;
-                }
-                GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vnonfungibleOpret);
-                if (vnonfungibleOpret.empty()) {
-                    LOGSTREAM("importcoin", CCLOG_INFO, stream << "GetCoinImportValue() could not find non-fungible token data" << std::endl);
-                    return 0;
-                }
-                nonfungibleEvalCode = vnonfungibleOpret.begin()[0];
-               
                 CAmount ccOutput = 0;
                 for (auto v : payouts)
-                    if (v.scriptPubKey.IsPayToCryptoCondition() && CTxOut(v.nValue, v.scriptPubKey) == MakeTokensCC1vout(nonfungibleEvalCode ? nonfungibleEvalCode : EVAL_TOKENS, v.nValue, pubkey2pk(ParseHex(CC_BURNPUBKEY))))  // burned value goes to cc vout with dead pubkey
+                    if (v.scriptPubKey.IsPayToCryptoCondition() && CTxOut(v.nValue, v.scriptPubKey) != MakeCC1vout(EVAL_TOKENS, v.nValue, GetUnspendable(cpTokens, NULL)))  
+                        ccOutput += v.nValue;        */
+
+                CAmount ccOutput = 0;
+                for (auto v : payouts)
+                    if (v.scriptPubKey.IsPayToCryptoCondition())  
                         ccOutput += v.nValue;
+
                 return ccOutput;
             }
             else
