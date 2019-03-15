@@ -445,7 +445,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         return Invalid("invalid-import-tx-no-opret");
 
     // check burn amount
-    if( vimportOpret.begin()[0] == EVAL_IMPORTCOIN || !isNewImportTx )  // for coins (both for new or old opret)
+    if( !isNewImportTx || vimportOpret.begin()[0] == EVAL_IMPORTCOIN )  // for coins (both for new or old opret)
     {
         uint64_t burnAmount = burnTx.vout.back().nValue;
         if (burnAmount == 0)
