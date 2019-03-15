@@ -471,15 +471,19 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         if (!vnonfungibleOpret.empty())
             nonfungibleEvalCode = vnonfungibleOpret.begin()[0];
 
+        // calc outputs for burn tx
         int64_t burnAmount = 0;
         for (auto v : burnTx.vout)
             if (v.scriptPubKey.IsPayToCryptoCondition() && CTxOut(v.nValue, v.scriptPubKey) == MakeTokensCC1vout(nonfungibleEvalCode ? nonfungibleEvalCode : EVAL_TOKENS, v.nValue, pubkey2pk(ParseHex(CC_BURNPUBKEY))) )  // burned to dead pubkey
                 burnAmount += v.nValue;
 
+        // calc outputs for import tx
         int64_t importAmount = 0;
-        for (auto v : importTx.vout)
-            if (v.scriptPubKey.IsPayToCryptoCondition() && CTxOut(v.nValue, v.scriptPubKey) != MakeCC1vout(EVAL_TOKENS, v.nValue, GetUnspendable(cpTokens, NULL)))  // not marker
-                importAmount += v.nValue;
+        for (auto v = importTx.vout.begin() + 1; v != importTx.vout.end() - 1; v ++)  // skip marker, exclude opret
+            if ((*v).scriptPubKey.IsPayToCryptoCondition() && 
+                CTxOut((*v).nValue, (*v).scriptPubKey) != MakeCC1vout(EVAL_TOKENS, (*v).nValue, GetUnspendable(cpTokens, NULL)))  // should not be marker here
+                importAmount += (*v).nValue;
+
         if( burnAmount != importAmount )
             return Invalid("token-payout-too-high-or-too-low");
 

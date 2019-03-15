@@ -140,8 +140,8 @@ bool UnmarshalImportTx(const CTransaction &importTx, ImportProof &proof, CTransa
                 break;
             }
 
-        payouts = std::vector<CTxOut>(importTx.vout.begin()+1 /*skip marker*/, importTx.vout.end()-1 /*exclude opret*/);    
-        payouts.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srcTokenId, oprets)));   // make payouts token opret 
+        payouts = std::vector<CTxOut>(importTx.vout.begin(), importTx.vout.end()-1);       //exclude opret with import data 
+        payouts.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srcTokenId, oprets)));   // make original payouts token opret (without import data)
     }
     else {
         //payouts = std::vector<CTxOut>(importTx.vout.begin()+1, importTx.vout.end());   // see next
@@ -282,9 +282,9 @@ CAmount GetCoinImportValue(const CTransaction &tx)
                         ccOutput += v.nValue;        */
 
                 CAmount ccOutput = 0;
-                for (auto v : payouts)
-                    if (v.scriptPubKey.IsPayToCryptoCondition())  
-                        ccOutput += v.nValue;
+                for (auto v = payouts.begin() + 1; v != payouts.end() - 1; v ++)  // skip marker, exclude opret
+                    if ((*v).scriptPubKey.IsPayToCryptoCondition())  
+                        ccOutput += (*v).nValue;
 
                 return ccOutput;
             }
