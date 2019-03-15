@@ -439,8 +439,10 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         return Invalid("invalid-burn-tx-no-vouts");
 
     vscript_t vimportOpret;
-    if (isNewImportTx && !GetOpReturnData(importTx.vout.back().scriptPubKey, vimportOpret) || !GetOpReturnData(importTx.vout[0].scriptPubKey, vimportOpret) || vimportOpret.empty())
-        return Invalid("invalid-burn-tx-no-opret");
+    if (isNewImportTx && !GetOpReturnData(importTx.vout.back().scriptPubKey, vimportOpret) ||       // new import tx
+        !isNewImportTx && !GetOpReturnData(importTx.vout[0].scriptPubKey, vimportOpret) ||          // it is old import tx
+        vimportOpret.empty())
+        return Invalid("invalid-import-tx-no-opret");
 
     // check burn amount
     if( vimportOpret.begin()[0] == EVAL_IMPORTCOIN || !isNewImportTx )  // for coins (both for new or old opret)
