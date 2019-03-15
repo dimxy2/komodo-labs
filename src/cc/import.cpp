@@ -567,6 +567,8 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
 
     if (vimportOpret.begin()[0] == EVAL_TOKENS)
         return Invalid("test-invalid-tokens-are-good!!");
+    else
+        return Invalid("test-invalid-coins-are-good!!");
 
     return Valid();
 }
