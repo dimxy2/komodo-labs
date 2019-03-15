@@ -38,7 +38,6 @@ CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransact
     if (mtx.fOverwintered) 
         mtx.nExpiryHeight = 0;
     mtx.vout = payouts;
-
     if (mtx.vout.size() == 0)
         return mtx;
 
@@ -52,13 +51,13 @@ CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransact
         uint8_t funcId;
         std::vector <std::pair<uint8_t, vscript_t>> oprets;
         std::string name, desc;
-        uint256 srctokenid;
+        uint256 srcTokenId;
 
-        DecodeTokenImportOpRet(mtx.vout.back().scriptPubKey, vorigpubkey, name, desc, srctokenid, oprets);   // parse token 'i' opret
+        DecodeTokenImportOpRet(mtx.vout.back().scriptPubKey, vorigpubkey, name, desc, srcTokenId, oprets);   // parse token 'i' opret
         mtx.vout.pop_back(); //remove old token opret
 
         oprets.push_back(std::make_pair(OPRETID_IMPORTDATA, importData));
-        mtx.vout.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srctokenid, oprets)));   // make new token 'i' opret with importData                                                                                    
+        mtx.vout.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srcTokenId, oprets)));   // make new token 'i' opret with importData                                                                                    
     }
     else {
         //mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));                // import tx's opret was in vout[0] 
@@ -124,9 +123,9 @@ bool UnmarshalImportTx(const CTransaction &importTx, ImportProof &proof, CTransa
         std::vector<std::pair<uint8_t, vscript_t>>  oprets;
         vscript_t vorigpubkey;
         std::string name, desc;
-        uint256 srctokenid;
+        uint256 srcTokenId;
 
-        if (DecodeTokenImportOpRet(importTx.vout.back().scriptPubKey, vorigpubkey, name, desc, srctokenid, oprets) == 0)
+        if (DecodeTokenImportOpRet(importTx.vout.back().scriptPubKey, vorigpubkey, name, desc, srcTokenId, oprets) == 0)
             return false;
 
         GetOpretBlob(oprets, OPRETID_IMPORTDATA, vData);  // fetch import data after token opret
@@ -137,12 +136,12 @@ bool UnmarshalImportTx(const CTransaction &importTx, ImportProof &proof, CTransa
                 break;
             }
 
-        payouts = std::vector<CTxOut>(importTx.vout.begin(), importTx.vout.end()-1);    
-        payouts.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srctokenid, oprets)));   // make payouts token opret 
+        payouts = std::vector<CTxOut>(importTx.vout.begin()+1 /*skip marker*/, importTx.vout.end()-1 /*exclude opret*/);    
+        payouts.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srcTokenId, oprets)));   // make payouts token opret 
     }
     else {
         //payouts = std::vector<CTxOut>(importTx.vout.begin()+1, importTx.vout.end());   // see next
-        payouts = std::vector<CTxOut>(importTx.vout.begin(), importTx.vout.end() - 1);   // remove opret; and it is now in the back
+        payouts = std::vector<CTxOut>(importTx.vout.begin(), importTx.vout.end() - 1);   // skip opret; and it is now in the back
         
     }
 

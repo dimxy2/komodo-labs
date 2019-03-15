@@ -483,13 +483,6 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         if( burnAmount != importAmount )
             return Invalid("token-payout-too-high-or-too-low");
 
-        CAmount payoutsAmount = 0;
-        for (auto v : payouts)
-            if (v.scriptPubKey.IsPayToCryptoCondition())
-                payoutsAmount += v.nValue;
-        if( payoutsAmount != importAmount )
-            return Invalid("invalid-payouts-token-amount");
-
     }
     else {
         return Invalid("invalid-burn-tx-incorrect-opret");
