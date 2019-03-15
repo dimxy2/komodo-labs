@@ -53,15 +53,15 @@ CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransact
         std::string name, desc;
         uint256 srcTokenId;
 
-        DecodeTokenImportOpRet(mtx.vout.back().scriptPubKey, vorigpubkey, name, desc, srcTokenId, oprets);   // parse token 'i' opret
+        DecodeTokenImportOpRet(mtx.vout.back().scriptPubKey, vorigpubkey, name, desc, srcTokenId, oprets);    // parse token 'i' opret
         mtx.vout.pop_back(); //remove old token opret
 
-        oprets.push_back(std::make_pair(OPRETID_IMPORTDATA, importData));
+        oprets.push_back(std::make_pair(OPRETID_IMPORTDATA, importData)); 
         mtx.vout.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srcTokenId, oprets)));   // make new token 'i' opret with importData                                                                                    
     }
     else {
-        //mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));                // import tx's opret was in vout[0] 
-        mtx.vout.push_back(CTxOut(0, CScript() << OP_RETURN << (uint8_t)EVAL_IMPORTCOIN << importData));     // import tx's opret now is in the vout's tail
+        //mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));     // import tx's opret was in vout[0] 
+        mtx.vout.push_back(CTxOut(0, CScript() << OP_RETURN << E_MARSHAL(ss << importData)));     // import tx's opret now is in the vout's tail
     }
 
     // add special import tx vin:
