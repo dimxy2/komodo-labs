@@ -58,18 +58,15 @@ CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransact
         mtx.vout.pop_back(); //remove old token opret
 
         oprets.push_back(std::make_pair(OPRETID_IMPORTDATA, importData));
-        mtx.vout.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srctokenid, oprets)));   // make new token 'i' opret with importData
-                                                                                    
-        scriptSig << E_MARSHAL(ss << EVAL_IMPORTCOIN);      // make payload for tokens
+        mtx.vout.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srctokenid, oprets)));   // make new token 'i' opret with importData                                                                                    
     }
     else {
         //mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));                // import tx's opret was in vout[0] 
         mtx.vout.push_back(CTxOut(0, CScript() << OP_RETURN << (uint8_t)EVAL_IMPORTCOIN << importData));     // import tx's opret now is in the vout's tail
-                                                                                                
-        scriptSig << E_MARSHAL(ss << EVAL_IMPORTCOIN);      // simple payload for coins
     }
 
     // add special import tx vin:
+    scriptSig << E_MARSHAL(ss << EVAL_IMPORTCOIN);      // simple payload for coins
     mtx.vin.push_back(CTxIn(COutPoint(burnTx.GetHash(), 10e8), scriptSig));
 
 	if (nExpiryHeightOverride != 0)

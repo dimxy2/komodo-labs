@@ -480,11 +480,11 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
         throw runtime_error("Couldn't parse payouts");
 
     ImportProof importProof;
-    if (params.size() == 2) {
+    if (params.size() == 2) {  // standard MoMoM based notarization
         // get MoM import proof
         importProof = ImportProof(GetAssetchainProof(burnTx.GetHash(), burnTx));
     }
-    else   {
+    else   {  // notarization by manual operators notary tx
         std::string targetSymbol;
         uint32_t targetCCid;
         CheckBurnTxSource(burnTx.GetHash(), targetSymbol, targetCCid);
