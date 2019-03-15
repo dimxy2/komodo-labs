@@ -39,14 +39,23 @@ CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransact
         mtx.nExpiryHeight = 0;
     mtx.vout = payouts;
     if (mtx.vout.size() == 0)
-        return mtx;
+        return CTransaction(mtx);
 
-    auto importData = E_MARSHAL(ss << proof; ss << burnTx);
+    // add special import tx vin:
+    scriptSig << E_MARSHAL(ss << EVAL_IMPORTCOIN);      // simple payload for coins
+    mtx.vin.push_back(CTxIn(COutPoint(burnTx.GetHash(), 10e8), scriptSig));
 
+    if (nExpiryHeightOverride != 0)
+        mtx.nExpiryHeight = nExpiryHeightOverride;  //this is for validation code, to make a tx used for validating the import tx
+
+    auto importData = E_MARSHAL(ss << EVAL_IMPORTCOIN; ss << proof; ss << burnTx);  // added evalcode to differentiate importdata from token opret
     // if it is tokens:
     vscript_t vopret;
     GetOpReturnData(mtx.vout.back().scriptPubKey, vopret);
-    if (!vopret.empty() && vopret.begin()[0] == EVAL_TOKENS) {
+    if (vopret.empty())
+        return CTransaction(mtx);
+
+    if (vopret.begin()[0] == EVAL_TOKENS) {
         vscript_t vorigpubkey;
         uint8_t funcId;
         std::vector <std::pair<uint8_t, vscript_t>> oprets;
@@ -59,17 +68,11 @@ CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransact
         oprets.push_back(std::make_pair(OPRETID_IMPORTDATA, importData)); 
         mtx.vout.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srcTokenId, oprets)));   // make new token 'i' opret with importData                                                                                    
     }
-    else {
+    else if( vopret.begin()[0] == EVAL_IMPORTCOIN ){
         //mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));     // import tx's opret was in vout[0] 
         mtx.vout.push_back(CTxOut(0, CScript() << OP_RETURN << importData));     // import tx's opret now is in the vout's tail
     }
 
-    // add special import tx vin:
-    scriptSig << E_MARSHAL(ss << EVAL_IMPORTCOIN);      // simple payload for coins
-    mtx.vin.push_back(CTxIn(COutPoint(burnTx.GetHash(), 10e8), scriptSig));
-
-	if (nExpiryHeightOverride != 0)
-		mtx.nExpiryHeight = nExpiryHeightOverride;  //this is for validation code, to make a tx used for validating the import tx
     return CTransaction(mtx);
 }
 
@@ -148,7 +151,8 @@ bool UnmarshalImportTx(const CTransaction &importTx, ImportProof &proof, CTransa
         payouts = std::vector<CTxOut>(importTx.vout.begin(), importTx.vout.end() - 1);   // skip opret; and it is now in the back
     }
 
-    bool retcode = E_UNMARSHAL(vImportData, ss >> proof; ss >> burnTx);
+    uint8_t evalCode;
+    bool retcode = E_UNMARSHAL(vImportData, ss >> evalCode; ss >> proof; ss >> burnTx);
     if (!retcode)
         LOGSTREAM("importcoin", CCLOG_INFO, stream << "UnmarshalImportTx() could not unmarshal import data" << std::endl);
     return retcode;
