@@ -462,9 +462,13 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
                         */
 
                     // for tokenbase tx check that normal inputs sent from origpubkey > cc outputs
+                    struct CCcontract_info *cpTokens, CCtokens_info;
+                    cpTokens = CCinit(&CCtokens_info, EVAL_TOKENS);
+
                     int64_t ccOutputs = 0;
                     for (auto vout : tx.vout)
-                        if (vout.scriptPubKey.IsPayToCryptoCondition())
+                        if (vout.scriptPubKey.IsPayToCryptoCondition() &&
+                            CTxOut(vout.nValue, vout.scriptPubKey) != MakeCC1vout(EVAL_TOKENS, vout.nValue, GetUnspendable(cpTokens, NULL)))  // should not be marker here
                             ccOutputs += vout.nValue;
 
                     int64_t normalInputs = 0;
