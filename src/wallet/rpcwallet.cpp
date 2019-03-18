@@ -8148,9 +8148,9 @@ UniValue test_tokencreate(const UniValue& params, bool fHelp)
 
 
     std::string name = params[0].get_str();
-    std::string desc = params[1].get_str();
     int64_t txfee = 10000;
-    int64_t amount = atoll(params[2].get_str().c_str()) * COIN;
+    int64_t amount = (int64_t) (atof(params[1].get_str().c_str()) * COIN);
+    std::string desc = params[2].get_str();
     vscript_t vtargetpubkey = ParseHex(params[3].get_str());
     vscript_t nonfungibleData;
 
