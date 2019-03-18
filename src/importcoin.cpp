@@ -54,23 +54,21 @@ CTransaction MakeImportCoinTransaction(const ImportProof &proof, const CTransact
     GetOpReturnData(mtx.vout.back().scriptPubKey, vopret);
 
     if (!vopret.empty()) {
-        vscript_t vorigpubkey;
+        std::vector<uint8_t> vorigpubkey;
         uint8_t funcId;
         std::vector <std::pair<uint8_t, vscript_t>> oprets;
         std::string name, desc;
-        uint256 srcTokenId;
 
-        if (DecodeTokenImportOpRet(mtx.vout.back().scriptPubKey, vorigpubkey, name, desc, srcTokenId, oprets) == 'i') {    // parse token 'i' opret
+        if (DecodeTokenCreateOpRet(mtx.vout.back().scriptPubKey, vorigpubkey, name, desc, oprets) == 'c') {    // parse token 'c' opret
             mtx.vout.pop_back(); //remove old token opret
             oprets.push_back(std::make_pair(OPRETID_IMPORTDATA, importData));
-            mtx.vout.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srcTokenId, oprets)));   // make new token 'i' opret with importData                                                                                    
+            mtx.vout.push_back(CTxOut(0, EncodeTokenCreateOpRet('c', vorigpubkey, name, desc, oprets)));   // make new token 'c' opret with importData                                                                                    
         }
         else {
             LOGSTREAM("importcoin", CCLOG_INFO, stream << "MakeImportCoinTransaction() incorrect token import opret" << std::endl);
         }
     }
     else { //no opret in coin payouts
-        //mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));     // import tx's opret was in vout[0] 
         mtx.vout.push_back(CTxOut(0, CScript() << OP_RETURN << importData));     // import tx's opret now is in the vout's tail
     }
 
@@ -127,25 +125,23 @@ bool UnmarshalImportTx(const CTransaction &importTx, ImportProof &proof, CTransa
     if (vImportData.begin()[0] == EVAL_TOKENS) {          // if it is tokens
         // get import data after token opret:
         std::vector<std::pair<uint8_t, vscript_t>>  oprets;
-        vscript_t vorigpubkey;
+        std::vector<uint8_t> vorigpubkey;
         std::string name, desc;
-        uint256 srcTokenId;
 
-        if (DecodeTokenImportOpRet(importTx.vout.back().scriptPubKey, vorigpubkey, name, desc, srcTokenId, oprets) == 0) {
+        if (DecodeTokenCreateOpRet(importTx.vout.back().scriptPubKey, vorigpubkey, name, desc, oprets) == 0) {
             LOGSTREAM("importcoin", CCLOG_INFO, stream << "UnmarshalImportTx() could not decode token opret" << std::endl);
             return false;
         }
 
         GetOpretBlob(oprets, OPRETID_IMPORTDATA, vImportData);  // fetch import data after token opret
-        // remove import data from token opret to restore original payouts:
         for (std::vector<std::pair<uint8_t, vscript_t>>::const_iterator i = oprets.begin(); i != oprets.end(); i++)
             if ((*i).first == OPRETID_IMPORTDATA) {
-                oprets.erase(i);
+                oprets.erase(i);            // remove import data from token opret to restore original payouts:
                 break;
             }
 
         payouts = std::vector<CTxOut>(importTx.vout.begin(), importTx.vout.end()-1);       //exclude opret with import data 
-        payouts.push_back(CTxOut(0, EncodeTokenImportOpRet(vorigpubkey, name, desc, srcTokenId, oprets)));   // make original payouts token opret (without import data)
+        payouts.push_back(CTxOut(0, EncodeTokenCreateOpRet('c', vorigpubkey, name, desc, oprets)));   // make original payouts token opret (without import data)
     }
     else {
         //payouts = std::vector<CTxOut>(importTx.vout.begin()+1, importTx.vout.end());   // see next

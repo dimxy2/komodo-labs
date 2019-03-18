@@ -395,9 +395,11 @@ int32_t CheckPUBKEYimport(TxProof proof,std::vector<uint8_t> rawproof,CTransacti
     uint8_t evalCode, funcId;
     int64_t amount;
 
-    GetOpReturnData(sourcetx.vout.back().scriptPubKey, vopret);
-    if (vopret.size() == 0 || !E_UNMARSHAL(vopret, ss >> evalCode; ss >> funcId; ss >> amount) || evalCode != EVAL_IMPORTCOIN || funcId != 'A') {
-        LOGSTREAM("importcoin", CCLOG_INFO, stream << "no or incorrect opret to validate in source txid=" << sourcetxid.GetHex() << std::endl);
+    if (!GetOpReturnData(sourcetx.vout.back().scriptPubKey, vopret) || 
+        vopret.size() == 0 || 
+        !E_UNMARSHAL(vopret, ss >> evalCode; ss >> funcId; ss >> amount) || 
+        evalCode != EVAL_IMPORTCOIN || funcId != 'A') {
+        LOGSTREAM("importcoin", CCLOG_INFO, stream << "none or incorrect opret to validate in source txid=" << sourcetxid.GetHex() << std::endl);
         return -1;
     }
 
@@ -444,6 +446,8 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         vimportOpret.empty())
         return Invalid("invalid-import-tx-no-opret");
 
+
+    uint256 tokenid = zeroid;
     // check burn amount
     if( !isNewImportTx || vimportOpret.begin()[0] == EVAL_IMPORTCOIN )  // for coins (both for new or old opret)
     {
@@ -459,7 +463,6 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     else if (vimportOpret.begin()[0] == EVAL_TOKENS) { // for tokens (new opret with tokens)
         struct CCcontract_info *cpTokens, CCtokens_info;
         std::vector<std::pair<uint8_t, vscript_t>>  oprets;
-        uint256 tokenid;
         uint8_t evalCodeInOpret;
         std::vector<CPubKey> voutTokenPubkeys;
         vscript_t vnonfungibleOpret;
@@ -467,9 +470,10 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
 
         cpTokens = CCinit(&CCtokens_info, EVAL_TOKENS);
 
-        if (DecodeTokenOpRet(importTx.vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) == 0)  // no nonfungible data in burn tx
-            return false;
-        GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vnonfungibleOpret);  
+        if (DecodeTokenOpRet(importTx.vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) == 0)  
+            return Invalid("cannot-decode-import-tx-token-opret");
+
+        GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vnonfungibleOpret);
         if (!vnonfungibleOpret.empty())
             nonfungibleEvalCode = vnonfungibleOpret.begin()[0];
 
@@ -481,7 +485,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
 
         // calc outputs for import tx
         int64_t importAmount = 0;
-        for (auto v : std::vector<CTxOut>(importTx.vout.begin() + 1, importTx.vout.end() - 1))  // skip marker, exclude opret
+        for (auto v : importTx.vout)  
             if (v.scriptPubKey.IsPayToCryptoCondition() && 
                 CTxOut(v.nValue, v.scriptPubKey) != MakeCC1vout(EVAL_TOKENS, v.nValue, GetUnspendable(cpTokens, NULL)))  // should not be marker here
                 importAmount += v.nValue;
@@ -493,6 +497,44 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     else {
         return Invalid("invalid-burn-tx-incorrect-opret");
     }
+
+    // for tokens check burn, import, tokenbase tx 
+    if (!tokenid.IsNull()) {
+        
+        std::string sourceSymbol;
+        CTransaction tokenbaseTx;
+        if (!E_UNMARSHAL(rawproof, ss >> sourceSymbol; ss >> tokenbaseTx))
+            return Invalid("cannot-unmarshal-rawproof-for-tokens");
+
+        uint256 sourceTokenId;
+        std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+        uint8_t evalCodeInOpret;
+        std::vector<CPubKey> voutTokenPubkeys;
+        if (burnTx.vout.size() > 0 && DecodeTokenOpRet(burnTx.vout.back().scriptPubKey, evalCodeInOpret, sourceTokenId, voutTokenPubkeys, oprets) == 0)
+            return Invalid("cannot-decode-burn-tx-token-opret");
+
+        if (sourceTokenId != tokenbaseTx.GetHash() )              // 
+            return Invalid("incorrect-token-creation-tx-passed");
+
+        std::vector<std::pair<uint8_t, vscript_t>>  opretsSrc;
+        vscript_t vorigpubkeySrc;
+        std::string nameSrc, descSrc;
+        if (DecodeTokenCreateOpRet(tokenbaseTx.vout.back().scriptPubKey, vorigpubkeySrc, nameSrc, descSrc, opretsSrc) == 0) 
+            return Invalid("cannot-decode-token-creation-tx");
+
+        std::vector<std::pair<uint8_t, vscript_t>>  opretsImport;
+        vscript_t vorigpubkeyImport;
+        std::string nameImport, descImport;
+        if (importTx.vout.size() == 0 || DecodeTokenCreateOpRet(importTx.vout.back().scriptPubKey, vorigpubkeySrc, nameSrc, descSrc, opretsImport) == 0)
+            return Invalid("cannot-decode-token-import-tx");
+
+        // check that name,pubkey,description in import tx correspond ones in token creation tx in the source chain:
+        if (vorigpubkeySrc != vorigpubkeyImport ||
+            nameSrc != nameImport ||
+            descSrc != descImport)
+            return Invalid("import-tx-token-params-incorrect");
+    }
+
 
     // Check burntx shows correct outputs hash
     if (payoutsHash != SerializeHash(payouts))
@@ -528,10 +570,8 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     else
     {
         TxProof merkleBranchProof;
-
         if (!proof.IsMerkleBranch(merkleBranchProof)) 
             return Invalid("invalid-import-proof-for-0xFFFFFFFF");
-
 
         if ( targetSymbol == "BEAM" )
         {

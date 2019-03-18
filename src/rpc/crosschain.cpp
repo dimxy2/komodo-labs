@@ -314,7 +314,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
 
     CScript scriptPubKey;
     const std::string chainSymbol(ASSETCHAINS_SYMBOL);
-    std::vector<uint8_t> rawproof(chainSymbol.begin(), chainSymbol.end());
+    std::vector<uint8_t> rawproof; //(chainSymbol.begin(), chainSymbol.end());
 
     if (tokenid.IsNull()) {        // coins
         int64_t inputs;
@@ -330,14 +330,15 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         mtx.vout.push_back(CTxOut(burnAmount, scriptPubKey));               // 'model' vout
         ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save 'model' vout
 
+        rawproof = E_MARSHAL(ss << chainSymbol); // add src chain name 
+
         CTxOut burnOut = MakeBurnOutput(burnAmount, ccid, targetSymbol, mtx.vout, rawproof);  //make opret with burned amount
 
         mtx.vout.clear();               // remove 'model' vout
 
-                                        // make change here to prevent it from making in FinalizeCCtx
         int64_t change = inputs - burnAmount;
         if (change != 0)
-            mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));
+            mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG)); // make change here to prevent it from making in FinalizeCCtx
 
         mtx.vout.push_back(burnOut);    // mtx now has only burned vout (that is, amount sent to OP_RETURN making it unspendable)
         std::string exportTxHex = FinalizeCCTx(0, cpTokens, mtx, myPubKey, txfee, CScript());  // no change no opret
@@ -385,15 +386,16 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
             std::vector<std::pair<uint8_t, vscript_t>> {std::make_pair(OPRETID_NONFUNGIBLEDATA, vopretNonfungible)})));  // make token import opret
         ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save payouts for import tx
 
+        rawproof = E_MARSHAL(ss << chainSymbol << tokenbasetx); // add src chain name and token creation tx
+
         CTxOut burnOut = MakeBurnOutput(0, ccid, targetSymbol, mtx.vout, rawproof);  //make opret with amount=0 because tokens are burned, not coins (see next vout) 
 
         mtx.vout.clear();  // remove payouts
         mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, pubkey2pk(ParseHex(CC_BURNPUBKEY))));    // burn tokens
-
-                                                                                                                // make change here to prevent it from making in FinalizeCCtx
+                                                                                                                
         int64_t change = inputs - txfee;
         if (change != 0)
-            mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));
+            mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));         // make change here to prevent it from making in FinalizeCCtx
 
         std::vector<CPubKey> voutTokenPubkeys;
         voutTokenPubkeys.push_back(pubkey2pk(ParseHex(CC_BURNPUBKEY)));  // maybe we do not need this because ccTokens has the const for burn pubkey
@@ -408,27 +410,70 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
 }
 
 // util func to check burn tx and source chain params
-void CheckBurnTxSource(uint256 burntxid, std::string &targetSymbol, uint32_t &targetCCid) {
+void CheckBurnTxSource(uint256 burntxid, UniValue &info) {
 
     CTransaction burnTx;
     uint256 blockHash;
+
     if (!GetTransaction(burntxid, burnTx, blockHash, true))
-        throw std::runtime_error("cannot find burn transaction");
+        throw std::runtime_error("Cannot find burn transaction");
 
     if (blockHash.IsNull())
-        throw std::runtime_error("burn tx still in mempool");
+        throw std::runtime_error("Burn tx still in mempool");
 
     uint256 payoutsHash;
-    std::vector<uint8_t>rawproof;
+    std::string targetSymbol;
+    uint32_t targetCCid;
+    std::vector<uint8_t> rawproof;
 
     if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash, rawproof))
-        throw std::runtime_error("cannot unmarshal burn tx data");
+        throw std::runtime_error("Cannot unmarshal burn tx data");
+
+    vscript_t vopret;
+    std::string sourceSymbol;
+    CTransaction tokenbasetx;
+    uint256 tokenid = zeroid;
+
+    if (burnTx.vout.size() > 1 && GetOpReturnData(burnTx.vout.back().scriptPubKey, vopret) && !vopret.empty())   {
+        if (vopret.begin()[0] == EVAL_TOKENS) {
+            if (!E_UNMARSHAL(rawproof, ss >> sourceSymbol; ss >> tokenbasetx))
+                throw std::runtime_error("Cannot unmarshal rawproof for tokens");
+
+            uint8_t evalCode;
+            uint256 tokenid;
+            std::vector<CPubKey> voutPubkeys;
+            std::vector<std::pair<uint8_t, vscript_t>> oprets;
+            if( DecodeTokenOpRet(burnTx.vout.back().scriptPubKey, evalCode, tokenid, voutPubkeys, oprets) == 0 )
+                throw std::runtime_error("Cannot decode token opret in burn tx");
+
+            if( tokenid != tokenbasetx.GetHash() )
+                throw std::runtime_error("Incorrect tokenbase tx");
+        }
+        else {
+            if (!E_UNMARSHAL(rawproof, ss >> sourceSymbol))
+                throw std::runtime_error("Cannot unmarshal rawproof for coins");
+        }
+    }
+    else {
+        throw std::runtime_error("No opret in burn tx");
+    }
+
+    if (sourceSymbol != ASSETCHAINS_SYMBOL)
+        throw std::runtime_error("Incorrect source chain in rawproof");
 
     if (targetCCid != ASSETCHAINS_CC)
-        throw std::runtime_error("incorrect CCid in burn tx");
+        throw std::runtime_error("Incorrect CCid in burn tx");
 
     if (targetSymbol == ASSETCHAINS_SYMBOL)
         throw std::runtime_error("Must not be called on the destination chain");
+
+    // fill info to return for the notary operator (if manual notarization) or user
+    info.push_back(Pair("SourceSymbol", sourceSymbol));
+    info.push_back(Pair("TargetSymbol", targetSymbol));
+    info.push_back(Pair("TargetCCid", std::to_string(targetCCid)));
+    if (!tokenid.IsNull())
+        info.push_back(Pair("tokenid", tokenid.GetHex()));
+
 }
 
 /*
@@ -485,9 +530,8 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
         importProof = ImportProof(GetAssetchainProof(burnTx.GetHash(), burnTx));
     }
     else   {  // notarization by manual operators notary tx
-        std::string targetSymbol;
-        uint32_t targetCCid;
-        CheckBurnTxSource(burnTx.GetHash(), targetSymbol, targetCCid);
+        UniValue info(UniValue::VOBJ);
+        CheckBurnTxSource(burnTx.GetHash(), info);
 
         // get notary import proof
         std::vector<uint256> notaryTxids;
@@ -560,20 +604,16 @@ UniValue migrate_checkburntransactionsource(const UniValue& params, bool fHelp)
         throw runtime_error("Must be called on asset chain");
 
     uint256 burntxid = Parseuint256(params[0].get_str().c_str());
-    std::string targetSymbol;
-    uint32_t targetCCid;
-    CheckBurnTxSource(burntxid, targetSymbol, targetCCid);
+    UniValue result(UniValue::VOBJ);
+    CheckBurnTxSource(burntxid, result);  // check and get burn tx data
 
     // get tx proof for burn tx
     UniValue nextparams(UniValue::VARR);
     UniValue txids(UniValue::VARR);
     txids.push_back(burntxid.GetHex());
     nextparams.push_back(txids);
+    result.push_back(Pair("TxOutProof", gettxoutproof(nextparams, false)));  // get txoutproof
 
-    UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("TargetSymbol", targetSymbol));
-    result.push_back(Pair("TargetCCid", std::to_string(targetCCid)));
-    result.push_back(Pair("TxOutProof", gettxoutproof(nextparams, false)));
     return result;
 }
 
@@ -873,8 +913,14 @@ UniValue getimports(const UniValue& params, bool fHelp)
                 {
                     if (rawproof.size() > 0)
                     {
-                        std::string sourceSymbol(rawproof.begin(), rawproof.end());
+                        std::string sourceSymbol;
+                        CTransaction tokenbasetx;
+                        E_UNMARSHAL(rawproof,   ss >> sourceSymbol; 
+                                                if (!ss.eof())
+                                                    ss >> tokenbasetx );
                         objBurnTx.push_back(Pair("source", sourceSymbol));
+                        if( !tokenbasetx.IsNull() )
+                            objBurnTx.push_back(Pair("tokenid", tokenbasetx.GetHash().GetHex()));
                     }
                 }
             }

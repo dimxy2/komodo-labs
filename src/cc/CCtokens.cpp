@@ -14,6 +14,7 @@
  ******************************************************************************/
 
 #include "CCtokens.h"
+#include "importcoin.h"
 
 /* TODO: correct this:
 -----------------------------
@@ -881,7 +882,7 @@ UniValue TokenInfo(uint256 tokenid)
 {
 	UniValue result(UniValue::VOBJ); 
     uint256 hashBlock; 
-    CTransaction vintx; 
+    CTransaction tokenbaseTx; 
     std::vector<uint8_t> origpubkey; 
     std::vector<std::pair<uint8_t, vscript_t>>  oprets;
     vscript_t vopretNonfungible;
@@ -890,14 +891,14 @@ UniValue TokenInfo(uint256 tokenid)
 
     cpTokens = CCinit(&tokensCCinfo, EVAL_TOKENS);
 
-	if( !GetTransaction(tokenid, vintx, hashBlock, false) )
+	if( !GetTransaction(tokenid, tokenbaseTx, hashBlock, false) )
 	{
 		fprintf(stderr, "TokenInfo() cant find tokenid\n");
 		result.push_back(Pair("result", "error"));
 		result.push_back(Pair("error", "cant find tokenid"));
 		return(result);
 	}
-	if (vintx.vout.size() > 0 && DecodeTokenCreateOpRet(vintx.vout[vintx.vout.size() - 1].scriptPubKey, origpubkey, name, description, oprets) != 'c')
+	if (tokenbaseTx.vout.size() > 0 && DecodeTokenCreateOpRet(tokenbaseTx.vout[tokenbaseTx.vout.size() - 1].scriptPubKey, origpubkey, name, description, oprets) != 'c')
 	{
         LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "TokenInfo() passed tokenid isnt token creation txid" << std::endl);
 		result.push_back(Pair("result", "error"));
@@ -910,8 +911,8 @@ UniValue TokenInfo(uint256 tokenid)
 	result.push_back(Pair("name", name));
 
     int64_t supply = 0, output;
-    for (int v = 0; v < vintx.vout.size() - 1; v++)
-        if ((output = IsTokensvout(false, true, cpTokens, NULL, vintx, v, tokenid)) > 0)
+    for (int v = 0; v < tokenbaseTx.vout.size() - 1; v++)
+        if ((output = IsTokensvout(false, true, cpTokens, NULL, tokenbaseTx, v, tokenid)) > 0)
             supply += output;
 	result.push_back(Pair("supply", supply));
 	result.push_back(Pair("description", description));
@@ -919,6 +920,40 @@ UniValue TokenInfo(uint256 tokenid)
     GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vopretNonfungible);
     if( !vopretNonfungible.empty() )    
         result.push_back(Pair("data", HexStr(vopretNonfungible)));
+
+    if (tokenbaseTx.IsCoinImport()) { // if imported token
+        ImportProof proof;
+        CTransaction burnTx;
+        std::vector<CTxOut> payouts;
+        CTxDestination importaddress;
+
+        std::string sourceSymbol = "can't decode";
+        std::string sourceTokenId = "can't decode";
+
+        if (UnmarshalImportTx(tokenbaseTx, proof, burnTx, payouts))
+        {
+            // extract op_return to get burn source chain.
+            std::vector<uint8_t> burnOpret;
+            std::string targetSymbol;
+            uint32_t targetCCid;
+            uint256 payoutsHash;
+            std::vector<uint8_t> rawproof;
+            if (UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash, rawproof)) {
+                if (rawproof.size() > 0) {
+                    CTransaction tokenbasetx;
+                    E_UNMARSHAL(rawproof, ss >> sourceSymbol;
+                    if (!ss.eof())
+                        ss >> tokenbasetx);
+                    
+                    if (!tokenbasetx.IsNull())
+                        sourceTokenId = tokenbasetx.GetHash().GetHex();
+                }
+            }
+        }
+        result.push_back(Pair("IsImported", "yes"));
+        result.push_back(Pair("sourceChain", sourceSymbol));
+        result.push_back(Pair("sourceTokenId", sourceTokenId));
+    }
 
 	return result;
 }
