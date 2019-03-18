@@ -19,6 +19,7 @@
 #include "crosschain.h"
 #include "primitives/transaction.h"
 #include "cc/CCinclude.h"
+#include "cc/CCtokens.h"
 
 /*
  * CC Eval method for import coin.
@@ -480,14 +481,15 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         // calc outputs for burn tx
         int64_t burnAmount = 0;
         for (auto v : burnTx.vout)
-            if (v.scriptPubKey.IsPayToCryptoCondition() && CTxOut(v.nValue, v.scriptPubKey) == MakeTokensCC1vout(nonfungibleEvalCode ? nonfungibleEvalCode : EVAL_TOKENS, v.nValue, pubkey2pk(ParseHex(CC_BURNPUBKEY))) )  // burned to dead pubkey
+            if (v.scriptPubKey.IsPayToCryptoCondition() && 
+                CTxOut(v.nValue, v.scriptPubKey) == MakeTokensCC1vout(nonfungibleEvalCode ? nonfungibleEvalCode : EVAL_TOKENS, v.nValue, pubkey2pk(ParseHex(CC_BURNPUBKEY))) )  // burned to dead pubkey
                 burnAmount += v.nValue;
 
         // calc outputs for import tx
         int64_t importAmount = 0;
         for (auto v : importTx.vout)  
             if (v.scriptPubKey.IsPayToCryptoCondition() && 
-                CTxOut(v.nValue, v.scriptPubKey) != MakeCC1vout(EVAL_TOKENS, v.nValue, GetUnspendable(cpTokens, NULL)))  // should not be marker here
+                !IsTokenMarkerVout(v))  // should not be marker here
                 importAmount += v.nValue;
 
         if( burnAmount != importAmount )

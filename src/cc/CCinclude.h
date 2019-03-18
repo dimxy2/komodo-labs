@@ -285,6 +285,8 @@ void vcalc_sha256(char deprecated[(256 >> 3) * 2 + 1],uint8_t hash[256 >> 3],uin
 bits256 bits256_doublesha256(char *deprecated,uint8_t *data,int32_t datalen);
 UniValue ValueFromAmount(const CAmount& amount);
 
+int64_t TotalPubkeyNormalInputs(const CTransaction &tx, const CPubKey &pubkey);
+int64_t TotalPubkeyCCInputs(const CTransaction &tx, const CPubKey &pubkey);
 
 // bitcoin LogPrintStr with category "-debug" cmdarg support for C++ ostringstream:
 #define CCLOG_INFO   0
