@@ -467,8 +467,9 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
 
                     int64_t ccOutputs = 0;
                     for (auto vout : tx.vout)
-                        if (vout.scriptPubKey.IsPayToCryptoCondition() &&
-                            CTxOut(vout.nValue, vout.scriptPubKey) != MakeCC1vout(EVAL_TOKENS, vout.nValue, GetUnspendable(cpTokens, NULL)))  // should not be marker here
+                        if (vout.scriptPubKey.IsPayToCryptoCondition() 
+                            // do not check this here: 
+                            /* && CTxOut(vout.nValue, vout.scriptPubKey) != MakeCC1vout(EVAL_TOKENS, vout.nValue, GetUnspendable(cpTokens, NULL))*/)  // should not be marker here
                             ccOutputs += vout.nValue;
 
                     int64_t normalInputs = 0;
@@ -496,7 +497,10 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
                     }
                     if (normalInputs > ccOutputs) {
                         LOGSTREAM("cctokens", CCLOG_DEBUG2, stream << indentStr << "IsTokensvout() assured normalInputs > ccOutput" << " for tokenbase=" << reftokenid.GetHex() << std::endl);
-                        return tx.vout[v].nValue;
+                        if (CTxOut(tx.vout[v].nValue, tx.vout[v].scriptPubKey) != MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, GetUnspendable(cpTokens, NULL)))
+                            return tx.vout[v].nValue;
+                        else
+                            return 0; // vout is good, but do not take marker into account
                     } 
                     else {
                         LOGSTREAM("cctokens", CCLOG_INFO, stream << indentStr << "IsTokensvout() bad not fulfilled normalInputs > ccOutput" << " for tokenbase=" << reftokenid.GetHex() << " normalInputs=" << normalInputs << " ccOutputs=" << ccOutputs << std::endl);
