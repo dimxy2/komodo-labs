@@ -436,6 +436,8 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
 
 			}
 			else	{  // funcid == 'c'
+                struct CCcontract_info *cpTokens, CCtokens_info;
+                cpTokens = CCinit(&CCtokens_info, EVAL_TOKENS);
 
                 if (!tx.IsCoinImport())   {
 
@@ -450,26 +452,26 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
 
                     CPubKey origPubkey = pubkey2pk(vorigPubkey);
 
+
+                    // TODO: add voutPubkeys for 'c' tx
+
                     /* this would not work for imported tokens:
                     // for 'c' recognize the tokens only to token originator pubkey (but not to unspendable <-- closed sec violation)
-
                     // maybe this is like gatewayclaim to single-eval token?
                     if (evalCodeNonfungible == 0)  // do not allow to convert non-fungible to fungible token
                         testVouts.push_back(std::make_pair(MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, origPubkey), std::string("single-eval cc1 orig-pk")));
                     // maybe this is like FillSell for non-fungible token?
                     if (evalCode1 != 0)
-                        testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode1, tx.vout[v].nValue, origPubkey), std::string("dual-eval-token cc1 orig-pk")));
-                        */
+                        testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode1, tx.vout[v].nValue, origPubkey), std::string("dual-eval-token cc1 orig-pk")));   */
 
+                    /* this would not work if there are several pubkeys in the tokencreator's wallet (AddNormalinputs does not use pubkey param):
                     // for tokenbase tx check that normal inputs sent from origpubkey > cc outputs
-                    struct CCcontract_info *cpTokens, CCtokens_info;
-                    cpTokens = CCinit(&CCtokens_info, EVAL_TOKENS);
-
                     int64_t ccOutputs = 0;
                     for (auto vout : tx.vout)
                         if (vout.scriptPubKey.IsPayToCryptoCondition() 
                             // do not check this here: 
-                            /* && CTxOut(vout.nValue, vout.scriptPubKey) != MakeCC1vout(EVAL_TOKENS, vout.nValue, GetUnspendable(cpTokens, NULL))*/)  // should not be marker here
+                            // && CTxOut(vout.nValue, vout.scriptPubKey) != MakeCC1vout(EVAL_TOKENS, vout.nValue, GetUnspendable(cpTokens, NULL))  // should not be marker here
+                            )  
                             ccOutputs += vout.nValue;
 
                     int64_t normalInputs = 0;
@@ -497,18 +499,26 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
                     }
                     if (normalInputs > ccOutputs) {
                         LOGSTREAM("cctokens", CCLOG_DEBUG2, stream << indentStr << "IsTokensvout() assured normalInputs > ccOutput" << " for tokenbase=" << reftokenid.GetHex() << std::endl);
-                        if (CTxOut(tx.vout[v].nValue, tx.vout[v].scriptPubKey) != MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, GetUnspendable(cpTokens, NULL)))
+                        if (CTxOut(tx.vout[v].nValue, tx.vout[v].scriptPubKey) != MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, GetUnspendable(cpTokens, NULL)))  // exclude marker
                             return tx.vout[v].nValue;
                         else
                             return 0; // vout is good, but do not take marker into account
                     } 
                     else {
                         LOGSTREAM("cctokens", CCLOG_INFO, stream << indentStr << "IsTokensvout() bad not fulfilled normalInputs > ccOutput" << " for tokenbase=" << reftokenid.GetHex() << " normalInputs=" << normalInputs << " ccOutputs=" << ccOutputs << std::endl);
-                    }
+                    }*/
+
+                    if (CTxOut(tx.vout[v].nValue, tx.vout[v].scriptPubKey) != MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, GetUnspendable(cpTokens, NULL)))  // exclude marker
+                        return tx.vout[v].nValue;
+                    else
+                        return 0; // vout is good, but do not take marker into account
                 }
                 else   {
                     // imported tokens are checked in the eval::ImportCoin() validation code
-                    return tx.vout[v].nValue;
+                    if (CTxOut(tx.vout[v].nValue, tx.vout[v].scriptPubKey) != MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, GetUnspendable(cpTokens, NULL)))  // exclude marker
+                        return tx.vout[v].nValue;
+                    else
+                        return 0; // vout is good, but do not take marker into account
                 }
 			}
 
@@ -907,7 +917,7 @@ std::string TokenTransfer(int64_t txfee, uint256 tokenid, vscript_t destpubkey, 
 		}
 		else {
             CCerror = strprintf("no token inputs");
-            LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "TokenTransfer() " << CCerror << total << std::endl);
+            LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "TokenTransfer() " << CCerror << " for amount=" << total << std::endl);
 		}
 		//} else fprintf(stderr,"numoutputs.%d != numamounts.%d\n",n,(int32_t)amounts.size());
 	}
