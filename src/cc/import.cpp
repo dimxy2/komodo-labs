@@ -513,7 +513,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         if (burnTx.vout.size() > 0 && DecodeTokenOpRet(burnTx.vout.back().scriptPubKey, evalCodeInOpret, sourceTokenId, voutTokenPubkeys, oprets) == 0)
             return Invalid("cannot-decode-burn-tx-token-opret");
 
-        if (sourceTokenId != tokenbaseTx.GetHash() )              // 
+        if (sourceTokenId != tokenbaseTx.GetHash())              // check tokenid in burn tx opret maches the passed tokenbase tx (to prevent cheating by importing user)
             return Invalid("incorrect-token-creation-tx-passed");
 
         std::vector<std::pair<uint8_t, vscript_t>>  opretsSrc;
@@ -559,7 +559,6 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
             }
         } else if (proof.IsNotaryTxids(notaryTxids)) {
             if (!CheckNotariesApproval(burnTx.GetHash(), notaryTxids)) {
-                LOGSTREAM("importcoin", CCLOG_INFO, stream << "Notaries approval check failed for importtx=" << importTx.GetHash().GetHex() << std::endl);
                 return Invalid("notaries-approval-check-fail");
             }
         }

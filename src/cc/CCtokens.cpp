@@ -334,7 +334,8 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
             vscript_t vopretExtra, vopretNonfungible;
             std::vector<std::pair<uint8_t, vscript_t>>  oprets;
 
-            uint8_t evalCode = EVAL_TOKENS;     // if both payloads are empty maybe it is a transfer to non-payload-one-eval-token vout like GatewaysClaim
+            uint8_t evalCodeNonfungible = 0;
+            uint8_t evalCode1 = EVAL_TOKENS;     // if both payloads are empty maybe it is a transfer to non-payload-one-eval-token vout like GatewaysClaim
             uint8_t evalCode2 = 0;              // will be checked if zero or not
 
             // test vouts for possible token use-cases:
@@ -355,12 +356,12 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
             // non-fungible-eval -> EVAL_TOKENS -> assets-eval
 
             if (vopretNonfungible.size() > 0)
-                evalCode = vopretNonfungible.begin()[0];
+                evalCodeNonfungible = evalCode1 = vopretNonfungible.begin()[0];
             if (vopretExtra.size() > 0)
                 evalCode2 = vopretExtra.begin()[0];
 
-            if (evalCode == EVAL_TOKENS && evalCode2 != 0)  {
-                evalCode = evalCode2;   // for using MakeTokensCC1vout(evalcode,...) instead of MakeCC1vout(EVAL_TOKENS, evalcode...)
+            if (evalCode1 == EVAL_TOKENS && evalCode2 != 0)  {
+                evalCode1 = evalCode2;   // for using MakeTokensCC1vout(evalcode,...) instead of MakeCC1vout(EVAL_TOKENS, evalcode...)
                 evalCode2 = 0;
             }
             
@@ -370,39 +371,41 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
 				// maybe this is dual-eval 1 pubkey or 1of2 pubkey vout?
 				if (voutPubkeys.size() >= 1 && voutPubkeys.size() <= 2) {					
 					// check dual/three-eval 1 pubkey vout with the first pubkey
-                    testVouts.push_back( std::make_pair(MakeTokensCC1vout(evalCode, evalCode2, tx.vout[v].nValue, voutPubkeys[0]), std::string("three-eval cc1 pk[0]")) );
+                    testVouts.push_back( std::make_pair(MakeTokensCC1vout(evalCode1, evalCode2, tx.vout[v].nValue, voutPubkeys[0]), std::string("three-eval cc1 pk[0]")) );
                     if (evalCode2 != 0) 
                         // also check in backward evalcode order
-                        testVouts.push_back( std::make_pair(MakeTokensCC1vout(evalCode2, evalCode, tx.vout[v].nValue, voutPubkeys[0]), std::string("three-eval cc1 pk[0] backward-eval")) );
+                        testVouts.push_back( std::make_pair(MakeTokensCC1vout(evalCode2, evalCode1, tx.vout[v].nValue, voutPubkeys[0]), std::string("three-eval cc1 pk[0] backward-eval")) );
 
 					if(voutPubkeys.size() == 2)	{
 						// check dual/three eval 1of2 pubkeys vout
-						testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode, evalCode2, tx.vout[v].nValue, voutPubkeys[0], voutPubkeys[1]), std::string("three-eval cc1of2")) );
+						testVouts.push_back( std::make_pair(MakeTokensCC1of2vout(evalCode1, evalCode2, tx.vout[v].nValue, voutPubkeys[0], voutPubkeys[1]), std::string("three-eval cc1of2")) );
                         // check dual/three eval 1 pubkey vout with the second pubkey
-						testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode, evalCode2, tx.vout[v].nValue, voutPubkeys[1]), std::string("three-eval cc1 pk[1]")));
+						testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode1, evalCode2, tx.vout[v].nValue, voutPubkeys[1]), std::string("three-eval cc1 pk[1]")));
                         if (evalCode2 != 0) {
                             // also check in backward evalcode order:
                             // check dual/three eval 1of2 pubkeys vout
-                            testVouts.push_back(std::make_pair(MakeTokensCC1of2vout(evalCode2, evalCode, tx.vout[v].nValue, voutPubkeys[0], voutPubkeys[1]), std::string("three-eval cc1of2 backward-eval")));
+                            testVouts.push_back(std::make_pair(MakeTokensCC1of2vout(evalCode2, evalCode1, tx.vout[v].nValue, voutPubkeys[0], voutPubkeys[1]), std::string("three-eval cc1of2 backward-eval")));
                             // check dual/three eval 1 pubkey vout with the second pubkey
-                            testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode2, evalCode, tx.vout[v].nValue, voutPubkeys[1]), std::string("three-eval cc1 pk[1] backward-eval")));
+                            testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode2, evalCode1, tx.vout[v].nValue, voutPubkeys[1]), std::string("three-eval cc1 pk[1] backward-eval")));
                         }
 					}
 				
+                    // maybe this is like gatewayclaim to single-eval token?
+                    if( evalCodeNonfungible == 0 )  // do not allow to convert non-fungible to fungible token
+                        testVouts.push_back(std::make_pair(MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, voutPubkeys[0]), std::string("single-eval cc1 pk[0]")));
 
-					// maybe this is like gatewayclaim to single-eval token?
-                    testVouts.push_back(std::make_pair(MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, voutPubkeys[0]), std::string("single-eval cc1 pk[0]")));
                     // maybe this is like FillSell for non-fungible token?
-                    if( evalCode != 0 )
-                        testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode, tx.vout[v].nValue, voutPubkeys[0]), std::string("dual-eval-token cc1 pk[0]")));
+                    if( evalCode1 != 0 )
+                        testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode1, tx.vout[v].nValue, voutPubkeys[0]), std::string("dual-eval-token cc1 pk[0]")));
                     if( evalCode2 != 0 )
                         testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode2, tx.vout[v].nValue, voutPubkeys[0]), std::string("dual-eval2-token cc1 pk[0]")));
 
+                    // the same for pk[1]:
 					if (voutPubkeys.size() == 2) {
-                        // the same for pk[1]:
-                        testVouts.push_back(std::make_pair(MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, voutPubkeys[1]), std::string("single-eval cc1 pk[1]")));
-                        if (evalCode != 0)
-                            testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode, tx.vout[v].nValue, voutPubkeys[1]), std::string("dual-eval-token cc1 pk[1]")));
+                        if (evalCodeNonfungible == 0)  // do not allow to convert non-fungible to fungible token
+                            testVouts.push_back(std::make_pair(MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, voutPubkeys[1]), std::string("single-eval cc1 pk[1]")));
+                        if (evalCode1 != 0)
+                            testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode1, tx.vout[v].nValue, voutPubkeys[1]), std::string("dual-eval-token cc1 pk[1]")));
                         if (evalCode2 != 0)
                             testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode2, tx.vout[v].nValue, voutPubkeys[1]), std::string("dual-eval2-token cc1 pk[1]")));
 					}
@@ -414,44 +417,95 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
                 FilterOutTokensUnspendablePk(vinPubkeysUnfiltered, vinPubkeys);  // cannot send tokens to token unspendable cc addr (only marker is allowed there)
 
 				for(std::vector<CPubKey>::iterator it = vinPubkeys.begin(); it != vinPubkeys.end(); it++) {
-                    testVouts.push_back(std::make_pair(MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, *it), std::string("single-eval cc1 self vin pk")));
-                    testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode, evalCode2, tx.vout[v].nValue, *it), std::string("three-eval cc1 self vin pk")));
+                    if (evalCodeNonfungible == 0)  // do not allow to convert non-fungible to fungible token
+                        testVouts.push_back(std::make_pair(MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, *it), std::string("single-eval cc1 self vin pk")));
+                    testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode1, evalCode2, tx.vout[v].nValue, *it), std::string("three-eval cc1 self vin pk")));
 
                     if (evalCode2 != 0) 
                         // also check in backward evalcode order:
-                        testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode2, evalCode, tx.vout[v].nValue, *it), std::string("three-eval cc1 self vin pk backward-eval")));
+                        testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode2, evalCode1, tx.vout[v].nValue, *it), std::string("three-eval cc1 self vin pk backward-eval")));
 				}
 
-			}
-			else	{
-                CPubKey origPubkey;
-                vscript_t vorigPubkey;
-                std::string  dummyName, dummyDescription;
-                std::vector<std::pair<uint8_t, vscript_t>>  oprets;
-
-                if (DecodeTokenCreateOpRet(tx.vout.back().scriptPubKey, vorigPubkey, dummyName, dummyDescription, oprets) == 0) {
-                    LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << indentStr << "IsTokensvout() could not decode create opret" << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl);
-                    return 0;
+                // try all test vouts:
+                for (auto t : testVouts) {
+                    if (t.first == tx.vout[v]) {  // test vout matches 
+                        LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << indentStr << "IsTokensvout() valid amount=" << tx.vout[v].nValue << " msg=" << t.second << " evalCode=" << (int)evalCode1 << " evalCode2=" << (int)evalCode2 << " txid=" << tx.GetHash().GetHex() << " tokenid=" << reftokenid.GetHex() << std::endl);
+                        return tx.vout[v].nValue;
+                    }
                 }
 
-                origPubkey = pubkey2pk(vorigPubkey);
-
-                // for 'c' recognize the tokens only to token originator pubkey (but not to unspendable <-- closed sec violation)
-                // maybe this is like gatewayclaim to single-eval token?
-                testVouts.push_back(std::make_pair(MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, origPubkey), std::string("single-eval cc1 orig-pk")));
-                // maybe this is like FillSell for non-fungible token?
-                if (evalCode != 0)
-                    testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode, tx.vout[v].nValue, origPubkey), std::string("dual-eval-token cc1 orig-pk")));
 			}
+			else	{  // funcid == 'c'
 
-            // try all test vouts:
-            for (auto t : testVouts) {
-                if (t.first == tx.vout[v]) {
-                    LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << indentStr << "IsTokensvout() valid amount=" << tx.vout[v].nValue << " msg=" << t.second << " evalCode=" << (int)evalCode << " evalCode2=" << (int)evalCode2 << " txid=" << tx.GetHash().GetHex() << " tokenid=" << reftokenid.GetHex() << std::endl);
+                if (!tx.IsCoinImport())   {
+
+                    vscript_t vorigPubkey;
+                    std::string  dummyName, dummyDescription;
+                    std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+
+                    if (DecodeTokenCreateOpRet(tx.vout.back().scriptPubKey, vorigPubkey, dummyName, dummyDescription, oprets) == 0) {
+                        LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << indentStr << "IsTokensvout() could not decode create opret" << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl);
+                        return 0;
+                    }
+
+                    CPubKey origPubkey = pubkey2pk(vorigPubkey);
+
+                    /* this would not work for imported tokens:
+                    // for 'c' recognize the tokens only to token originator pubkey (but not to unspendable <-- closed sec violation)
+
+                    // maybe this is like gatewayclaim to single-eval token?
+                    if (evalCodeNonfungible == 0)  // do not allow to convert non-fungible to fungible token
+                        testVouts.push_back(std::make_pair(MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, origPubkey), std::string("single-eval cc1 orig-pk")));
+                    // maybe this is like FillSell for non-fungible token?
+                    if (evalCode1 != 0)
+                        testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode1, tx.vout[v].nValue, origPubkey), std::string("dual-eval-token cc1 orig-pk")));
+                        */
+
+                    // for tokenbase tx check that normal inputs sent from origpubkey > cc outputs
+                    int64_t ccOutputs = 0;
+                    for (auto vout : tx.vout)
+                        if (vout.scriptPubKey.IsPayToCryptoCondition())
+                            ccOutputs += vout.nValue;
+
+                    int64_t normalInputs = 0;
+                    for (auto vin : tx.vin) {
+                        CTransaction vintx;
+                        uint256 hashBlock;
+                        if (myGetTransaction(vin.prevout.hash, vintx, hashBlock)) {
+                            typedef std::vector<unsigned char> valtype;
+                            std::vector<valtype> vSolutions;
+                            txnouttype whichType;
+
+                            if (Solver(vintx.vout[vin.prevout.n].scriptPubKey, whichType, vSolutions)) {
+                                switch (whichType) {
+                                case TX_PUBKEY:
+                                    if (origPubkey == CPubKey(vSolutions[0]))   // is my input?
+                                        normalInputs += vintx.vout[vin.prevout.n].nValue;
+                                    break;
+                                case TX_PUBKEYHASH:
+                                    if (origPubkey.GetID() == CKeyID(uint160(vSolutions[0])))    // is my input?
+                                        normalInputs += vintx.vout[vin.prevout.n].nValue;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (normalInputs > ccOutputs) {
+                        LOGSTREAM("cctokens", CCLOG_DEBUG2, stream << indentStr << "IsTokensvout() assured normalInputs > ccOutput" << " for tokenbase=" << reftokenid.GetHex() << std::endl);
+                        return tx.vout[v].nValue;
+                    } 
+                    else {
+                        LOGSTREAM("cctokens", CCLOG_INFO, stream << indentStr << "IsTokensvout() bad not fulfilled normalInputs > ccOutput" << " for tokenbase=" << reftokenid.GetHex() << " normalInputs=" << normalInputs << " ccOutputs=" << ccOutputs << std::endl);
+                    }
+                }
+                else   {
+                    // imported tokens are checked in the eval::ImportCoin() validation code
                     return tx.vout[v].nValue;
                 }
-            }
-            LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << indentStr << "IsTokensvout() no valid vouts evalCode=" << (int)evalCode << " evalCode2=" << (int)evalCode2 << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl);
+			}
+
+            
+            LOGSTREAM("cctokens", CCLOG_DEBUG1, stream << indentStr << "IsTokensvout() no valid vouts evalCode=" << (int)evalCode1 << " evalCode2=" << (int)evalCode2 << " for txid=" << tx.GetHash().GetHex() << " for tokenid=" << reftokenid.GetHex() << std::endl);
 		}
 
 		//std::cerr << indentStr; fprintf(stderr,"IsTokensvout() CC vout v.%d of n=%d amount=%.8f txid=%s\n",v,n,(double)0/COIN, tx.GetHash().GetHex().c_str());
