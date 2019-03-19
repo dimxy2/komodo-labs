@@ -607,12 +607,16 @@ int64_t TotalPubkeyNormalInputs(const CTransaction &tx, const CPubKey &pubkey)
             if (Solver(vintx.vout[vin.prevout.n].scriptPubKey, whichType, vSolutions)) {
                 switch (whichType) {
                 case TX_PUBKEY:
-                    if (pubkey == CPubKey(vSolutions[0]))   // is my input?
+                    if (pubkey == CPubKey(vSolutions[0])) {   // is my input?
                         total += vintx.vout[vin.prevout.n].nValue;
+                        std::cerr << "TotalPubkeyNormalInputs() found TX_PUBKEY input value=" << vintx.vout[vin.prevout.n].nValue << std::endl;
+                    }
                     break;
                 case TX_PUBKEYHASH:
-                    if (pubkey.GetID() == CKeyID(uint160(vSolutions[0])))    // is my input?
+                    if (pubkey.GetID() == CKeyID(uint160(vSolutions[0]))) {// is my input?
                         total += vintx.vout[vin.prevout.n].nValue;
+                        std::cerr << "TotalPubkeyNormalInputs() found TX_PUBKEYHASH input value=" << vintx.vout[vin.prevout.n].nValue << std::endl;
+                    }
                     break;
                 }
             }
@@ -641,6 +645,29 @@ int64_t TotalPubkeyCCInputs(const CTransaction &tx, const CPubKey &pubkey)
     }
     return total;
 }
+
+// returns total of normal inputs signed with this pubkey
+/*
+int64_t TotalPubkeyInputs(const CTransaction &tx, const CPubKey &pubkey)
+{
+    int64_t total = 0;
+    for (auto vin : tx.vin) {
+        CTransaction vintx;
+        uint256 hashBlock;
+        if (myGetTransaction(vin.prevout.hash, vintx, hashBlock)) {
+
+            CTxDestination txDest;
+            if( ExtractDestination(vintx.vout[vin.prevout.n].scriptPubKey, txDest, false) ) {
+                // todo make script visitor which checks pubkey or key is and stores result
+                txDest.apply_visitor(visitor);
+                if (visitor.foundPubKey) {
+                    total += vintx.vout[vin.prevout.n].nValue;
+                }
+            }
+        }
+    }
+    return total;
+} */
 
 bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
 {
