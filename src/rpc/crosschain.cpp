@@ -373,7 +373,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
             throw runtime_error("Invalid destination pubkey\n");
 
         int64_t inputs;
-        if ((inputs = AddNormalinputs(mtx, myPubKey, txfee*3, 1)) == 0)  // now 3*txfee
+        if ((inputs = AddNormalinputs(mtx, myPubKey, txfee*4, 1)) == 0)  // now 3*txfee
             throw runtime_error("No normal input found for txfee\n");
 
         if (AddTokenCCInputs(cpTokens, mtx, myPubKey, tokenid, burnAmount, 1) != burnAmount)
@@ -383,6 +383,11 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens, NULL)));  // new marker to token cc addr, burnable and validated, vout position now changed to 0 (from 1)
         mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, destPubKey));
         mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(destPubKey)) << OP_CHECKSIG)); // txfee normal vout to dest pubkey to force AddToWallet
+
+        CTxDestination txdest = destPubKey.GetID(); // DecodeDestination(dest_addr_or_pubkey.c_str());
+        scriptPubKey = GetScriptForDestination(txdest);
+        mtx.vout.push_back(CTxOut(txfee, scriptPubKey));
+
         mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenCreateOpRet('c', vorigpubkey, name, description, 
             std::vector<std::pair<uint8_t, vscript_t>> {std::make_pair(OPRETID_NONFUNGIBLEDATA, vopretNonfungible)})));  // make token import opret
         ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save payouts for import tx
