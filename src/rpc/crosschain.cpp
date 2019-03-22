@@ -382,7 +382,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         // destination vouts (payouts) which would create the import tx with non-fungible token:
         mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens, NULL)));  // new marker to token cc addr, burnable and validated, vout position now changed to 0 (from 1)
         mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, destPubKey));
-        mtx.vout.push_back(CTxOut(txfee, CScript() << Mypubkey())); // test vout to force AddToWallet
+        mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(destPubKey)))); // txfee normal vout to force AddToWallet
         mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenCreateOpRet('c', vorigpubkey, name, description, 
             std::vector<std::pair<uint8_t, vscript_t>> {std::make_pair(OPRETID_NONFUNGIBLEDATA, vopretNonfungible)})));  // make token import opret
         ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save payouts for import tx
