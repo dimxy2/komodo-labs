@@ -373,7 +373,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
             throw runtime_error("Invalid destination pubkey\n");
 
         int64_t inputs;
-        if ((inputs = AddNormalinputs(mtx, myPubKey, txfee*5, 1)) == 0)  // now 3*txfee
+        if ((inputs = AddNormalinputs(mtx, myPubKey, txfee*1, 1)) == 0)  // for miners
             throw runtime_error("No normal input found for txfee\n");
 
         if (AddTokenCCInputs(cpTokens, mtx, myPubKey, tokenid, burnAmount, 1) != burnAmount)
@@ -409,7 +409,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         mtx.vout.clear();  // remove payouts
         mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, pubkey2pk(ParseHex(CC_BURNPUBKEY))));    // burn tokens
                                                                                                                 
-        int64_t change = inputs - 5*txfee;
+        int64_t change = inputs - txfee;
         if (change != 0)
             mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));         // make change here to prevent it from making in FinalizeCCtx
 
