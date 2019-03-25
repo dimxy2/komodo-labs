@@ -282,12 +282,11 @@ CAmount GetCoinImportValue(const CTransaction &tx)
                     if (v.scriptPubKey.IsPayToCryptoCondition() && CTxOut(v.nValue, v.scriptPubKey) != MakeCC1vout(EVAL_TOKENS, v.nValue, GetUnspendable(cpTokens, NULL)))  
                         ccOutput += v.nValue;        */
 
-                CAmount ccOutput = 0;
-                for (auto v = payouts.begin() + 1; v != payouts.end() - 1; v ++)  // skip marker, exclude opret
-                    if ((*v).scriptPubKey.IsPayToCryptoCondition())  
-                        ccOutput += (*v).nValue;
+                CAmount totalOutput = 0;
+                for (auto v : payouts)  // skip marker, exclude opret
+                    totalOutput += v.nValue;
 
-                return ccOutput;
+                return totalOutput;
             }
             else
                 return burnTx.vout.back().nValue;
