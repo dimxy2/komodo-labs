@@ -261,18 +261,26 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 uint256 sighash = SignatureHash(CCPubKey(cond), mtx, i, SIGHASH_ALL, utxovalues[i],consensusBranchId, &txdata);
 
                 uint8_t evalcode = 0xEE;
-                cond = CCNewEval(E_MARSHAL(ss << evalcode));
+                //cond = CCNewEval(E_MARSHAL(ss << evalcode));
+
+                std::vector<CC*> thresholds;
+                thresholds.push_back(CCNewEval(E_MARSHAL(ss << evalcode)));
+                thresholds.push_back(CCNewEval(E_MARSHAL(ss << (uint8_t)EVAL_TOKENS)));	    // this is eval token cc
+                cond= CCNewThreshold(thresholds.size(), thresholds);
+
                 std::cerr << "FinalizeCCtx CCPubkey=" << HexStr(CCPubKey(cond)) << std::endl;
                 unsigned char buf[1000];
                 size_t len2 = cc_conditionBinary(cond, buf);
-                std::vector<unsigned char> v;
+                /*std::vector<unsigned char> v;
                 GetPushData(CCPubKey(cond), v);
                 std::vector<unsigned char> v1(v.begin(), v.end() - 1);
                 CC *cc = cc_readConditionBinary(v.data(), len2);
-                CC *cc2 = cc_readConditionBinary(v1.data(), len2);
+                CC *cc2 = cc_readConditionBinary(v1.data(), len2);*/
                 CC *cc3 = cc_readConditionBinary(buf, len2);
-                std::cerr << "FinalizeCCtx cc of v=" << HexStr((unsigned char*)cc, ((unsigned char*)cc + len2)) << std::endl;
-                std::cerr << "FinalizeCCtx cc2 of v1=" << HexStr((unsigned char*)cc2, ((unsigned char*)cc2 + len2)) << std::endl;
+
+                /* std::cerr << "FinalizeCCtx cc of v=" << HexStr((unsigned char*)cc, ((unsigned char*)cc + len2)) << std::endl;
+                std::cerr << "FinalizeCCtx cc2 of v1=" << HexStr((unsigned char*)cc2, ((unsigned char*)cc2 + len2)) << std::endl;*/
+
                 std::cerr << "FinalizeCCtx buf=" << HexStr((unsigned char*)buf, ((unsigned char*)buf + len2)) << std::endl;
 
                 auto findEval = [](CC *cond, struct CCVisitor _) {
