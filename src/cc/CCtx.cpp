@@ -291,7 +291,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                     return 1;
                 };
 
-                std::cerr << "visit(cc)..." << std::endl;
+                /*std::cerr << "visit(cc)..." << std::endl;
                 if (cc) {
                     CPubKey pubkey;
                     CCVisitor visitor = { findEval, (uint8_t*)"", 0, &pubkey };
@@ -303,7 +303,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                     CPubKey pubkey;
                     CCVisitor visitor = { findEval, (uint8_t*)"", 0, &pubkey };
                     bool out = !cc_visit(cc2, visitor);
-                }
+                }*/
 
 
                 std::cerr << "visit(cond)..." << std::endl;
