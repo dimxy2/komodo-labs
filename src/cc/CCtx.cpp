@@ -260,6 +260,8 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 }
                 uint256 sighash = SignatureHash(CCPubKey(cond), mtx, i, SIGHASH_ALL, utxovalues[i],consensusBranchId, &txdata);
 
+                uint8_t evalcode = 0xEE;
+                cond = CCNewEval(E_MARSHAL(ss << evalcode));
                 std::cerr << "FinalizeCCtx CCPubkey=" << HexStr(CCPubKey(cond)) << std::endl;
                 unsigned char buf[1000];
                 size_t len2 = cc_conditionBinary(cond, buf);
@@ -313,7 +315,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
 
 
                 std::cerr << "visit(cc3)..." << std::endl;
-                if (cond) {
+                if (cc3) {
                     CPubKey pubkey;
                     CCVisitor visitor = { findEval, (uint8_t*)"", 0, &pubkey };
                     bool out = !cc_visit(cc3, visitor);
