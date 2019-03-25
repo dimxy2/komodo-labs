@@ -332,16 +332,16 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
 
         rawproof = E_MARSHAL(ss << chainSymbol); // add src chain name 
 
-        CTxOut burnOut = MakeBurnOutput(burnAmount, ccid, targetSymbol, mtx.vout, rawproof);  //make opret with burned amount
+        CTxOut burnOut = MakeBurnOutput(burnAmount+txfee, ccid, targetSymbol, mtx.vout, rawproof);  //make opret with burned amount
 
         mtx.vout.clear();               // remove 'model' vout
 
-        int64_t change = inputs - burnAmount;
+        int64_t change = inputs - (burnAmount+txfee);
         if (change != 0)
             mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG)); // make change here to prevent it from making in FinalizeCCtx
 
         mtx.vout.push_back(burnOut);    // mtx now has only burned vout (that is, amount sent to OP_RETURN making it unspendable)
-        std::string exportTxHex = FinalizeCCTx(0, cpTokens, mtx, myPubKey, txfee, CScript());  // no change no opret
+        //std::string exportTxHex = FinalizeCCTx(0, cpTokens, mtx, myPubKey, txfee, CScript());  // no change no opret
 
     }
     else {   // tokens
@@ -373,7 +373,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
             throw runtime_error("Invalid destination pubkey\n");
 
         int64_t inputs;
-        if ((inputs = AddNormalinputs(mtx, myPubKey, txfee*1, 1)) == 0)  // for miners
+        if ((inputs = AddNormalinputs(mtx, myPubKey, txfee*2, 1)) == 0)  // for miners and marker
             throw runtime_error("No normal input found for txfee\n");
 
         if (AddTokenCCInputs(cpTokens, mtx, myPubKey, tokenid, burnAmount, 1) != burnAmount)
@@ -382,12 +382,13 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         // destination vouts (payouts) which would create the import tx with non-fungible token:
         mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens, NULL)));  // new marker to token cc addr, burnable and validated, vout position now changed to 0 (from 1)
         mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, destPubKey));
-        mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(destPubKey)) << OP_CHECKSIG)); // txfee normal vout to dest pubkey to force AddToWallet
+
+        /* try add to wallet with this:
+        mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(destPubKey)) << OP_CHECKSIG)); // txfee normal vout to dest pubkey to force AddToWallet - address not matched to dest
 
         CTxDestination txdest = destPubKey.GetID(); // DecodeDestination(dest_addr_or_pubkey.c_str());
         scriptPubKey = GetScriptForDestination(txdest);
         mtx.vout.push_back(CTxOut(txfee, scriptPubKey));
-
 
         txdest = DecodeDestination(std::string("RKobYr8CFKQDBZXUWvXTbbR2cudE3DRkBU")); // DecodeDestination(dest_addr_or_pubkey.c_str());
         scriptPubKey = GetScriptForDestination(txdest);
@@ -396,9 +397,9 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         txdest = DecodeDestination(EncodeDestination(destPubKey.GetID())); // DecodeDestination(dest_addr_or_pubkey.c_str());
         std::cerr << "migrate_createburntransaction() EncodeDestination(destPubKey.GetID())=" << EncodeDestination(destPubKey.GetID()) << std::endl;
         scriptPubKey = GetScriptForDestination(txdest);
-        mtx.vout.push_back(CTxOut(txfee, scriptPubKey));
+        mtx.vout.push_back(CTxOut(txfee, scriptPubKey));  */
 
-        mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenCreateOpRet('c', vorigpubkey, name, description, 
+        mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenCreateOpRet('c', vorigpubkey, name, description,            
             std::vector<std::pair<uint8_t, vscript_t>> {std::make_pair(OPRETID_NONFUNGIBLEDATA, vopretNonfungible)})));  // make token import opret
         ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save payouts for import tx
 
@@ -409,7 +410,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         mtx.vout.clear();  // remove payouts
         mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, pubkey2pk(ParseHex(CC_BURNPUBKEY))));    // burn tokens
                                                                                                                 
-        int64_t change = inputs - txfee;
+        int64_t change = inputs - 2*txfee;
         if (change != 0)
             mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(myPubKey)) << OP_CHECKSIG));         // make change here to prevent it from making in FinalizeCCtx
 
@@ -417,7 +418,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         voutTokenPubkeys.push_back(pubkey2pk(ParseHex(CC_BURNPUBKEY)));  // maybe we do not need this because ccTokens has the const for burn pubkey
 
         GetOpReturnData(burnOut.scriptPubKey, vopretBurnData);
-        mtx.vout.push_back(CTxOut(0, EncodeTokenOpRet(tokenid, voutTokenPubkeys, std::make_pair(OPRETID_BURNDATA, vopretBurnData))));  //opret
+        mtx.vout.push_back(CTxOut(2*txfee, EncodeTokenOpRet(tokenid, voutTokenPubkeys, std::make_pair(OPRETID_BURNDATA, vopretBurnData))));  //burn txfee miners+marker
     }
 
     std::string burnTxHex = FinalizeCCTx(0, cpTokens, mtx, myPubKey, txfee, CScript()); //no change, no opret

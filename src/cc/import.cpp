@@ -448,20 +448,18 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         return Invalid("invalid-import-tx-no-opret");
 
 
+    // check burned amount >= import amount  && burned amount <= import amount + txfee (extra txfee is for miners and relaying, see GetImportCoinValue() func)
+    uint64_t burnAmount = burnTx.vout.back().nValue;
+    if (burnAmount == 0)
+        return Invalid("invalid-burn-amount");
+    uint64_t totalOut = 0;
+    for (int i=0; i<importTx.vout.size(); i++)
+        totalOut += importTx.vout[i].nValue;
+    if (totalOut > burnAmount || totalOut < burnAmount-txfee )
+        return Invalid("payout-too-high-or-too-low");
+    
     uint256 tokenid = zeroid;
-    // check burn amount
-    if( !isNewImportTx || vimportOpret.begin()[0] == EVAL_IMPORTCOIN )  // for coins (both for new or old opret)
-    {
-        uint64_t burnAmount = burnTx.vout.back().nValue;
-        if (burnAmount == 0)
-            return Invalid("invalid-burn-amount");
-        uint64_t totalOut = 0;
-        for (int i=0; i<importTx.vout.size(); i++)
-            totalOut += importTx.vout[i].nValue;
-        if (totalOut > burnAmount || totalOut < burnAmount-txfee )
-            return Invalid("payout-too-high-or-too-low");
-    }
-    else if (vimportOpret.begin()[0] == EVAL_TOKENS) { // for tokens (new opret with tokens)
+    if (isNewImportTx && vimportOpret.begin()[0] == EVAL_TOKENS) { // for tokens (new opret with tokens)
         struct CCcontract_info *cpTokens, CCtokens_info;
         std::vector<std::pair<uint8_t, vscript_t>>  oprets;
         uint8_t evalCodeInOpret;
@@ -478,26 +476,31 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         if (!vnonfungibleOpret.empty())
             nonfungibleEvalCode = vnonfungibleOpret.begin()[0];
 
+        int64_t ccBurnInputs, ccBurnOutputs;
+        if (!TokensExactAmounts(false, cpTokens, ccBurnInputs, ccBurnOutputs, NULL, burnTx, tokenid))
+            return Invalid("token-burn-tx-cc-input-not-equal-cc-output");
+
+        
         // calc outputs for burn tx
-        int64_t burnAmount = 0;
+        /* int64_t burnAmount = 0;
         for (auto v : burnTx.vout)
             if (v.scriptPubKey.IsPayToCryptoCondition() && 
                 CTxOut(v.nValue, v.scriptPubKey) == MakeTokensCC1vout(nonfungibleEvalCode ? nonfungibleEvalCode : EVAL_TOKENS, v.nValue, pubkey2pk(ParseHex(CC_BURNPUBKEY))) )  // burned to dead pubkey
-                burnAmount += v.nValue;
+                burnAmount += v.nValue;  */
 
         // calc outputs for import tx
-        int64_t importAmount = 0;
+        int64_t ccImportOutputs = 0;
         for (auto v : importTx.vout)  
             if (v.scriptPubKey.IsPayToCryptoCondition() && 
                 !IsTokenMarkerVout(v))  // should not be marker here
-                importAmount += v.nValue;
+                ccImportOutputs += v.nValue;
 
-        if( burnAmount != importAmount )
-            return Invalid("token-payout-too-high-or-too-low");
+        if(ccBurnOutputs != ccImportOutputs )
+            return Invalid("token-cc-burned-output-not-equal-cc-imported-output"); 
 
     }
-    else {
-        return Invalid("invalid-burn-tx-incorrect-opret");
+    else if(vimportOpret.begin()[0] != EVAL_IMPORTCOIN )  {
+        return Invalid("import-tx-incorrect-opret-eval");
     }
 
     // for tokens check burn, import, tokenbase tx 

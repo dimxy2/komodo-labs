@@ -251,6 +251,7 @@ bool UnmarshalBurnTxOld(const CTransaction &burnTx, std::string &targetSymbol, u
 
 /*
  * Required by main
+ * returns valueIn for import tx (used burned value for calculation, with extra txfee for relaying and miners)
  */
 CAmount GetCoinImportValue(const CTransaction &tx)
 {
@@ -283,7 +284,7 @@ CAmount GetCoinImportValue(const CTransaction &tx)
                         ccOutput += v.nValue;        */
 
                 CAmount totalOutput = 0;
-                for (auto v : payouts)  // skip marker, exclude opret
+                for (auto v : payouts)  // calc total burned value
                     totalOutput += v.nValue;
 
                 return totalOutput;
