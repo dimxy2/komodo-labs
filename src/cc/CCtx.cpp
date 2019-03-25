@@ -268,6 +268,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 std::vector<unsigned char> v1(v.begin(), v.end() - 1);
                 CC *cc = cc_readConditionBinary(v.data(), len2);
                 CC *cc2 = cc_readConditionBinary(v1.data(), len2);
+                CC *cc3 = cc_readConditionBinary(buf, len2);
                 std::cerr << "FinalizeCCtx cc of v=" << HexStr((unsigned char*)cc, ((unsigned char*)cc + len2)) << std::endl;
                 std::cerr << "FinalizeCCtx cc2 of v1=" << HexStr((unsigned char*)cc2, ((unsigned char*)cc2 + len2)) << std::endl;
                 std::cerr << "FinalizeCCtx buf=" << HexStr((unsigned char*)buf, ((unsigned char*)buf + len2)) << std::endl;
@@ -308,6 +309,14 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                     CPubKey pubkey;
                     CCVisitor visitor = { findEval, (uint8_t*)"", 0, &pubkey };
                     bool out = !cc_visit(cond, visitor);
+                }
+
+
+                std::cerr << "visit(cc3)..." << std::endl;
+                if (cond) {
+                    CPubKey pubkey;
+                    CCVisitor visitor = { findEval, (uint8_t*)"", 0, &pubkey };
+                    bool out = !cc_visit(cc3, visitor);
                 }
 
 
