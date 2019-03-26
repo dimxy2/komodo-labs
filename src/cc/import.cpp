@@ -476,17 +476,20 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         if (!vnonfungibleOpret.empty())
             nonfungibleEvalCode = vnonfungibleOpret.begin()[0];
 
-        int64_t ccBurnInputs, ccBurnOutputs;
-        if (!TokensExactAmounts(false, cpTokens, ccBurnInputs, ccBurnOutputs, NULL, burnTx, tokenid))
-            return Invalid("token-burn-tx-cc-input-not-equal-cc-output");
-
-        
+        // check if burntx at least has cc vin evaltoken
+        bool hasTokenVin = false;
+        for (auto vin : burnTx.vin)
+            if (cpTokens->ismyvin(vin.scriptSig))
+                hasTokenVin = true;
+        if( !hasTokenVin )
+            return Invalid("cannot-burn-txhas-no-token-vins");
+       
         // calc outputs for burn tx
-        /* int64_t burnAmount = 0;
+        int64_t ccBurnOutputs = 0;
         for (auto v : burnTx.vout)
             if (v.scriptPubKey.IsPayToCryptoCondition() && 
                 CTxOut(v.nValue, v.scriptPubKey) == MakeTokensCC1vout(nonfungibleEvalCode ? nonfungibleEvalCode : EVAL_TOKENS, v.nValue, pubkey2pk(ParseHex(CC_BURNPUBKEY))) )  // burned to dead pubkey
-                burnAmount += v.nValue;  */
+                ccBurnOutputs  += v.nValue;
 
         // calc outputs for import tx
         int64_t ccImportOutputs = 0;

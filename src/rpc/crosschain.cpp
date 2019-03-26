@@ -448,12 +448,12 @@ void CheckBurnTxSource(uint256 burntxid, UniValue &info) {
 
     vscript_t vopret;
     std::string sourceSymbol;
-    CTransaction tokenbasetx;
+    CTransaction tokenbasetxStored;
     uint256 tokenid = zeroid;
 
     if (burnTx.vout.size() > 1 && GetOpReturnData(burnTx.vout.back().scriptPubKey, vopret) && !vopret.empty())   {
         if (vopret.begin()[0] == EVAL_TOKENS) {
-            if (!E_UNMARSHAL(rawproof, ss >> sourceSymbol; ss >> tokenbasetx))
+            if (!E_UNMARSHAL(rawproof, ss >> sourceSymbol; ss >> tokenbasetxStored))
                 throw std::runtime_error("Cannot unmarshal rawproof for tokens");
 
             uint8_t evalCode;
@@ -463,8 +463,39 @@ void CheckBurnTxSource(uint256 burntxid, UniValue &info) {
             if( DecodeTokenOpRet(burnTx.vout.back().scriptPubKey, evalCode, tokenid, voutPubkeys, oprets) == 0 )
                 throw std::runtime_error("Cannot decode token opret in burn tx");
 
-            if( tokenid != tokenbasetx.GetHash() )
-                throw std::runtime_error("Incorrect tokenbase tx");
+            if( tokenid != tokenbasetxStored.GetHash() )
+                throw std::runtime_error("Incorrect tokenbase in burn tx");
+
+            CTransaction tokenbasetx;
+            uint256 hashBlock;
+            if (!myGetTransaction(tokenid, tokenbasetx, hashBlock)) {
+                throw std::runtime_error("Could not load tokenbase tx");
+            }
+
+            // check if nonfungible data present
+            if (tokenbasetx.vout.size() > 0) {
+                std::vector<uint8_t> origpubkey;
+                std::string name, description;
+                std::vector<std::pair<uint8_t, vscript_t>>  oprets;
+
+                vscript_t vopretNonfungible;
+                if (DecodeTokenCreateOpRet(tokenbasetx.vout.back().scriptPubKey, origpubkey, name, description, oprets) == 'c') {
+                    GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vopretNonfungible);
+                    if (vopretNonfungible.empty())
+                        throw std::runtime_error("Could not migrate fungible tokens");
+                }
+                else
+                    throw std::runtime_error("Could not decode opreturn in tokenbase tx");
+            }
+            else
+                throw std::runtime_error("Incorrect tokenbase tx: not opreturn");
+
+
+            struct CCcontract_info *cpTokens, CCtokens_info;
+            cpTokens = CCinit(&CCtokens_info, EVAL_TOKENS);
+            int64_t ccInputs = 0, ccOutputs = 0;
+            if( !TokensExactAmounts(true, cpTokens, ccInputs, ccOutputs, NULL, burnTx, tokenid) )
+                throw std::runtime_error("Incorrect token burn tx: cc inputs <> cc outputs");
         }
         else {
             if (!E_UNMARSHAL(rawproof, ss >> sourceSymbol))
