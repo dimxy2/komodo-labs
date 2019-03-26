@@ -272,19 +272,18 @@ CAmount GetCoinImportValue(const CTransaction &tx)
 
             if (isNewImportTx && vburnOpret.begin()[0] == EVAL_TOKENS) {      //if it is tokens
              
-             /* This code would not link because we are in a shared library with no most of cc modules
+             /* NOTE: this code would not link because we are in a shared library with no most of cc modules
                 Assume we do not need this extended check for payouts because we could not have markers in them
                 and we do validate payouts outputs in eval::ImportCoin()
                 struct CCcontract_info *cpTokens, CCtokens_info;
                 cpTokens = CCinit(&CCtokens_info, EVAL_TOKENS);
-
                 CAmount ccOutput = 0;
                 for (auto v : payouts)
                     if (v.scriptPubKey.IsPayToCryptoCondition() && CTxOut(v.nValue, v.scriptPubKey) != MakeCC1vout(EVAL_TOKENS, v.nValue, GetUnspendable(cpTokens, NULL)))  
-                        ccOutput += v.nValue;        */
+                        ccOutput += v.nValue; */
 
                 CAmount totalOutput = 0;
-                for (auto v : payouts)  // calc total burned value
+                for (auto v : burnTx.vout)  // calc total burned value
                     totalOutput += v.nValue;
 
                 return totalOutput;
