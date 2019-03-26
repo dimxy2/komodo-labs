@@ -434,27 +434,27 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     if (MakeImportCoinTransaction(proof, burnTx, payouts, importTx.nExpiryHeight).GetHash() != importTx.GetHash() &&    // ExistsImportTombstone prevents from burn tx duplication
         MakeImportCoinTransactionVout0(proof, burnTx, payouts, importTx.nExpiryHeight).GetHash() != importTx.GetHash() )  // compatibility
         return Invalid("non-canonical-import-tx");
+
     // get burn params
     if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof) && !UnmarshalBurnTxOld(burnTx, targetSymbol, &targetCcid, payoutsHash, rawproof)) //with support for old burn tx
         return Invalid("invalid-burn-tx");
     
-    if( burnTx.vout.size() == 0 )
-        return Invalid("invalid-burn-tx-no-vouts");
-
     vscript_t vimportOpret;
     if (isNewImportTx && !GetOpReturnData(importTx.vout.back().scriptPubKey, vimportOpret) ||       // new import tx
         !isNewImportTx && !GetOpReturnData(importTx.vout[0].scriptPubKey, vimportOpret) ||          // it is old import tx
         vimportOpret.empty())
         return Invalid("invalid-import-tx-no-opret");
 
+    if (burnTx.vout.size() == 0)
+        return Invalid("invalid-burn-tx-no-vouts");
 
-    // check burned amount >= import amount  && burned amount <= import amount + txfee (extra txfee is for miners and relaying, see GetImportCoinValue() func)
+    // check burned normal amount >= import amount  && burned amount <= import amount + txfee (extra txfee is for miners and relaying, see GetImportCoinValue() func)
     uint64_t burnAmount = burnTx.vout.back().nValue;
     if (burnAmount == 0)
         return Invalid("invalid-burn-amount");
     uint64_t totalOut = 0;
-    for (int i=0; i<importTx.vout.size(); i++)
-        totalOut += importTx.vout[i].nValue;
+    for (auto v : importTx.vout)
+        totalOut += v.nValue;
     if (totalOut > burnAmount || totalOut < burnAmount-txfee )
         return Invalid("payout-too-high-or-too-low");
     
