@@ -457,7 +457,6 @@ void CheckBurnTxSource(uint256 burntxid, UniValue &info) {
                 throw std::runtime_error("Cannot unmarshal rawproof for tokens");
 
             uint8_t evalCode;
-            uint256 tokenid;
             std::vector<CPubKey> voutPubkeys;
             std::vector<std::pair<uint8_t, vscript_t>> oprets;
             if( DecodeTokenOpRet(burnTx.vout.back().scriptPubKey, evalCode, tokenid, voutPubkeys, oprets) == 0 )
@@ -497,14 +496,16 @@ void CheckBurnTxSource(uint256 burntxid, UniValue &info) {
             if( !TokensExactAmounts(true, cpTokens, ccInputs, ccOutputs, NULL, burnTx, tokenid) )
                 throw std::runtime_error("Incorrect token burn tx: cc inputs <> cc outputs");
         }
-        else {
+        else if (vopret.begin()[0] == EVAL_IMPORTCOIN) {
             if (!E_UNMARSHAL(rawproof, ss >> sourceSymbol))
                 throw std::runtime_error("Cannot unmarshal rawproof for coins");
         }
+        else
+            throw std::runtime_error("Incorrect eval code in opreturn");
     }
-    else {
-        throw std::runtime_error("No opret in burn tx");
-    }
+    else 
+        throw std::runtime_error("No opreturn in burn tx");
+    
 
     if (sourceSymbol != ASSETCHAINS_SYMBOL)
         throw std::runtime_error("Incorrect source chain in rawproof");
@@ -661,6 +662,7 @@ UniValue migrate_checkburntransactionsource(const UniValue& params, bool fHelp)
     txids.push_back(burntxid.GetHex());
     nextparams.push_back(txids);
     result.push_back(Pair("TxOutProof", gettxoutproof(nextparams, false)));  // get txoutproof
+    result.push_back(Pair("result", "success"));  // get txoutproof
 
     return result;
 }
