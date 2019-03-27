@@ -1,5 +1,21 @@
+/******************************************************************************
+* Copyright © 2014-2019 The SuperNET Developers.                             *
+*                                                                            *
+* See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+* the top-level directory of this distribution for the individual copyright  *
+* holder information and the developer policies on copyright and licensing.  *
+*                                                                            *
+* Unless otherwise agreed in a custom licensing agreement, no part of the    *
+* SuperNET software, including this file may be copied, modified, propagated *
+* or distributed except according to the terms contained in the LICENSE file *
+*                                                                            *
+* Removal or modification of this copyright notice is prohibited.            *
+*                                                                            *
+******************************************************************************/
+
 // encode decode tokens opret 
-// (moved to a separate file to enable linking lib common.so with importcoin.cpp)
+// make token cryptoconditions and vouts
+// This code was moved to a separate source file to enable linking libcommon.so (with importcoin.cpp which depends on some token functions)
 
 #include "CCtokens.h"
 
@@ -159,39 +175,9 @@ uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t>
     return (uint8_t)0;
 }
 
-/*
-// for imported tokens
-uint8_t DecodeTokenImportOpRet(const CScript &scriptPubKey, std::vector<uint8_t> &origpubkey, std::string &name, std::string &description, uint256 &srctokenid, std::vector<std::pair<uint8_t, vscript_t>>  &oprets)
-{
-    vscript_t vopret, vblob;
-    uint8_t dummyEvalcode, funcid, opretId = 0;
-
-    GetOpReturnData(scriptPubKey, vopret);
-    oprets.clear();
-
-    if (vopret.size() > 2 && vopret.begin()[0] == EVAL_TOKENS && vopret.begin()[1] == 'i')
-    {
-        if (E_UNMARSHAL(vopret, ss >> dummyEvalcode; ss >> funcid; ss >> origpubkey; ss >> name; ss >> description; ss >> srctokenid;
-        while (!ss.eof()) {
-            ss >> opretId;
-            if (!ss.eof()) {
-                ss >> vblob;
-                oprets.push_back(std::make_pair(opretId, vblob));
-            }
-        }))
-        {
-            srctokenid = revuint256(srctokenid); // do not forget this
-            return(funcid);
-        }
-    }
-    LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenImportOpRet() incorrect token import opret" << std::endl);
-    return (uint8_t)0;
-}
-*/
-
-// decodes token opret: 
+// decode token opret: 
 // for 't' returns all data from opret, vopretExtra contains other contract's data (currently only assets'). 
-// for 'c' and 'i' returns only funcid. NOTE: nonfungible data is not returned
+// for 'c' returns only funcid. NOTE: nonfungible data is not returned
 uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, uint256 &tokenid, std::vector<CPubKey> &voutPubkeys, std::vector<std::pair<uint8_t, vscript_t>>  &oprets)
 {
     vscript_t vopret, vblob, dummyPubkey, vnonfungibleDummy;
@@ -210,9 +196,6 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
 
     if (script != NULL && vopret.size() > 2)
     {
-        // NOTE: if parse error occures, parse might not be able to set error. It is safer to treat that it was eof if it is not set!
-        // bool isEof = true;
-
         evalCodeTokens = script[0];
         if (evalCodeTokens != EVAL_TOKENS) {
             LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() incorrect evalcode in tokens opret" << std::endl);
@@ -220,15 +203,13 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
         }
 
         funcId = script[1];
-        LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << "DecodeTokenOpRet decoded funcId=" << (char)(funcId ? funcId : ' ') << std::endl);
+        LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << "DecodeTokenOpRet() decoded funcId=" << (char)(funcId ? funcId : ' ') << std::endl);
 
         switch (funcId)
         {
         case 'c':
             return DecodeTokenCreateOpRet(scriptPubKey, dummyPubkey, dummyName, dummyDescription, oprets);
-        //case 'i':
-        //    return DecodeTokenImportOpRet(scriptPubKey, dummyPubkey, dummyName, dummyDescription, dummySrcTokenId, oprets);
-            //break;
+
         case 't':
            
             // compatibility with old-style rogue or assets data (with no opretid):
