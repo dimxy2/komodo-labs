@@ -479,13 +479,13 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         if (!vnonfungibleOpret.empty())
             nonfungibleEvalCode = vnonfungibleOpret.begin()[0];
 
-        // check if burntx at least has cc vin evaltoken
+        // check if burn tx at least has cc evaltoken vins (we cannot get cc input)
         bool hasTokenVin = false;
         for (auto vin : burnTx.vin)
             if (cpTokens->ismyvin(vin.scriptSig))
                 hasTokenVin = true;
         if( !hasTokenVin )
-            return Invalid("cannot-burn-txhas-no-token-vins");
+            return Invalid("burn-tx-has-no-token-vins");
        
         // calc outputs for burn tx
         int64_t ccBurnOutputs = 0;

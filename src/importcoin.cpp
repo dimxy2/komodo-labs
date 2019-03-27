@@ -248,7 +248,6 @@ bool UnmarshalBurnTxOld(const CTransaction &burnTx, std::string &targetSymbol, u
     return retcode;
 }
 
-
 /*
  * Required by main
  * returns valueIn for import tx (used burned value for calculation, with extra txfee for relaying and miners)
@@ -282,14 +281,32 @@ CAmount GetCoinImportValue(const CTransaction &tx)
                     if (v.scriptPubKey.IsPayToCryptoCondition() && CTxOut(v.nValue, v.scriptPubKey) != MakeCC1vout(EVAL_TOKENS, v.nValue, GetUnspendable(cpTokens, NULL)))  
                         ccOutput += v.nValue; */
 
-                CAmount totalOutput = 0;
-                for (auto v : burnTx.vout)  // calc total burned value
-                    totalOutput += v.nValue;
+                uint8_t evalCodeInOpret;
+                uint256 tokenid;
+                std::vector<CPubKey> voutTokenPubkeys;
+                std::vector<std::pair<uint8_t, vscript_t>>  oprets;
 
-                return totalOutput;
+                if (DecodeTokenOpRet(tx.vout.back().scriptPubKey, evalCodeInOpret, tokenid, voutTokenPubkeys, oprets) == 0)
+                    return 0;
+
+                uint8_t nonfungibleEvalCode = 0;
+                vscript_t vnonfungibleOpret;
+
+                GetOpretBlob(oprets, OPRETID_NONFUNGIBLEDATA, vnonfungibleOpret);
+                if (!vnonfungibleOpret.empty())
+                    nonfungibleEvalCode = vnonfungibleOpret.begin()[0];
+
+                // calc outputs for burn tx
+                int64_t ccBurnOutputs = 0;
+                for (auto v : burnTx.vout)
+                    if (v.scriptPubKey.IsPayToCryptoCondition() &&
+                        CTxOut(v.nValue, v.scriptPubKey) == MakeTokensCC1vout(nonfungibleEvalCode ? nonfungibleEvalCode : EVAL_TOKENS, v.nValue, pubkey2pk(ParseHex(CC_BURNPUBKEY))))  // burned to dead pubkey
+                        ccBurnOutputs += v.nValue;
+
+                return ccBurnOutputs + burnTx.vout.back().nValue;   // total token burned value, including txfee for miners
             }
             else
-                return burnTx.vout.back().nValue;
+                return burnTx.vout.back().nValue; // coin burned value
         }
     }
     return 0;
