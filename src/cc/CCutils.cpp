@@ -75,7 +75,7 @@ CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2)
     cc_free(payoutCond);
     return(vout);
 }
-
+/*
 // make three-eval (token+evalcode+evalcode2) 1of2 cryptocondition:
 CC *MakeTokensCCcond1of2(uint8_t evalcode, uint8_t evalcode2, CPubKey pk1, CPubKey pk2)
 {
@@ -147,7 +147,7 @@ CTxOut MakeTokensCC1vout(uint8_t evalcode, uint8_t evalcode2, CAmount nValue, CP
 CTxOut MakeTokensCC1vout(uint8_t evalcode, CAmount nValue, CPubKey pk) {
     return MakeTokensCC1vout(evalcode, 0, nValue, pk);
 }
-
+*/
 
 CC* GetCryptoCondition(CScript const& scriptSig)
 {
