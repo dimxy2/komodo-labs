@@ -250,7 +250,8 @@ bool UnmarshalBurnTxOld(const CTransaction &burnTx, std::string &targetSymbol, u
 
 /*
  * Required by main
- * returns valueIn for import tx (used burned value for calculation, with extra txfee for relaying and miners)
+ * in main.cpp the returned value is used as valueIn for the import tx 
+ * the returned calue = burned value (which also includes extra txfee for relaying and miners. See migrate_createburntransaction)
  */
 CAmount GetCoinImportValue(const CTransaction &tx)
 {
@@ -271,16 +272,6 @@ CAmount GetCoinImportValue(const CTransaction &tx)
 
             if (isNewImportTx && vburnOpret.begin()[0] == EVAL_TOKENS) {      //if it is tokens
              
-             /* NOTE: this code would not link because we are in a shared library with no most of cc modules
-                Assume we do not need this extended check for payouts because we could not have markers in them
-                and we do validate payouts outputs in eval::ImportCoin()
-                struct CCcontract_info *cpTokens, CCtokens_info;
-                cpTokens = CCinit(&CCtokens_info, EVAL_TOKENS);
-                CAmount ccOutput = 0;
-                for (auto v : payouts)
-                    if (v.scriptPubKey.IsPayToCryptoCondition() && CTxOut(v.nValue, v.scriptPubKey) != MakeCC1vout(EVAL_TOKENS, v.nValue, GetUnspendable(cpTokens, NULL)))  
-                        ccOutput += v.nValue; */
-
                 uint8_t evalCodeInOpret;
                 uint256 tokenid;
                 std::vector<CPubKey> voutTokenPubkeys;
@@ -303,7 +294,7 @@ CAmount GetCoinImportValue(const CTransaction &tx)
                         CTxOut(v.nValue, v.scriptPubKey) == MakeTokensCC1vout(nonfungibleEvalCode ? nonfungibleEvalCode : EVAL_TOKENS, v.nValue, pubkey2pk(ParseHex(CC_BURNPUBKEY))))  // burned to dead pubkey
                         ccBurnOutputs += v.nValue;
 
-                return ccBurnOutputs + burnTx.vout.back().nValue;   // total token burned value, including txfee for miners
+                return ccBurnOutputs + burnTx.vout.back().nValue;   // total token burned value
             }
             else
                 return burnTx.vout.back().nValue; // coin burned value

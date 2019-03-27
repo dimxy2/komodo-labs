@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2018 The SuperNET Developers.                             *
+ * Copyright © 2014-2019 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -103,22 +103,21 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 
    	switch (funcid)
 	{
-	case 'c': // create wont be called to be verified as it has no CC inputs
+	case 'c': // token create should not be validated as it has no CC inputs, so return 'invalid'
+              // token tx structure for 'c':
 			  //vin.0: normal input
 			  //vout.0: issuance tokenoshis to CC
 			  //vout.1: normal output for change (if any)
 			  //vout.n-1: opreturn EVAL_TOKENS 'c' <tokenname> <description>
-		//if (evalCodeInOpret != EVAL_TOKENS)
-		//	return eval->Invalid("unexpected TokenValidate for createtoken");
-		//else
-		return true;
+		return eval->Invalid("incorrect token funcid");
 		
 	case 't': // transfer
+              // token tx structure for 't'
 			  //vin.0: normal input
 			  //vin.1 .. vin.n-1: valid CC outputs
 			  //vout.0 to n-2: tokenoshis output to CC
 			  //vout.n-2: normal output for change (if any)
-			  //vout.n-1: opreturn <other evalcode> 't' tokenid <other contract payload>
+			  //vout.n-1: opreturn EVAL_TOKENS 't' tokenid <other contract payload>
 		if (inputs == 0)
 			return eval->Invalid("no token inputs for transfer");
 
@@ -130,20 +129,7 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 		return eval->Invalid("unexpected token funcid");
 	}
 
-	// forward validation if evalcode in opret is not EVAL_TOKENS
-	// init for forwarding validation call
-	//if (evalCodeInOpret != EVAL_TOKENS) {		// TODO: should we check also only allowed for tokens evalcodes, like EVAL_ASSETS, EVAL_GATEWAYS?
-	//	struct CCcontract_info *cpOther = NULL, C;
-
-	//	cpOther = CCinit(&C, evalCodeInOpret);
-	//	if (cpOther)
-	//		return cpOther->validate(cpOther, eval, tx, nIn);
-	//	else
-	//		return eval->Invalid("unsupported evalcode in opret");
-	//}
 	return true;
-	// what does this do?
-	// return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
 }
 
 // helper funcs:
