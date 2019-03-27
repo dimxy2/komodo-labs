@@ -224,10 +224,14 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
     if (burnAmount > 1000000LL*COIN)
         throw JSONRPCError(RPC_TYPE_ERROR, "Cannot export more than 1 million coins per export.");
 
+    /* note: we marshal to rawproof in a different way (to be able to add other objects)
     rawproof.resize(strlen(ASSETCHAINS_SYMBOL));
     ptr = rawproof.data();
     for (i=0; i<rawproof.size(); i++)
-        ptr[i] = ASSETCHAINS_SYMBOL[i];
+        ptr[i] = ASSETCHAINS_SYMBOL[i]; */
+    const std::string chainSymbol(ASSETCHAINS_SYMBOL);
+    rawproof = E_MARSHAL(ss << chainSymbol); // add src chain name 
+
     CTxOut burnOut = MakeBurnOutput(burnAmount+txfee, ccid, targetSymbol, tx.vout,rawproof);
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << tx.vout))));
@@ -272,11 +276,6 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
     if (ensure_CCrequirements(225) < 0)
         throw runtime_error("You need to set -pubkey, or run setpukbey RPC, or imports are disabled on this chain.");
 
-//    vector<uint8_t> txData(ParseHexV(params[0], "argument 1"));
-   // CMutableTransaction tx;
-//    if (!E_UNMARSHAL(txData, ss >> tx))
-//        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
-
     string targetSymbol = params[0].get_str();
     if (targetSymbol.size() == 0 || targetSymbol.size() > 32)
         throw runtime_error("targetSymbol length must be >0 and <=32");
@@ -292,7 +291,6 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
     else
         burnAmount = atoll(params[2].get_str().c_str());
 
-//    for (int i = 0; i<tx.vout.size(); i++) burnAmount += tx.vout[i].nValue;
     if (burnAmount <= 0)
         throw JSONRPCError(RPC_TYPE_ERROR, "Cannot export a negative or zero value.");
     if (burnAmount > 1000000LL * COIN)
@@ -312,7 +310,6 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
 
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), komodo_nextheight());
 
-    CScript scriptPubKey;
     const std::string chainSymbol(ASSETCHAINS_SYMBOL);
     std::vector<uint8_t> rawproof; //(chainSymbol.begin(), chainSymbol.end());
 
@@ -323,7 +320,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         }
 
         CTxDestination txdest = DecodeDestination(dest_addr_or_pubkey.c_str());
-        scriptPubKey = GetScriptForDestination(txdest);
+        CScript scriptPubKey = GetScriptForDestination(txdest);
         if (!scriptPubKey.IsPayToPublicKeyHash()) {
             throw JSONRPCError(RPC_TYPE_ERROR, "Incorrect destination addr.");
         }
@@ -382,23 +379,6 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         // destination vouts (payouts) which would create the import tx with non-fungible token:
         mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cpTokens, NULL)));  // new marker to token cc addr, burnable and validated, vout position now changed to 0 (from 1)
         mtx.vout.push_back(MakeTokensCC1vout(destEvalCode, burnAmount, destPubKey));
-
-        /* try add to wallet with this:
-        mtx.vout.push_back(CTxOut(txfee, CScript() << ParseHex(HexStr(destPubKey)) << OP_CHECKSIG)); // txfee normal vout to dest pubkey to force AddToWallet - address not matched to dest
-
-        CTxDestination txdest = destPubKey.GetID(); // DecodeDestination(dest_addr_or_pubkey.c_str());
-        scriptPubKey = GetScriptForDestination(txdest);
-        mtx.vout.push_back(CTxOut(txfee, scriptPubKey));
-
-        txdest = DecodeDestination(std::string("RKobYr8CFKQDBZXUWvXTbbR2cudE3DRkBU")); // DecodeDestination(dest_addr_or_pubkey.c_str());
-        scriptPubKey = GetScriptForDestination(txdest);
-        mtx.vout.push_back(CTxOut(txfee, scriptPubKey));
-
-        txdest = DecodeDestination(EncodeDestination(destPubKey.GetID())); // DecodeDestination(dest_addr_or_pubkey.c_str());
-        std::cerr << "migrate_createburntransaction() EncodeDestination(destPubKey.GetID())=" << EncodeDestination(destPubKey.GetID()) << std::endl;
-        scriptPubKey = GetScriptForDestination(txdest);
-        mtx.vout.push_back(CTxOut(txfee, scriptPubKey));  */
-
         mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenCreateOpRet('c', vorigpubkey, name, description,            
             std::vector<std::pair<uint8_t, vscript_t>> {std::make_pair(OPRETID_NONFUNGIBLEDATA, vopretNonfungible)})));  // make token import opret
         ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save payouts for import tx
