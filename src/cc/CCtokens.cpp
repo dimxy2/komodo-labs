@@ -79,7 +79,7 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 	//else if (IsCCInput(tx.vin[0].scriptSig) != 0)
 	//	return eval->Invalid("illegal token vin0");     // <-- this validation was removed because some token tx might not have normal vins
 
-    if (tokenid == zeroid)
+    if (funcid != 'c' && tokenid == zeroid)
         return eval->Invalid("illegal tokenid");
 
     if (!TokensExactAmounts(true, cp, inputs, outputs, eval, tx, tokenid)) {
@@ -132,7 +132,7 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 		return eval->Invalid("unexpected token funcid");
 	}
 
-    eval->state = CValidationState();  // clear prossible invalid state
+    eval->state = CValidationState();  // clear possible invalid state
 	return eval->Valid();
 }
 
