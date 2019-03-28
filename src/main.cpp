@@ -48,6 +48,7 @@
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 #include "notaries_staked.h"
+#include "cc/CCtokens.h"
 
 #include <cstring>
 #include <algorithm>
@@ -2776,6 +2777,13 @@ bool ContextualCheckInputs(
         LOCK(cs_main);
         ServerTransactionSignatureChecker checker(&tx, 0, 0, false, txdata);
         return VerifyCoinImport(tx.vin[0].scriptSig, checker, state);
+    }
+
+    if (ASSETCHAINS_SYMBOL[0] != 0 && tx.IsToken())
+    {
+        LOCK(cs_main);
+        ServerTransactionSignatureChecker checker(&tx, 0, 0, false, txdata);
+        return VerifyToken(tx, checker, state);
     }
 
     return true;

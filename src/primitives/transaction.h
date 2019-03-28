@@ -711,6 +711,8 @@ public:
         return (vin.size() == 1 && vin[0].prevout.n == 10e8);
     }
 
+    bool IsToken() const;
+
     friend bool operator==(const CTransaction& a, const CTransaction& b)
     {
         return a.hash == b.hash;

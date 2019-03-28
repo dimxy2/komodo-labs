@@ -38,4 +38,6 @@ int64_t GetTokenBalance(CPubKey pk, uint256 tokenid);
 UniValue TokenInfo(uint256 tokenid);
 UniValue TokenList();
 
+bool VerifyToken(const CTransaction& tx, TransactionSignatureChecker& checker, CValidationState &state);
+
 #endif

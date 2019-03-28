@@ -349,3 +349,31 @@ CTxOut MakeTokensCC1vout(uint8_t evalcode, CAmount nValue, CPubKey pk) {
     return MakeTokensCC1vout(evalcode, 0, nValue, pk);
 }
 
+/*
+* CoinImport is different enough from normal script execution that it's not worth
+* making all the mods neccesary in the interpreter to do the dispatch correctly.
+*/
+bool VerifyToken(const CTransaction& tx, TransactionSignatureChecker& checker, CValidationState &state)
+{
+    /*auto pc = scriptSig.begin();
+    opcodetype opcode;*/
+    //std::vector<uint8_t> evalScript;
+
+    auto f = [&]() {
+    /*    if (!scriptSig.GetOp(pc, opcode, evalScript))
+            return false;
+        if (pc != scriptSig.end())
+            return false;
+        if (evalScript.size() == 0)
+            return false;
+        if (evalScript.begin()[0] != EVAL_IMPORTCOIN)
+            return false;*/
+        // Ok, all looks good so far...
+        CC *cond = CCNewEval(E_MARSHAL(ss << EVAL_TOKENS));
+        bool out = checker.CheckEvalCondition(cond);
+        cc_free(cond);
+        return out;
+    };
+
+    return f() ? true : state.Invalid(false, 0, "invalid-token-tx");
+}

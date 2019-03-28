@@ -24,6 +24,9 @@
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 
+#include "script/cc.h"
+#include "cc/eval.h"
+
 #include "librustzcash.h"
 
 JSDescription::JSDescription(
@@ -438,4 +441,10 @@ std::string CTransaction::ToString() const
     for (unsigned int i = 0; i < vout.size(); i++)
         str += "    " + vout[i].ToString() + "\n";
     return str;
+}
+
+bool CTransaction::IsToken() const
+{
+    std::vector<uint8_t> opret;
+    return (vout.size() > 0 && GetOpReturnData(vout.back().scriptPubKey, opret) && opret.size() > 0 && opret.begin()[0] == EVAL_TOKENS);
 }
