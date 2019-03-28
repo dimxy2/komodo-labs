@@ -63,6 +63,7 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 	numvouts = tx.vout.size();
 	outputs = inputs = 0;
 	preventCCvins = preventCCvouts = -1;
+    tokenid = zeroid;
 
     // check boundaries:
     if (numvouts < 1)
@@ -73,7 +74,7 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 
     LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "TokensValidate funcId=" << (char)(funcid?funcid:' ') << " evalcode=" << std::hex << (int)cp->evalcode << std::endl);
 
-    if (eval->GetTxUnconfirmed(tokenid, createTx, hashBlock) == 0)
+    if (funcid != 'c' && eval->GetTxUnconfirmed(tokenid, createTx, hashBlock) == 0)
 		return eval->Invalid("cant find token create txid");
 	//else if (IsCCInput(tx.vin[0].scriptSig) != 0)
 	//	return eval->Invalid("illegal token vin0");     // <-- this validation was removed because some token tx might not have normal vins
@@ -109,7 +110,10 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 			  //vout.0: issuance tokenoshis to CC
 			  //vout.1: normal output for change (if any)
 			  //vout.n-1: opreturn EVAL_TOKENS 'c' <tokenname> <description>
-		return eval->Invalid("incorrect token funcid");
+        if( outputs > 0 )
+            return true; //  
+        else
+            eval->Invalid("incorrect token value");
 		
 	case 't': // transfer
               // token tx structure for 't'
