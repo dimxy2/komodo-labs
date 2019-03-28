@@ -113,6 +113,7 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 			  //vout.n-1: opreturn EVAL_TOKENS 'c' <tokenname> <description>
         if( outputs == 0 )
             return eval->Invalid("incorrect token value");
+        break;
 		
 	case 't': // transfer
               // token tx structure for 't'
