@@ -82,7 +82,7 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
     if (funcid != 'c' && tokenid == zeroid)
         return eval->Invalid("illegal tokenid");
 
-    if (!TokensExactAmounts(true, cp, inputs, outputs, eval, tx, tokenid)) {
+    if (!TokensExactAmounts(true, cp, inputs, outputs, eval, tx, (funcid != 'c') ? tokenid : tx.GetHash())) {
         if (funcid != 'c') {
             if (eval->state.IsInvalid() || eval->state.IsError()) // state already set in TokenExactAmounts
                 return false;
