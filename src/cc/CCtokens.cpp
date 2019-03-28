@@ -78,16 +78,17 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 		return eval->Invalid("cant find token create txid");
 	//else if (IsCCInput(tx.vin[0].scriptSig) != 0)
 	//	return eval->Invalid("illegal token vin0");     // <-- this validation was removed because some token tx might not have normal vins
-	else if (funcid != 'c')
-	{
-        if (tokenid == zeroid)
-            return eval->Invalid("illegal tokenid");
-		else if (!TokensExactAmounts(true, cp, inputs, outputs, eval, tx, tokenid)) {
-			if (!eval->Valid())
-				return false;  //TokenExactAmounts must call eval->Invalid()!
-			else
-				return eval->Invalid("tokens cc inputs != cc outputs");
-		}
+
+    if (tokenid == zeroid)
+        return eval->Invalid("illegal tokenid");
+
+    if (!TokensExactAmounts(true, cp, inputs, outputs, eval, tx, tokenid)) {
+        if (funcid != 'c') {
+            if (eval->state.IsInvalid() || eval->state.IsError()) // state already set in TokenExactAmounts
+                return false;
+            else    // state not set to invalid but there are errors -> set state invalid
+                return eval->Invalid("tokens cc inputs != cc outputs");
+        }
 	}
 
     // validate spending from token cc addr: allowed only for burned non-fungible tokens:
@@ -110,10 +111,8 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 			  //vout.0: issuance tokenoshis to CC
 			  //vout.1: normal output for change (if any)
 			  //vout.n-1: opreturn EVAL_TOKENS 'c' <tokenname> <description>
-        if( outputs > 0 )
-            return true; //  
-        else
-            eval->Invalid("incorrect token value");
+        if( outputs == 0 )
+            return eval->Invalid("incorrect token value");
 		
 	case 't': // transfer
               // token tx structure for 't'
@@ -133,7 +132,8 @@ bool TokensValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &
 		return eval->Invalid("unexpected token funcid");
 	}
 
-	return true;
+    eval->state = CValidationState();  // clear prossible invalid state
+	return eval->Valid();
 }
 
 // helper funcs:
