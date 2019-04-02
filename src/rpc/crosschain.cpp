@@ -724,7 +724,7 @@ UniValue selfimport(const UniValue& params, bool fHelp)
     if ( ASSETCHAINS_SELFIMPORT.size() == 0 )
         throw runtime_error("selfimport only works on -ac_import chains");
 
-    if (fHelp || params.size() != 2)
+    if (fHelp || params.size() != 2 && params.size() != 3)
         throw runtime_error("selfimport destaddr amount\n"
                   //TODO:   "or selfimport rawburntx burntxid {nvout|\"find\"} rawproof source bindtxid height} \n"
                             "\ncreates self import coin transaction");
@@ -775,8 +775,12 @@ UniValue selfimport(const UniValue& params, bool fHelp)
         templateMtx.vout.clear();
         templateMtx.vout.push_back(burnOut);	// burn tx has only opret with vouts and optional proof
 
-        burnTx = templateMtx;					// complete the creation of 'quasi-burn' tx
+        if (params.size() == 2)
+            burnTx = templateMtx;					// complete the creation of 'quasi-burn' tx
+        else
+            E_UNMARSHAL(ParseHex(params[2].get_str()), ss >> burnTx);
 
+        std::cerr << "burnTx=" << HexStr(E_MARSHAL(ss << burnTx));
         sourceTxHex = HexStr(E_MARSHAL(ss << sourceMtx));
         importTxHex = HexStr(E_MARSHAL(ss << MakeImportCoinTransaction(proofNull, burnTx, vouts)));
       

@@ -417,7 +417,7 @@ int32_t CheckPUBKEYimport(TxProof proof,std::vector<uint8_t> rawproof,CTransacti
 
 bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &importTx, unsigned int nIn)
 {
-    ImportProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; uint64_t txfee = 10000;
+    ImportProof proof; CTransaction burnTx; std::vector<CTxOut> payouts; CAmount txfee = 10000;
     uint32_t targetCcid; std::string targetSymbol; uint256 payoutsHash; std::vector<uint8_t> rawproof;
 
     LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "Validating import tx..., txid=" << importTx.GetHash().GetHex() << std::endl);
@@ -452,12 +452,13 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         return Invalid("invalid-burn-tx-no-vouts");
 
     // check burned normal amount >= import amount  && burned amount <= import amount + txfee (extra txfee is for miners and relaying, see GetImportCoinValue() func)
-    uint64_t burnAmount = burnTx.vout.back().nValue;
+    CAmount burnAmount = burnTx.vout.back().nValue;
     if (burnAmount == 0)
         return Invalid("invalid-burn-amount");
-    uint64_t totalOut = 0;
+    CAmount totalOut = 0;
     for (auto v : importTx.vout)
-        totalOut += v.nValue;
+        if (!v.scriptPubKey.IsPayToCryptoCondition())
+            totalOut += v.nValue;
     if (totalOut > burnAmount || totalOut < burnAmount-txfee )
         return Invalid("payout-too-high-or-too-low");
     
