@@ -425,6 +425,9 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     if (strcmp(ASSETCHAINS_SYMBOL, "CFEKDIMXY6") == 0 && chainActive.Height() <= 10699)
         return true;
 
+    if (strcmp(ASSETCHAINS_SYMBOL, "DIMXY10") == 0 && chainActive.Height() <= 185)
+        return true;
+
     if ( importTx.vout.size() < 2 )
         return Invalid("too-few-vouts");
     // params
