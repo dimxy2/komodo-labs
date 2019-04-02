@@ -178,6 +178,7 @@ bool UnmarshalImportTxOld(const CTransaction &importTx, ImportProof &proof, CTra
 bool UnmarshalImportTxVout0(const CTransaction &importTx, ImportProof &proof, CTransaction &burnTx, std::vector<CTxOut> &payouts)
 {
     std::vector<uint8_t> vData;
+    TxProof txProof;
 
     GetOpReturnData(importTx.vout[0].scriptPubKey, vData);
     if (importTx.vout.size() < 1) 
@@ -185,8 +186,9 @@ bool UnmarshalImportTxVout0(const CTransaction &importTx, ImportProof &proof, CT
     payouts = std::vector<CTxOut>(importTx.vout.begin() + 1, importTx.vout.end());
     bool retcode = importTx.vin.size() == 1 &&
                    importTx.vin[0].scriptSig == (CScript() << E_MARSHAL(ss << EVAL_IMPORTCOIN)) &&
-                   E_UNMARSHAL(vData, ss >> proof; ss >> burnTx);
+                   E_UNMARSHAL(vData, ss >> txProof; ss >> burnTx);
 
+    proof = ImportProof(txProof);
     if( retcode )
         LOGSTREAM("importcoin", CCLOG_DEBUG1, stream << "UnmarshalImportTxVout0() parsed old import tx opret" << std::endl);
     return retcode;
