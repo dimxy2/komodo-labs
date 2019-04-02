@@ -300,8 +300,12 @@ CAmount GetCoinImportValue(const CTransaction &tx)
 
                 return ccBurnOutputs + burnTx.vout.back().nValue;   // total token burned value
             }
-            else
-                return burnTx.vout.back().nValue; // coin burned value
+            else {
+                CAmount totalOut = 0;
+                for (auto v : payouts)
+                    totalOut += v.nValue;
+                return burnTx.vout.back().nValue > totalOut ? burnTx.vout.back().nValue : totalOut + 10000; // coin burned value
+            }
         }
     }
     return 0;
