@@ -533,16 +533,14 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         if (sourceTokenId != tokenbaseTx.GetHash())              // check tokenid in burn tx opret matches the passed tokenbase tx (to prevent cheating by importing user)
             return Invalid("incorrect-token-creation-tx-passed");
 
-        std::vector<std::pair<uint8_t, vscript_t>>  opretsSrc;
         vscript_t vorigpubkeySrc;
         std::string nameSrc, descSrc;
-        if (DecodeTokenCreateOpRet(tokenbaseTx.vout.back().scriptPubKey, vorigpubkeySrc, nameSrc, descSrc, opretsSrc) != 'c') 
+        if (DecodeTokenCreateOpRet(tokenbaseTx.vout.back().scriptPubKey, vorigpubkeySrc, nameSrc, descSrc) != 'c') 
             return Invalid("cannot-decode-token-creation-tx");
 
-        std::vector<std::pair<uint8_t, vscript_t>>  opretsImport;
         vscript_t vorigpubkeyImport;
         std::string nameImport, descImport;
-        if (importTx.vout.size() == 0 || DecodeTokenCreateOpRet(importTx.vout.back().scriptPubKey, vorigpubkeySrc, nameSrc, descSrc, opretsImport) != 'c')
+        if (importTx.vout.size() == 0 || DecodeTokenCreateOpRet(importTx.vout.back().scriptPubKey, vorigpubkeyImport, nameImport, descImport) != 'c')
             return Invalid("cannot-decode-token-import-tx");
 
         // check that name,pubkey,description in import tx correspond ones in token creation tx in the source chain:
