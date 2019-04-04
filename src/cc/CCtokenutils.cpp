@@ -24,7 +24,7 @@
 #endif
 
 // this is just for log messages indentation fur debugging recursive calls:
-extern thread_local uint32_t tokenValIndentSize = 0;
+extern thread_local uint32_t tokenValIndentSize;
 
 // NOTE: this inital tx won't be used by other contract
 // for tokens to be used there should be at least one 't' tx with other contract's custom opret
