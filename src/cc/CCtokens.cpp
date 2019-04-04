@@ -179,7 +179,7 @@ bool ExtractTokensCCVinPubkeys(const CTransaction &tx, std::vector<CPubKey> &vin
 	return found;
 }
 
-// this is just for log messages indentation fur debugging recursive calls:
+// this is just for log messages indentation for debugging recursive calls:
 thread_local uint32_t tokenValIndentSize = 0;
 
 // validates opret for token tx:
