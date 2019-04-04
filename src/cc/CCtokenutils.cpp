@@ -23,6 +23,9 @@
 #define IS_CHARINSTR(c, str) (std::string(str).find((char)(c)) != std::string::npos)
 #endif
 
+// this is just for log messages indentation fur debugging recursive calls:
+extern thread_local uint32_t tokenValIndentSize = 0;
+
 // NOTE: this inital tx won't be used by other contract
 // for tokens to be used there should be at least one 't' tx with other contract's custom opret
 CScript EncodeTokenCreateOpRet(uint8_t funcid, std::vector<uint8_t> origpubkey, std::string name, std::string description, vscript_t vopretNonfungible)
@@ -154,6 +157,9 @@ uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t>
     vscript_t vopret, vblob;
     uint8_t dummyEvalcode, funcid, opretId = 0;
 
+    // this is just for log messages indentation fur debugging recursive calls:
+    std::string indentStr = std::string().append(tokenValIndentSize, '.');
+
     GetOpReturnData(scriptPubKey, vopret);
     oprets.clear();
 
@@ -171,7 +177,7 @@ uint8_t DecodeTokenCreateOpRet(const CScript &scriptPubKey, std::vector<uint8_t>
             return(funcid);
         }
     }
-    LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenCreateOpRet() incorrect token create opret" << std::endl);
+    LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << indentStr << "DecodeTokenCreateOpRet() incorrect token create opret" << std::endl);
     return (uint8_t)0;
 }
 
@@ -186,6 +192,9 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
     uint256 dummySrcTokenId;
     CPubKey voutPubkey1, voutPubkey2;
 
+    // this is just for log messages indentation fur debugging recursive calls:
+    std::string indentStr = std::string().append(tokenValIndentSize, '.');
+
     vscript_t voldstyledata;
     bool foundOldstyle = false;
 
@@ -198,12 +207,12 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
     {
         evalCodeTokens = script[0];
         if (evalCodeTokens != EVAL_TOKENS) {
-            LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() incorrect evalcode in tokens opret" << std::endl);
+            LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << indentStr << "DecodeTokenOpRet() incorrect evalcode in tokens opret" << std::endl);
             return (uint8_t)0;
         }
 
         funcId = script[1];
-        LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << "DecodeTokenOpRet() decoded funcId=" << (char)(funcId ? funcId : ' ') << std::endl);
+        LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << indentStr << "DecodeTokenOpRet() decoded funcId=" << (char)(funcId ? funcId : ' ') << std::endl);
 
         switch (funcId)
         {
@@ -236,7 +245,7 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
                     }))
             {
                 if (!(ccType >= 0 && ccType <= 2)) { //incorrect ccType
-                    LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() incorrect ccType=" << (int)ccType << " tokenid=" << revuint256(tokenid).GetHex() << std::endl);
+                    LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << indentStr << "DecodeTokenOpRet() incorrect ccType=" << (int)ccType << " tokenid=" << revuint256(tokenid).GetHex() << std::endl);
                     return (uint8_t)0;
                 }
 
@@ -250,7 +259,7 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
                 tokenid = revuint256(tokenid);
 
                 if (foundOldstyle) {        //patch for old-style opret data with no opretid
-                    LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << "DecodeTokenOpRet() found old-style rogue/asset data, evalcode=" << (int)voldstyledata.begin()[0] << " funcid=" << (char)voldstyledata.begin()[1] << " for tokenid=" << revuint256(tokenid).GetHex() << std::endl);
+                    LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << indentStr << "DecodeTokenOpRet() found old-style rogue/asset data, evalcode=" << (int)voldstyledata.begin()[0] << " funcid=" << (char)voldstyledata.begin()[1] << " for tokenid=" << revuint256(tokenid).GetHex() << std::endl);
                     uint8_t opretIdRestored;
                     if (voldstyledata.begin()[0] == 0x11 /*EVAL_ROGUE*/)
                         opretIdRestored = OPRETID_ROGUEGAMEDATA;
@@ -262,16 +271,16 @@ uint8_t DecodeTokenOpRet(const CScript scriptPubKey, uint8_t &evalCodeTokens, ui
 
                 return(funcId);
             }
-            LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() bad opret format," << " ccType=" << (int)ccType << " tokenid=" <<  revuint256(tokenid).GetHex() << std::endl);
+            LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << indentStr << "DecodeTokenOpRet() bad opret format," << " ccType=" << (int)ccType << " tokenid=" <<  revuint256(tokenid).GetHex() << std::endl);
             return (uint8_t)0;
 
         default:
-            LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() illegal funcid=" << (int)funcId << std::endl);
+            LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << indentStr << "DecodeTokenOpRet() illegal funcid=" << (int)funcId << std::endl);
             return (uint8_t)0;
         }
     }
     else {
-        LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << "DecodeTokenOpRet() empty opret, could not parse" << std::endl);
+        LOGSTREAM((char *)"cctokens", CCLOG_INFO, stream << indentStr << "DecodeTokenOpRet() empty opret, could not parse" << std::endl);
     }
     return (uint8_t)0;
 }

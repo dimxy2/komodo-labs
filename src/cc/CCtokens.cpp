@@ -320,11 +320,11 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
         std::vector<std::pair<CTxOut, std::string>> testVouts;
 
         DecodeTokenOpRet(tx.vout.back().scriptPubKey, dummyEvalCode, tokenIdOpret, voutPubkeysInOpret, oprets);
-        LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << "IsTokensvout() oprets.size()=" << oprets.size() << std::endl);
+        LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << indentStr << "IsTokensvout() oprets.size()=" << oprets.size() << std::endl);
             
         // get assets/channels/gateways token data:
         FilterOutNonCCOprets(oprets, vopretExtra);  // NOTE: only 1 additional evalcode in token opret is currently supported
-        LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << "IsTokensvout() vopretExtra=" << HexStr(vopretExtra) << std::endl);
+        LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << indentStr << "IsTokensvout() vopretExtra=" << HexStr(vopretExtra) << std::endl);
 
         // get non-fungible data
         GetNonfungibleData(reftokenid, vopretNonfungible);
@@ -968,17 +968,17 @@ UniValue TokenInfo(uint256 tokenid)
             std::vector<uint8_t> rawproof;
             if (UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash, rawproof)) {
                 if (rawproof.size() > 0) {
-                    CTransaction tokenbasetx;
+                    CTransaction srcTokenBaseTx;
                     E_UNMARSHAL(rawproof, ss >> sourceSymbol;
                     if (!ss.eof())
-                        ss >> tokenbasetx);
+                        ss >> srcTokenBaseTx);
                     
-                    if (!tokenbasetx.IsNull()) {
-                        sourceTokenId = tokenbasetx.GetHash().GetHex();
-                        if (tokenbasetx.vout.size() > 0) {
+                    if (!srcTokenBaseTx.IsNull()) {
+                        sourceTokenId = srcTokenBaseTx.GetHash().GetHex();
+                        if (srcTokenBaseTx.vout.size() > 0) {
                             std::string name, desc;
                             std::vector<uint8_t> vorigpubkey;
-                            DecodeTokenCreateOpRet(tokenbasetx.vout.back().scriptPubKey, vorigpubkey, name, desc);
+                            DecodeTokenCreateOpRet(srcTokenBaseTx.vout.back().scriptPubKey, vorigpubkey, name, desc);
                             sourceOrigPubkey = HexStr(vorigpubkey);
                         }
                     }
