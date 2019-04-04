@@ -428,11 +428,10 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
 
                 CPubKey origPubkey = pubkey2pk(vorigPubkey);
 
-
                 // TODO: add voutPubkeys for 'c' tx
 
                 /* this would not work for imported tokens:
-                // for 'c' recognize the tokens only to token originator pubkey (but not to unspendable <-- closed sec violation)
+                // for 'c' validate tokens only to originator pubkey (but not to unspendable addr)
                 // maybe this is like gatewayclaim to single-eval token?
                 if (evalCodeNonfungible == 0)  // do not allow to convert non-fungible to fungible token
                     testVouts.push_back(std::make_pair(MakeCC1vout(EVAL_TOKENS, tx.vout[v].nValue, origPubkey), std::string("single-eval cc1 orig-pk")));
@@ -440,7 +439,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
                 if (evalCode1 != 0)
                     testVouts.push_back(std::make_pair(MakeTokensCC1vout(evalCode1, tx.vout[v].nValue, origPubkey), std::string("dual-eval-token cc1 orig-pk")));   */
 
-                // note: this would not work if there are several pubkeys in the tokencreator's wallet (AddNormalinputs does not use pubkey param):
+                // note: this would not work if there are several privkeys in the tokencreator's wallet (AddNormalinputs does not use pubkey param):
                 // for tokenbase tx check that normal inputs sent from origpubkey > cc outputs
                 int64_t ccOutputs = 0;
                 for (auto vout : tx.vout)
@@ -456,7 +455,7 @@ int64_t IsTokensvout(bool goDeeper, bool checkPubkeys /*<--not used, always true
                     if (!IsTokenMarkerVout(tx.vout[v]))  // exclude marker
                         return tx.vout[v].nValue;
                     else
-                        return 0; // vout is good, but do not take marker into account
+                        return 0; // do not take marker into account
                 } 
                 else {
                     LOGSTREAM("cctokens", CCLOG_INFO, stream << indentStr << "IsTokensvout() skipping vout not fulfilled normalInputs >= ccOutput" << " for tokenbase=" << reftokenid.GetHex() << " normalInputs=" << normalInputs << " ccOutputs=" << ccOutputs << std::endl);
@@ -617,29 +616,29 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
         CTransaction vintx;
         uint256 hashBlock;
         uint256 vintxid = it->first.txhash;
-		int32_t vout = (int32_t)it->first.index;
+		int32_t ivout = (int32_t)it->first.index;
 
 		if (it->second.satoshis < threshold)            // this should work also for non-fungible tokens (there should be only 1 satoshi for non-fungible token issue)
 			continue;
 
         int32_t ivin;
 		for (ivin = 0; ivin < mtx.vin.size(); ivin ++)
-			if (vintxid == mtx.vin[ivin].prevout.hash && vout == mtx.vin[ivin].prevout.n)
+			if (vintxid == mtx.vin[ivin].prevout.hash && ivout == mtx.vin[ivin].prevout.n)
 				break;
 		if (ivin != mtx.vin.size()) // that is, the tx.vout is already added to mtx.vin (in some previous calls)
 			continue;
 
 		if (GetTransaction(vintxid, vintx, hashBlock, false) != 0)
 		{
-			Getscriptaddress(destaddr, vintx.vout[vout].scriptPubKey);
+			Getscriptaddress(destaddr, vintx.vout[ivout].scriptPubKey);
 			if (strcmp(destaddr, tokenaddr) != 0 && 
                 strcmp(destaddr, cp->unspendableCCaddr) != 0 &&   // TODO: check why this. Should not we add token inputs from unspendable cc addr if mypubkey is used?
                 strcmp(destaddr, cp->unspendableaddr2) != 0)      // or the logic is to allow to spend all available tokens (what about unspendableaddr3)?
 				continue;
 			
-            LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << "AddTokenCCInputs() check vintx vout destaddress=" << destaddr << " amount=" << vintx.vout[vout].nValue << std::endl);
+            LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << "AddTokenCCInputs() check vintx vout destaddress=" << destaddr << " amount=" << vintx.vout[ivout].nValue << std::endl);
 
-			if ((nValue = IsTokensvout(true, true/*<--add only valid token uxtos */, cp, NULL, vintx, vout, tokenid)) > 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,vintxid, vout) == 0)
+			if ((nValue = IsTokensvout(true, true/*<--add only valid token uxtos */, cp, NULL, vintx, ivout, tokenid)) > 0 && myIsutxo_spentinmempool(ignoretxid,ignorevin,vintxid, ivout) == 0)
 			{
 				//for non-fungible tokens check payload:
                 if (!vopretNonfungible.empty()) {
@@ -656,7 +655,7 @@ int64_t AddTokenCCInputs(struct CCcontract_info *cp, CMutableTransaction &mtx, C
 
                 
                 if (total != 0 && maxinputs != 0)  // if it is not just to calc amount...
-					mtx.vin.push_back(CTxIn(vintxid, vout, CScript()));
+					mtx.vin.push_back(CTxIn(vintxid, ivout, CScript()));
 
 				nValue = it->second.satoshis;
 				totalinputs += nValue;
@@ -957,6 +956,7 @@ UniValue TokenInfo(uint256 tokenid)
 
         std::string sourceSymbol = "can't decode";
         std::string sourceTokenId = "can't decode";
+        std::string sourceOrigPubkey = "can't decode";
 
         if (UnmarshalImportTx(tokenbaseTx, proof, burnTx, payouts))
         {
@@ -976,11 +976,18 @@ UniValue TokenInfo(uint256 tokenid)
                     if (!tokenbasetx.IsNull())
                         sourceTokenId = tokenbasetx.GetHash().GetHex();
                 }
+                std::string name, desc;
+                std::vector<uint8_t> vorigpubkey;
+                if (burnTx.vout.size() > 0) {
+                    DecodeTokenCreateOpRet(burnTx.vout.back().scriptPubKey, vorigpubkey, name, desc);
+                    sourceOrigPubkey = HexStr(vorigpubkey);
+                }
             }
         }
         result.push_back(Pair("IsImported", "yes"));
         result.push_back(Pair("sourceChain", sourceSymbol));
         result.push_back(Pair("sourceTokenId", sourceTokenId));
+        result.push_back(Pair("sourceOriginatorPubKey", sourceOrigPubkey));
     }
 
 	return result;
