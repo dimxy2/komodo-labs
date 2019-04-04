@@ -389,7 +389,7 @@ UniValue migrate_createburntransaction(const UniValue& params, bool fHelp)
         if (!vopretNonfungible.empty())
             voprets.push_back(std::make_pair(OPRETID_NONFUNGIBLEDATA, vopretNonfungible));  // add additional opret with non-fungible data
 
-        mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenCreateOpRet('c', vorigpubkey, name, description, voprets)));  // make token import opret
+        mtx.vout.push_back(CTxOut((CAmount)0, EncodeTokenCreateOpRet('c', vdestpubkey, name, description, voprets)));  // make token import opret
         ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << mtx.vout))));  // save payouts for import tx
 
         rawproof = E_MARSHAL(ss << chainSymbol << tokenbasetx); // add src chain name and token creation tx

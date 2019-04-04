@@ -513,7 +513,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cp, int64_t &inpu
 				return (!eval) ? false : eval->Invalid("always should find vin tx, but didnt");
 			}
 			else {
-                LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << indentStr << "TokenExactAmounts() checking vintx.vout for tx.vin[" << i << "] nValue=" << vinTx.vout[tx.vin[i].prevout.n].nValue << std::endl);
+                LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << indentStr << "TokensExactAmounts() checking vintx.vout for tx.vin[" << i << "] nValue=" << vinTx.vout[tx.vin[i].prevout.n].nValue << std::endl);
 
                 // validate vouts of vintx  
                 tokenValIndentSize++;
@@ -530,7 +530,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cp, int64_t &inpu
 
 	for (int32_t i = 0; i < numvouts-1; i ++)  // 'numvouts-1' <-- do not check opret
 	{
-        LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << indentStr << "TokenExactAmounts() recursively checking tx.vout[" << i << "] nValue=" << tx.vout[i].nValue << std::endl);
+        LOGSTREAM((char *)"cctokens", CCLOG_DEBUG2, stream << indentStr << "TokensExactAmounts() recursively checking tx.vout[" << i << "] nValue=" << tx.vout[i].nValue << std::endl);
 
         // Note: we pass in here IsTokenvout(false,...) because we don't need to call TokenExactAmounts() recursively from IsTokensvout here
         // indeed, if we pass 'true' we'll be checking this tx vout again
@@ -549,7 +549,7 @@ bool TokensExactAmounts(bool goDeeper, struct CCcontract_info *cp, int64_t &inpu
 
 	if (inputs != outputs) {
 		if (tx.GetHash() != reftokenid)
-            LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << indentStr << "TokenExactAmounts() found unequal token cc inputs=" << inputs << " vs cc outputs=" << outputs << " for txid=" << tx.GetHash().GetHex() << " and this is not the create tx" << std::endl);
+            LOGSTREAM((char *)"cctokens", CCLOG_DEBUG1, stream << indentStr << "TokensExactAmounts() found unequal token cc inputs=" << inputs << " vs cc outputs=" << outputs << " for txid=" << tx.GetHash().GetHex() << " and this is not the create tx" << std::endl);
         //fprintf(stderr,"inputs %llu vs outputs %llu\n",(long long)inputs,(long long)outputs);
 		return false;  // do not call eval->Invalid() here!
 	}
