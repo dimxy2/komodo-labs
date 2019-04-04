@@ -619,7 +619,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     // return Invalid("test-invalid");
     LOGSTREAM("importcoin", CCLOG_DEBUG2, stream << "Valid import tx! txid=" << importTx.GetHash().GetHex() << std::endl);
     
-    if (vimportOpret.begin()[0] == EVAL_TOKENS)
+    if (!tokenid.IsNull())
         return Invalid("test-invalid-tokens-are-good!!");
     else
         return Invalid("test-invalid-coins-are-good!!");
