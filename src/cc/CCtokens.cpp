@@ -973,14 +973,15 @@ UniValue TokenInfo(uint256 tokenid)
                     if (!ss.eof())
                         ss >> tokenbasetx);
                     
-                    if (!tokenbasetx.IsNull())
+                    if (!tokenbasetx.IsNull()) {
                         sourceTokenId = tokenbasetx.GetHash().GetHex();
-                }
-                std::string name, desc;
-                std::vector<uint8_t> vorigpubkey;
-                if (burnTx.vout.size() > 0) {
-                    DecodeTokenCreateOpRet(burnTx.vout.back().scriptPubKey, vorigpubkey, name, desc);
-                    sourceOrigPubkey = HexStr(vorigpubkey);
+                        if (burnTx.vout.size() > 0) {
+                            std::string name, desc;
+                            std::vector<uint8_t> vorigpubkey;
+                            DecodeTokenCreateOpRet(burnTx.vout.back().scriptPubKey, vorigpubkey, name, desc);
+                            sourceOrigPubkey = HexStr(vorigpubkey);
+                        }
+                    }
                 }
             }
         }
