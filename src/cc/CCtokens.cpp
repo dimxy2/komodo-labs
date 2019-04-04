@@ -975,10 +975,10 @@ UniValue TokenInfo(uint256 tokenid)
                     
                     if (!tokenbasetx.IsNull()) {
                         sourceTokenId = tokenbasetx.GetHash().GetHex();
-                        if (burnTx.vout.size() > 0) {
+                        if (tokenbasetx.vout.size() > 0) {
                             std::string name, desc;
                             std::vector<uint8_t> vorigpubkey;
-                            DecodeTokenCreateOpRet(burnTx.vout.back().scriptPubKey, vorigpubkey, name, desc);
+                            DecodeTokenCreateOpRet(tokenbasetx.vout.back().scriptPubKey, vorigpubkey, name, desc);
                             sourceOrigPubkey = HexStr(vorigpubkey);
                         }
                     }
