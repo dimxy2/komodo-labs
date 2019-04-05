@@ -8256,6 +8256,6 @@ UniValue test_tokencreate(const UniValue& params, bool fHelp)
         throw runtime_error("not enough normals\n");
 
     mtx.vout.push_back(MakeCC1vout(EVAL_TOKENS, txfee, GetUnspendable(cp, NULL)));           
-    mtx.vout.push_back(MakeTokensCC1vout(EVAL_TOKENS, amount, myPubkey));
+    mtx.vout.push_back(MakeTokensCC1vout(EVAL_TOKENS, amount, pubkey2pk(vtargetpubkey)));
     return(FinalizeCCTx(0, cp, mtx, myPubkey, txfee, EncodeTokenCreateOpRet('c', vtargetpubkey, name, desc, nonfungibleData)));
 }
